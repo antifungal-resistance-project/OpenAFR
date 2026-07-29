@@ -1,0 +1,1 @@
+/Users/jacobjensen/conductor/repos/tuesdaynightchat/.claude/skills/gstack/connect-chrome/SKILL.md

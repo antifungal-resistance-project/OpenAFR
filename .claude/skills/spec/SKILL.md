@@ -1,0 +1,1 @@
+/Users/jacobjensen/conductor/repos/tuesdaynightchat/.claude/skills/gstack/spec/SKILL.md
