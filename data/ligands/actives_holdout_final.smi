@@ -1,0 +1,7 @@
+C[C@H]([C@](CN1C=NC=N1)(C2=C(C=C(C=C2)F)F)O)N3CCC(=C)CC3	efinaconazole
+C1[C@H](S/C(=C(\C#N)/N2C=CN=C2)/S1)C3=C(C=C(C=C3)Cl)Cl	luliconazole
+C1=CC2=C(C(=C1)Cl)SC=C2COC(CN3C=CN=C3)C4=C(C=C(C=C4)Cl)Cl	sertaconazole
+C1=CC(=C(C=C1Cl)Cl)CO/N=C(\CN2C=CN=C2)/C3=C(C=C(C=C3)Cl)Cl	oxiconazole
+C1=CC=C(C=C1)C2=CC=C(C=C2)C(C3=CC=CC=C3)N4C=CN=C4	bifonazole
+C1=CC=C(C=C1)SC2=CC=C(C=C2)COC(CN3C=CN=C3)C4=C(C=C(C=C4)Cl)Cl	fenticonazole
+C1=CC(=C(C(=C1)Cl)SC(CCC2=CC=C(C=C2)Cl)CN3C=CN=C3)Cl	butoconazole
