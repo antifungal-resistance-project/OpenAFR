@@ -1,0 +1,24 @@
+# Docking intermediates and outputs — regenerate with scripts/, do not version.
+# (~43 MB of pose files; the results markdown in work/ is what matters.)
+work/screen/
+work/screen2/
+work/docked/
+work/docked_deep/
+work/docked_bigbox/
+work/diag/
+work/ligands/
+work/screen_ligands/
+work/run2_ligands/
+work/screen_pdbqt/
+work/run2_pdbqt/
+work/*.pdbqt
+work/*.log
+
+# gstack tooling is installed per-developer, not vendored
+.claude/skills/gstack/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+work/dock_batch_output.txt
