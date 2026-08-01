@@ -81,8 +81,21 @@ work/RESULTS_*.md                 every run, including the failure
 conda env create -f environment.yml     # or: mamba env create -f environment.yml
 conda activate openafr
 
-python scripts/prep_ligands.py data/ligands/actives.smi work/ligands
-./scripts/run_screen2.sh
+# 1. Prepare the docking receptor: 5TZ1 chain A + heme -> work/receptor.pdbqt.
+#    NOT yet scripted — a manual prerequisite, and a known reproducibility gap
+#    (see Status). work/receptor.pdbqt is gitignored, so a fresh clone lacks it
+#    and run_screen2.sh cannot dock until it exists.
+
+# 2. Prepare the run-2 held-out ligands — 7 azole actives + 350 property-matched
+#    decoys — into the directory run_screen2.sh reads from (work/run2_ligands):
+python scripts/prep_ligands.py data/ligands/actives_holdout_final.smi work/run2_ligands
+python scripts/prep_ligands.py data/ligands/decoys_holdout.smi        work/run2_ligands
+
+# 3. Dock every ligand under the one frozen protocol, then grade the result.
+#    The screen docks against work/receptor.pdbqt (step 1); the gate reads the
+#    heme-iron position from the tracked work/receptor_A.pdb — two files, both
+#    the same 5TZ1 receptor in different formats.
+./scripts/run_screen2.sh                                            # -> work/screen2/
 python scripts/validate_gate2.py work/screen2 work/receptor_A.pdb   # exit 0 = pass
 
 pytest   # known-answer tests for the gate math, parsers, and protocol
@@ -112,6 +125,10 @@ Two traps this pipeline is explicitly built to avoid, both documented in `work/`
 Prove-the-core spike: complete and passing. `screen/`, `filter/`, and `report/` stages are
 next. No wet-lab collaborator yet — that is the critical open dependency, since nothing here
 is validated until someone puts candidates on real fungus.
+
+Known reproducibility gap: receptor preparation (`data/structures/5TZ1.pdb` -> the docking
+input `work/receptor.pdbqt`) was done by hand and is not yet scripted, so `run_screen2.sh`
+cannot be run from a fresh clone until that step is captured (tracked in `TODOS.md`).
 
 ## License
 
