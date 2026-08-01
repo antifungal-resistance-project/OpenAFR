@@ -23,7 +23,7 @@ directly, so a future refactor that silently changes the math fails loudly.
 """
 import pytest
 
-import validate_gate2 as g
+from openafr import scoring as g
 
 
 # --------------------------------------------------------------------------

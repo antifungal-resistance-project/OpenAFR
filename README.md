@@ -57,12 +57,19 @@ data/ligands/actives.smi          8 known azoles (training)
 data/ligands/actives_holdout_final.smi   7 held-out azoles (never used to form hypotheses)
 data/ligands/decoys*.smi          property-matched decoys, 50 per active
 
+protocol.yaml                     the frozen run protocol (box, search effort, pass bar), hash-pinned
+
+openafr/pdbqt.py                  shared Vina/PDBQT/receptor parsers
+openafr/scoring.py                metrics() / report() — the ranking math
+openafr/protocol.py               loads + hash-verifies protocol.yaml
+
 scripts/prep_ligands.py           SMILES -> 3D, deterministic, failures logged not dropped
 scripts/make_decoys.py            property-matched decoy generation from ChEMBL
 scripts/run_screen*.sh            docking, one fixed protocol for every molecule
 scripts/analyze_poses.py          metal-coordination analysis
 scripts/validate_gate*.py         the gate — exits nonzero when it cannot recover knowns
 
+tests/                            known-answer tests for the gate math, parsers, and protocol
 work/PREREGISTRATION_run2.md      rules fixed in advance, hash-frozen
 work/RESULTS_*.md                 every run, including the failure
 ```
@@ -70,17 +77,23 @@ work/RESULTS_*.md                 every run, including the failure
 ## Reproducing
 
 ```bash
-# toolkit (Apple Silicon / Linux)
-mamba create -n openafr -c conda-forge python=3.11 rdkit openbabel vina numpy pandas
+# toolkit (Apple Silicon / Linux), version-pinned in environment.yml
+conda env create -f environment.yml     # or: mamba env create -f environment.yml
 conda activate openafr
 
 python scripts/prep_ligands.py data/ligands/actives.smi work/ligands
 ./scripts/run_screen2.sh
 python scripts/validate_gate2.py work/screen2 work/receptor_A.pdb   # exit 0 = pass
+
+pytest   # known-answer tests for the gate math, parsers, and protocol
 ```
 
-The gate script re-checks the pre-registration hash and refuses to certify a pass if the
-rules file was edited after being frozen.
+The gate script re-checks two hashes — the pre-registration (`work/PREREGISTRATION_run2.md`)
+and the frozen protocol (`protocol.yaml`) — and flags any pass as not credible if either was
+edited after being frozen. The docking script reads its box and search parameters from the
+same `protocol.yaml`, so what is docked and what is graded can never silently drift apart.
+Changing the protocol is a conscious act: edit `protocol.yaml`, re-freeze with
+`python -m openafr.protocol --freeze`, update `PROTOCOL_SHA`, and record why.
 
 ## Design notes worth knowing
 

@@ -1,0 +1,29 @@
+# OpenAFR frozen protocol — run 2.
+#
+# Machine-readable mirror of work/PREREGISTRATION_run2.md, sections
+# "Docking protocol (fixed, identical for every molecule)" and
+# "Primary hypothesis (H1)". These are the numbers that define the run: the
+# docking box + search effort every molecule is scored under, and the pass bar
+# the gate must clear.
+#
+# FROZEN. openafr/protocol.py pins this file's SHA-256; scripts/validate_gate2.py
+# re-checks that hash at run time and flags any pass as not credible if the file
+# was edited after freezing — the same anti-tuning guarantee as the
+# pre-registration itself. Changing a value here is a protocol change: do it
+# consciously, re-freeze the hash (python -m openafr.protocol --freeze), and
+# record why.
+
+docking:
+  center_x: 70.61          # crystal ligand centroid
+  center_y: 66.28
+  center_z: 4.18
+  size: 26                 # 26 A box: fits the long azoles
+  exhaustiveness: 32       # doubled vs run 1 so search effort is not limiting
+  num_modes: 20
+  seed: 42                 # fixed seed = reproducible runs
+
+gate:
+  min_auc: 0.70            # both thresholds must hold on mode C (H1)
+  min_ef1: 5.0
+  ef_fractions: [0.01, 0.05, 0.10]
+  bedroc_alpha: 20.0
