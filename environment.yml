@@ -1,0 +1,34 @@
+# OpenAFR runtime + dev environment, version-pinned for reproducibility.
+#
+# Recreate with:
+#   conda env create -f environment.yml      # or: mamba env create -f environment.yml
+#   conda activate openafr
+#
+# These are the versions the run-2 result (work/RESULTS_run2_holdout.md) was
+# produced under. Pinning them is part of the same reproducibility contract as the
+# hash-frozen pre-registration and protocol.yaml: a result you cannot rebuild is
+# not a result.
+#
+# What each dependency is for:
+#   rdkit      the only third-party import in the Python code — Chem (ligand prep,
+#              decoy fingerprints) and ML.Scoring (the AUC/EF/BEDROC gate math).
+#              Pulls in numpy transitively; the gate tests lock the exact metric
+#              values, so any numpy-induced drift fails loudly rather than silently.
+#   openbabel  the `obabel` CLI the docking scripts shell out to (SDF -> PDBQT).
+#   vina       the `vina` CLI (AutoDock Vina) that does the docking.
+#   pytest     dev only: runs tests/. Installed from PyPI to match the current env.
+#
+# Versions are pinned to minor where the toolchain is stable and exact where it
+# materially affects docking/scoring output. Build strings are intentionally
+# omitted so the file resolves on both Apple Silicon and Linux (see README).
+name: openafr
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - rdkit=2025.09.5
+  - openbabel=3.1.1
+  - vina=1.2.7
+  - pip
+  - pip:
+      - pytest==9.1.1

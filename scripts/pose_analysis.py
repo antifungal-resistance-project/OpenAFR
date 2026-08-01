@@ -1,4 +1,10 @@
 import math
+import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from openafr.pdbqt import iron_position, read_scores
+
 
 def read_atoms(path, model=None):
     out, in_model = [], (model is None)
@@ -17,10 +23,9 @@ def read_atoms(path, model=None):
     return out
 
 ref = {a[0]: a[1:] for a in read_atoms("work/ref_VT1.pdb")}
-fe = [(float(l[30:38]), float(l[38:46]), float(l[46:54])) for l in open("work/receptor_A.pdb")
-      if l.startswith("HETATM") and l[76:78].strip().upper()=="FE"][0]
+fe = iron_position("work/receptor_A.pdb")
 
-scores = [float(l.split()[3]) for l in open("work/redock_VT1.pdbqt") if "REMARK VINA RESULT" in l]
+scores = read_scores("work/redock_VT1.pdbqt")
 
 print(f"{'pose':>5}{'score':>9}{'RMSD(name-matched)':>20}{'N-Fe':>9}   verdict")
 print("-"*64)

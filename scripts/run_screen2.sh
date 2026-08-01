@@ -1,7 +1,10 @@
 #!/bin/bash
 # Run 2 — protocol FIXED BY work/PREREGISTRATION_run2.md. Do not tune.
+# Box + search parameters come from the hash-frozen protocol.yaml (single source
+# of truth shared with the gate), not hand-copied constants.
 set -u
-CX=70.61; CY=66.28; CZ=4.18; SIZE=26; EXHAUST=32; MODES=20; SEED=42
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+eval "$(python "$ROOT/openafr/protocol.py" --shell docking)"   # sets CX CY CZ SIZE EXHAUST MODES SEED
 OUT=work/screen2; LIG=work/run2_pdbqt; mkdir -p "$OUT" "$LIG"
 total=$(ls work/run2_ligands/*.sdf | wc -l | tr -d ' '); i=0; failed=0
 for sdf in work/run2_ligands/*.sdf; do

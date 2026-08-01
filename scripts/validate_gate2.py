@@ -10,16 +10,15 @@ never dropped. Dropping unrankable actives inflates every metric and is the sing
 easiest way to fake a passing gate.
 """
 import hashlib
-import math
 import os
+import pathlib
 import sys
 
-from rdkit.ML.Scoring import Scoring
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from openafr import protocol
+from openafr.pdbqt import iron_position, min_nitrogen_iron_distance, read_poses, read_scores
+from openafr.scoring import report
 
-MIN_AUC = 0.70
-MIN_EF1 = 5.0
-EF_FRACTIONS = [0.01, 0.05, 0.10]
-BEDROC_ALPHA = 20.0
 PREREG = "work/PREREGISTRATION_run2.md"
 PREREG_SHA = "7c89d78cdadba90bae54b60ba9583eec606f6c6aec88688dd2ef353e773ddbf1"
 
@@ -38,73 +37,26 @@ def check_prereg():
         print("   Any 'pass' from this run is not credible.")
 
 
-def poses(path):
-    cur = None
-    for l in open(path):
-        if l.startswith("MODEL"):
-            cur = []
-        elif l.startswith("ENDMDL"):
-            yield cur
-        elif l.startswith(("ATOM", "HETATM")):
-            nm = l[12:16].strip()
-            el = (l[76:78].strip() or nm[0]).upper()
-            if el != "H":
-                cur.append((nm, float(l[30:38]), float(l[38:46]), float(l[46:54])))
-
-
-def vina_scores(path):
-    return [float(l.split()[3]) for l in open(path) if "REMARK VINA RESULT" in l]
-
-
-def iron(receptor):
-    for l in open(receptor):
-        if l.startswith("HETATM") and l[76:78].strip().upper() == "FE":
-            return (float(l[30:38]), float(l[38:46]), float(l[46:54]))
-    raise SystemExit("no heme iron in receptor")
-
-
-def metrics(ordered_flags):
-    r = [[1 if a else 0] for a in ordered_flags]
-    return (Scoring.CalcAUC(r, 0),
-            [Scoring.CalcEnrichment(r, 0, [f])[0] for f in EF_FRACTIONS],
-            Scoring.CalcBEDROC(r, 0, BEDROC_ALPHA))
-
-
-def report(label, ranked, gating=False):
-    """ranked: list of (name, key, is_active), lower key = better. None key = ranked last."""
-    ok = [r for r in ranked if r[1] is not None]
-    bad = [r for r in ranked if r[1] is None]
-    ordered = sorted(ok, key=lambda r: r[1]) + bad          # unrankable go last
-    flags = [r[2] for r in ordered]
-    auc, efs, bedroc = metrics(flags)
-    n_act = sum(flags)
-    print(f"\n{label}{'   [PRIMARY — gates the result]' if gating else '   (secondary, reported only)'}")
-    print(f"  ranked           : {len(ordered)}  ({n_act} actives, {len(ordered)-n_act} decoys)")
-    if bad:
-        nb = sum(1 for r in bad if r[2])
-        print(f"  unrankable       : {len(bad)} molecules ({nb} actives) — placed LAST per pre-registration")
-    print(f"  AUC              : {auc:.3f}")
-    for f, ef in zip(EF_FRACTIONS, efs):
-        print(f"  EF@{int(f*100):>3}%          : {ef:.2f}x")
-    print(f"  BEDROC (a=20)    : {bedroc:.3f}")
-    top = [r[0] for r in ordered[:15] if r[2]]
-    print(f"  actives in top 15: {len(top)}/{n_act}  {top if top else ''}")
-    return auc, efs, bedroc
-
-
 def main():
     screen = sys.argv[1] if len(sys.argv) > 1 else "work/screen2"
     receptor = sys.argv[2] if len(sys.argv) > 2 else "work/receptor_A.pdb"
-    fe = iron(receptor)
+    fe = iron_position(receptor)
     actives = {l.split("\t")[1].strip()
                for l in open("data/ligands/actives_holdout_final.smi") if "\t" in l}
+
+    gate = protocol.load()["gate"]
+    min_auc, min_ef1 = gate["min_auc"], gate["min_ef1"]
+    ef_fractions, bedroc_alpha = gate["ef_fractions"], gate["bedroc_alpha"]
+    rep = lambda label, rows, gating=False: report(
+        label, rows, gating, ef_fractions, bedroc_alpha)
 
     print("=" * 70)
     print("RUN 2 — PRE-REGISTERED HELD-OUT VALIDATION")
     print("=" * 70)
     check_prereg()
+    protocol.verify()
     print(f"held-out actives : {len(actives)}")
-    print(f"pass bar         : AUC >= {MIN_AUC} AND EF@1% >= {MIN_EF1}x (mode C only)")
+    print(f"pass bar         : AUC >= {min_auc} AND EF@1% >= {min_ef1}x (mode C only)")
 
     dist_rows, score_rows, both = [], [], []
     for f in sorted(os.listdir(screen)):
@@ -113,14 +65,11 @@ def main():
         name = f[:-6]
         is_act = name in actives
         p = os.path.join(screen, f)
-        sc = vina_scores(p)
+        sc = read_scores(p)
         best_d = None
-        for pose in poses(p):
-            ns = [a for a in pose if a[0].startswith("N")]
-            if not ns:
-                continue
-            d = min(math.dist(a[1:], fe) for a in ns)
-            if best_d is None or d < best_d:
+        for _num, atoms in read_poses(p):
+            d = min_nitrogen_iron_distance(atoms, fe)
+            if d is not None and (best_d is None or d < best_d):
                 best_d = d
         dist_rows.append((name, best_d, is_act))
         score_rows.append((name, sc[0] if sc else None, is_act))
@@ -131,8 +80,8 @@ def main():
     if seen != actives:
         print(f"\n!! MISSING ACTIVES: {actives - seen} — results not valid")
 
-    c = report("MODE C — rank by iron-approach distance", dist_rows, gating=True)
-    a = report("MODE A — rank by Vina score", score_rows)
+    c = rep("MODE C — rank by iron-approach distance", dist_rows, gating=True)
+    rep("MODE A — rank by Vina score", score_rows)
 
     dr = {b[0]: i for i, b in enumerate(sorted([b for b in both if b[1] is not None],
                                                key=lambda b: b[1]))}
@@ -140,11 +89,11 @@ def main():
                                                key=lambda b: b[2]))}
     comb = [(b[0], (dr[b[0]] + sr[b[0]]) if (b[0] in dr and b[0] in sr) else None, b[3])
             for b in both]
-    report("MODE D — combined rank (distance + score)", comb)
+    rep("MODE D — combined rank (distance + score)", comb)
 
     print("\n" + "=" * 70)
-    passed = c[0] >= MIN_AUC and c[1][0] >= MIN_EF1
-    print(f"MODE C: AUC {c[0]:.3f} (need >= {MIN_AUC})   EF@1% {c[1][0]:.2f}x (need >= {MIN_EF1})")
+    passed = c[0] >= min_auc and c[1][0] >= min_ef1
+    print(f"MODE C: AUC {c[0]:.3f} (need >= {min_auc})   EF@1% {c[1][0]:.2f}x (need >= {min_ef1})")
     if passed:
         print("GATE: PASS — hypothesis H1 supported on held-out actives.")
         print("Screening new molecules is justified under this protocol and domain.")

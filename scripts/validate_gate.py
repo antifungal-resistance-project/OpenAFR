@@ -23,46 +23,20 @@ Metrics (all from rdkit.ML.Scoring, the canonical implementations):
     BEDROC  - like AUC but weights the top of the list heavily (alpha=20), which is
               what matters when you can only afford to test the top few hundred.
 """
-import math
 import os
+import pathlib
 import sys
 
-from rdkit.ML.Scoring import Scoring
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from openafr.pdbqt import iron_position, min_nitrogen_iron_distance, read_poses, read_scores
+from openafr.scoring import EF_FRACTIONS, metrics
 
 FE_CUTOFF = 3.0
-EF_FRACTIONS = [0.01, 0.05, 0.10]
-BEDROC_ALPHA = 20.0
 
 # Gate thresholds, declared BEFORE looking at results (pre-registration).
 # A pipeline that cannot beat these has not earned the right to screen new molecules.
 MIN_AUC = 0.70
 MIN_EF1 = 5.0
-
-
-def read_poses(path):
-    cur, num = [], None
-    for line in open(path):
-        if line.startswith("MODEL"):
-            num, cur = int(line.split()[1]), []
-        elif line.startswith("ENDMDL"):
-            yield num, cur
-        elif line.startswith(("ATOM", "HETATM")):
-            name = line[12:16].strip()
-            element = (line[76:78].strip() or name[0]).upper()
-            if element == "H":
-                continue
-            cur.append((name, float(line[30:38]), float(line[38:46]), float(line[46:54])))
-
-
-def read_scores(path):
-    return [float(l.split()[3]) for l in open(path) if "REMARK VINA RESULT" in l]
-
-
-def iron_position(receptor_pdb):
-    for l in open(receptor_pdb):
-        if l.startswith("HETATM") and l[76:78].strip().upper() == "FE":
-            return (float(l[30:38]), float(l[38:46]), float(l[46:54]))
-    raise SystemExit("no heme iron in receptor")
 
 
 def summarize(pdbqt, fe):
@@ -72,29 +46,18 @@ def summarize(pdbqt, fe):
         return None, None
     best_constrained = None
     for (num, atoms), score in zip(read_poses(pdbqt), scores):
-        ns = [a for a in atoms if a[0].startswith("N")]
-        if not ns:
-            continue
-        if min(math.dist(a[1:], fe) for a in ns) < FE_CUTOFF:
+        d = min_nitrogen_iron_distance(atoms, fe)
+        if d is not None and d < FE_CUTOFF:
             if best_constrained is None or score < best_constrained:
                 best_constrained = score
     return scores[0], best_constrained
 
 
-def metrics(ranked):
-    """ranked: list of [is_active] ordered best-first. Returns (auc, efs, bedroc)."""
-    auc = Scoring.CalcAUC(ranked, 0)
-    efs = [Scoring.CalcEnrichment(ranked, 0, [f])[0] for f in EF_FRACTIONS]
-    bedroc = Scoring.CalcBEDROC(ranked, 0, BEDROC_ALPHA)
-    return auc, efs, bedroc
-
-
 def report(label, rows, n_actives_total):
     """rows: (name, score, is_active) for molecules that produced a usable score."""
     rows = sorted(rows, key=lambda r: r[1])          # more negative = better
-    ranked = [[1 if r[2] else 0] for r in rows]
     n_act = sum(r[2] for r in rows)
-    auc, efs, bedroc = metrics(ranked)
+    auc, efs, bedroc = metrics([r[2] for r in rows])
     print(f"\n{label}")
     print(f"  molecules ranked : {len(rows)}  ({n_act} actives, {len(rows)-n_act} decoys)")
     if n_act < n_actives_total:

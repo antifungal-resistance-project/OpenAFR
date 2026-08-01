@@ -20,38 +20,14 @@ bond. Chemistry first, score second.
         |                              v
         +------------------> best score among iron-bound poses = the answer
 """
-import math
 import os
+import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from openafr.pdbqt import iron_position, min_nitrogen_iron_distance, read_poses, read_scores
+
 FE_CUTOFF = 3.0  # angstroms; a real azole-iron coordination bond is 2.0-2.5 A
-
-
-def read_poses(path):
-    """Yield (model_number, [(atom_name, x, y, z), ...]) for each pose, heavy atoms only."""
-    cur, num = [], None
-    for line in open(path):
-        if line.startswith("MODEL"):
-            num, cur = int(line.split()[1]), []
-        elif line.startswith("ENDMDL"):
-            yield num, cur
-        elif line.startswith(("ATOM", "HETATM")):
-            name = line[12:16].strip()
-            element = (line[76:78].strip() or name[0]).upper()
-            if element == "H":
-                continue
-            cur.append((name, float(line[30:38]), float(line[38:46]), float(line[46:54])))
-
-
-def read_scores(path):
-    return [float(l.split()[3]) for l in open(path) if "REMARK VINA RESULT" in l]
-
-
-def iron_position(receptor_pdb):
-    for l in open(receptor_pdb):
-        if l.startswith("HETATM") and l[76:78].strip().upper() == "FE":
-            return (float(l[30:38]), float(l[38:46]), float(l[46:54]))
-    raise SystemExit(f"No heme iron found in {receptor_pdb} — wrong structure?")
 
 
 def analyze(pdbqt, fe):
@@ -62,10 +38,9 @@ def analyze(pdbqt, fe):
         return None
     best_fe, constrained, all_fe = None, [], []
     for (num, atoms), score in zip(poses, scores):
-        nitrogens = [a for a in atoms if a[0].startswith("N")]
-        if not nitrogens:
+        d = min_nitrogen_iron_distance(atoms, fe)
+        if d is None:
             continue
-        d = min(math.dist(a[1:], fe) for a in nitrogens)
         all_fe.append(d)
         if d < FE_CUTOFF:
             constrained.append((score, num, d))
