@@ -66,9 +66,11 @@ openafr/protocol.py               loads + hash-verifies protocol.yaml
 scripts/prep_receptor.py          5TZ1.pdb -> work/receptor.pdbqt, chain-A+heme, matches the anchor
 scripts/prep_ligands.py           SMILES -> 3D, deterministic, failures logged not dropped
 scripts/make_decoys.py            property-matched decoy generation from ChEMBL
+scripts/filter_library.py         applicability-domain filter — keep only what the gate validated
 scripts/screen.sh                 the docking engine — one fixed protocol, all cores, resumable
 scripts/run_screen2.sh            thin wrapper: run-2 held-out validation via screen.sh
 scripts/rank_candidates.py        screen poses -> candidate list ranked by the validated criterion
+scripts/report_candidates.py      candidate list -> human-readable Markdown report with the evidence
 scripts/analyze_poses.py          metal-coordination analysis
 scripts/validate_gate*.py         the gate — exits nonzero when it cannot recover knowns
 
@@ -128,7 +130,15 @@ Prove-the-core spike: complete and passing. The `screen/` stage now exists as a 
 parallel docking engine (`scripts/screen.sh`) that docks any prepared ligand library under the
 one frozen protocol; `scripts/rank_candidates.py` turns its poses into a candidate list ranked
 by the validated iron-approach criterion. Run-2 validation now goes through the same engine, so
-validation and screening can never drift apart. `filter/` and `report/` stages are next.
+validation and screening can never drift apart. The `filter/` stage
+(`scripts/filter_library.py`) now enforces the pre-registered applicability domain on
+a novel library before any docking compute is spent, so the ranked list only ever
+contains molecules the gate's evidence covers. The `report/` stage
+(`scripts/report_candidates.py`) then turns that ranked list into a Markdown report a
+wet-lab collaborator can read: per-candidate iron-coordination evidence, the frozen-
+protocol provenance (including a live check that `protocol.yaml` is unmodified), and
+the caveats that keep the list honest. With filter and report in place, the novel-
+screening path — filter → prep → screen → rank → report — is complete end to end.
 
 No wet-lab collaborator yet — that is the critical open dependency, since nothing here is
 validated until someone puts candidates on real fungus. And screening a novel library is only
@@ -138,10 +148,21 @@ a hit.
 To screen a novel library once the gate has passed:
 
 ```bash
-python scripts/prep_ligands.py my_library.smi work/screen_ligands   # SMILES -> 3D
+python scripts/filter_library.py my_library.smi -o work/in_domain.smi -x work/excluded.tsv
+                                                                    # keep only what the gate validated
+python scripts/prep_ligands.py work/in_domain.smi work/screen_ligands   # SMILES -> 3D
 ./scripts/screen.sh                                                  # dock all cores -> work/screen/
 python scripts/rank_candidates.py work/screen -o work/candidates.tsv # ranked by validated criterion
+python scripts/report_candidates.py work/screen -o work/report.md    # human-readable report + evidence
 ```
+
+The `filter/` step drops molecules the gate's evidence does not cover *before* any
+docking compute — > 45 heavy atoms (the pre-registered applicability domain, the
+posaconazole/itraconazole blind spot) and anything with no aromatic nitrogen (the
+N–Fe criterion is undefined for it). Nothing is silently dropped: every exclusion
+is written to `work/excluded.tsv` with a reason. It deliberately adds *no*
+un-registered drug-likeness filters — that would be the same tuning trap the gate
+is built to avoid.
 
 Receptor preparation is now scripted end to end (`scripts/prep_receptor.py`), so the
 reproduce recipe runs from a fresh clone: `data/structures/5TZ1.pdb` -> `work/receptor.pdbqt`,
