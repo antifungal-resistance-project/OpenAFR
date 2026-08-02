@@ -63,6 +63,7 @@ openafr/pdbqt.py                  shared Vina/PDBQT/receptor parsers
 openafr/scoring.py                metrics() / report() — the ranking math
 openafr/protocol.py               loads + hash-verifies protocol.yaml
 
+scripts/prep_receptor.py          5TZ1.pdb -> work/receptor.pdbqt, chain-A+heme, matches the anchor
 scripts/prep_ligands.py           SMILES -> 3D, deterministic, failures logged not dropped
 scripts/make_decoys.py            property-matched decoy generation from ChEMBL
 scripts/run_screen*.sh            docking, one fixed protocol for every molecule
@@ -82,9 +83,8 @@ conda env create -f environment.yml     # or: mamba env create -f environment.ym
 conda activate openafr
 
 # 1. Prepare the docking receptor: 5TZ1 chain A + heme -> work/receptor.pdbqt.
-#    NOT yet scripted — a manual prerequisite, and a known reproducibility gap
-#    (see Status). work/receptor.pdbqt is gitignored, so a fresh clone lacks it
-#    and run_screen2.sh cannot dock until it exists.
+#    work/receptor.pdbqt is gitignored, so a fresh clone must build it first.
+python scripts/prep_receptor.py   # -> work/receptor.pdbqt (asserts atoms match work/receptor_A.pdb)
 
 # 2. Prepare the run-2 held-out ligands — 7 azole actives + 350 property-matched
 #    decoys — into the directory run_screen2.sh reads from (work/run2_ligands):
@@ -126,9 +126,11 @@ Prove-the-core spike: complete and passing. `screen/`, `filter/`, and `report/` 
 next. No wet-lab collaborator yet — that is the critical open dependency, since nothing here
 is validated until someone puts candidates on real fungus.
 
-Known reproducibility gap: receptor preparation (`data/structures/5TZ1.pdb` -> the docking
-input `work/receptor.pdbqt`) was done by hand and is not yet scripted, so `run_screen2.sh`
-cannot be run from a fresh clone until that step is captured (tracked in `TODOS.md`).
+Receptor preparation is now scripted end to end (`scripts/prep_receptor.py`), so the
+reproduce recipe runs from a fresh clone: `data/structures/5TZ1.pdb` -> `work/receptor.pdbqt`,
+with the extracted chain-A + heme atoms asserted identical to the tracked `work/receptor_A.pdb`
+the gate grades against. Verified by re-docking VT-1161 (top −12.1 kcal/mol; iron-bound pose
+at N–Fe 2.63 Å, matching `work/RESULTS_redock_VT1.md`).
 
 ## License
 

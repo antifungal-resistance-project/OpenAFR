@@ -2,26 +2,6 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Script the receptor preparation (5TZ1.pdb -> receptor.pdbqt)
-
-**What:** Add a script that turns `data/structures/5TZ1.pdb` into the docking
-receptor `work/receptor.pdbqt` (chain A + heme, correct protonation/charges),
-the same one the run-2 result was produced against.
-
-**Why:** This step was done by hand and never captured. `work/receptor.pdbqt` is
-gitignored, so a fresh clone does not have it and `run_screen2.sh` cannot dock —
-the reproduce recipe in the README dead-ends at step 1 for any new developer.
-This is the single biggest onboarding blocker.
-
-**Context:** The gate reads the heme-iron position from the tracked
-`work/receptor_A.pdb` (a stripped chain-A + heme PDB, already in the repo); the
-*docking* input is the separate `work/receptor.pdbqt`. The script must reproduce
-that exact `.pdbqt` — same atoms, protonation, and Gasteiger charges — or docking
-scores will not match the frozen result. Verify by re-docking a known active and
-checking the top score against `work/RESULTS_redock_VT1.md`.
-
-**Source:** README reproducibility gap, 2026-08-01.
-
 ## Parallelize the docking loop (screen stage)
 
 **What:** Replace the serial `for sdf in ...; do vina ...; done` loop with a
