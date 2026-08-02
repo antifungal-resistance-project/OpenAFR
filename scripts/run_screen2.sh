@@ -1,23 +1,13 @@
 #!/bin/bash
-# Run 2 — protocol FIXED BY work/PREREGISTRATION_run2.md. Do not tune.
-# Box + search parameters come from the hash-frozen protocol.yaml (single source
-# of truth shared with the gate), not hand-copied constants.
+# Run 2 — the pre-registered held-out validation docking.
+#
+# Thin wrapper over the one docking engine (scripts/screen.sh): it docks the
+# run-2 ligands (work/run2_ligands) into work/screen2 under the frozen protocol,
+# exactly as before. Validation and any future novel-library screen therefore run
+# through identical code — there is no separate, drift-prone docking loop here.
+#
+# Protocol FIXED BY work/PREREGISTRATION_run2.md. Do not tune. The box + search
+# parameters are read from the hash-frozen protocol.yaml inside screen.sh.
 set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-eval "$(python "$ROOT/openafr/protocol.py" --shell docking)"   # sets CX CY CZ SIZE EXHAUST MODES SEED
-OUT=work/screen2; LIG=work/run2_pdbqt; mkdir -p "$OUT" "$LIG"
-total=$(ls work/run2_ligands/*.sdf | wc -l | tr -d ' '); i=0; failed=0
-for sdf in work/run2_ligands/*.sdf; do
-  name=$(basename "$sdf" .sdf); i=$((i+1))
-  [ -s "$OUT/${name}.pdbqt" ] && continue
-  obabel "$sdf" -O "$LIG/${name}.pdbqt" -p 7.4 >/dev/null 2>&1
-  [ -s "$LIG/${name}.pdbqt" ] || { echo "CONVERT_FAIL ${name}"; failed=$((failed+1)); continue; }
-  vina --receptor work/receptor.pdbqt --ligand "$LIG/${name}.pdbqt" \
-       --center_x $CX --center_y $CY --center_z $CZ \
-       --size_x $SIZE --size_y $SIZE --size_z $SIZE \
-       --exhaustiveness $EXHAUST --num_modes $MODES --seed $SEED \
-       --out "$OUT/${name}.pdbqt" >/dev/null 2>&1
-  [ -s "$OUT/${name}.pdbqt" ] || { echo "DOCK_FAIL ${name}"; failed=$((failed+1)); }
-  [ $((i % 25)) -eq 0 ] && echo "progress: $i/$total failed=$failed"
-done
-echo "RUN2_COMPLETE docked=$(ls $OUT/*.pdbqt 2>/dev/null | wc -l | tr -d ' ') failed=$failed"
+exec "$ROOT/scripts/screen.sh" work/run2_ligands work/screen2 "$@"
