@@ -151,4 +151,15 @@ at N–Fe 2.63 Å, matching `work/RESULTS_redock_VT1.md`).
 
 ## License
 
-TBD.
+**[PolyForm Noncommercial License 1.0.0](LICENSE)** — © The Antifungal Resistance Project.
+
+This is a *source-available* license, not an OSI open-source license:
+
+- **Free** for noncommercial use — academic and public research, nonprofits,
+  educational, health, and government institutions, and personal/hobby use.
+- **Commercial use requires a separate license** from the foundation. If you want
+  to use OpenAFR for commercial purposes, contact us — see the site.
+
+Copyright is held by the foundation so it can offer commercial licenses; outside
+contributions are accepted under the same terms (a contributor license agreement
+may be requested) to keep that possible.
