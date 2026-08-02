@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+  OpenAFR foundation site — design tokens.
+  Deep, quiet, scientific. Iron-amber is the signature accent (heme iron);
+  cyan reads as "nitrogen / candidate molecule"; emerald means "validated / pass".
+*/
+@theme {
+  --color-bg: #05070d;
+  --color-surface: #0a0e1a;
+  --color-surface-2: #111726;
+  --color-border: #1c2536;
+
+  --color-fg: #eef2f8;
+  --color-muted: #8a94a6;
+  --color-faint: #5b6474;
+
+  --color-iron: #f9a826; /* heme iron */
+  --color-iron-deep: #e2711d;
+  --color-nitrogen: #4cc9f0; /* candidate nitrogen */
+  --color-pass: #34d399; /* validated */
+  --color-fail: #fb7185;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle grid + radial glow used behind hero-type sections */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.glow-iron {
+  background: radial-gradient(
+    60% 50% at 50% 40%,
+    rgba(249, 168, 38, 0.14),
+    transparent 70%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
