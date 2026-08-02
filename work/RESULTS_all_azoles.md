@@ -76,6 +76,8 @@ mandatory, not optional. Consider ranking on ligand efficiency rather than raw s
 
     conda run -n openafr --no-capture-output python scripts/prep_ligands.py \
       data/ligands/actives.smi work/ligands
-    ./scripts/dock_batch.sh
+    # dock_batch.sh was the training-run spike script (box 70.61,66.28,4.18 size 26
+    # exhaust 16), removed when docking was consolidated into scripts/screen.sh.
+    # Those exact constants — not the current frozen protocol — define this run.
     conda run -n openafr --no-capture-output python scripts/analyze_poses.py \
       work/docked work/receptor_A.pdb

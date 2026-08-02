@@ -9,8 +9,7 @@ work/diag/
 work/ligands/
 work/screen_ligands/
 work/run2_ligands/
-work/screen_pdbqt/
-work/run2_pdbqt/
+work/*_pdbqt/
 work/*.pdbqt
 work/*.log
 

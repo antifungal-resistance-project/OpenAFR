@@ -81,6 +81,8 @@ cheap. Screening new molecules remains unjustified until a pre-registered re-run
 
 ## Reproduce
 
-    ./scripts/run_screen.sh
+    # run_screen.sh was a run-1 spike script (box 67.4,68.8,3.4 size 30 exhaust 16),
+    # removed when docking was consolidated into scripts/screen.sh. Those exact
+    # constants — not the current frozen protocol — define this historical run.
     conda run -n openafr --no-capture-output python scripts/validate_gate.py \
       work/screen work/receptor_A.pdb        # exits 1 on failure

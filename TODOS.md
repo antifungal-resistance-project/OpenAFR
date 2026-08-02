@@ -2,38 +2,25 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Parallelize the docking loop (screen stage)
+## Parallelize the docking loop (screen stage) — DONE 2026-08-01
 
-**What:** Replace the serial `for sdf in ...; do vina ...; done` loop with a
-parallel dispatch (`xargs -P $(nproc)` or GNU `parallel`), one Vina process per
-core, preserving the per-ligand fixed `--seed 42`.
+**Status:** Implemented. `scripts/screen.sh` is now the single docking engine and
+dispatches one Vina process per core with `xargs -P` (core count via `nproc` on
+Linux / `sysctl -n hw.ncpu` on Apple Silicon). Each ligand keeps the fixed
+protocol `--seed`, applied independently — no shared RNG across the pool — so a
+parallel run is bit-for-bit identical to a serial one. Box + search parameters are
+still read from the hash-frozen `protocol.yaml` via
+`eval "$(python openafr/protocol.py --shell docking)"`, so docking stays in sync
+with grading. Progress is per-ligand (`OK`/`SKIP`/`*_FAIL` lines + per-ligand
+`work/screen/<name>.log`); the run is resumable.
 
-**Why:** Each Vina run at `--exhaustiveness 32` takes minutes. At validation
-scale (~355 molecules) serial is fine. The `screen` stage points the pipeline
-at a novel library (potentially thousands of compounds) — serial that is days
-of wall time on one machine. Docking runs are independent, so this is
-embarrassingly parallel.
+The three former docking scripts were consolidated: `run_screen.sh` and
+`dock_batch.sh` were removed, and `run_screen2.sh` is now a thin wrapper over
+`screen.sh` so validation and any novel-library screen share one code path.
 
-**Pros:** Turns a multi-day screen into an afternoon; keeps solo iteration fast.
-**Cons:** None functional (runs are independent). Minor: interleaved progress
-output needs per-ligand log files instead of a shared stdout counter.
-
-**Context:** The serial loop is the `for sdf in ...; do ... vina ...; done` block
-in `scripts/run_screen2.sh` (lines 10–22). Determinism is preserved as long as
-each ligand keeps its own fixed seed — do NOT share a seed across the pool. The
-box and search parameters already come from the hash-frozen `protocol.yaml` (via
-`eval "$(python openafr/protocol.py --shell docking)"` at the top of the script);
-any parallel version must keep reading them from there so what is docked stays in
-sync with what is graded.
-
-When the `screen` stage is built, put the parallel dispatch inside it rather than
-forking yet another one-off docking script. Three docking scripts already exist
-(`run_screen.sh`, `run_screen2.sh`, `dock_batch.sh`); do not add a fourth — the
-screen stage should be the one place a novel library gets docked.
-
-**Depends on / blocked by:** The `screen` stage existing, and ideally a
-wet-lab-collaborator-scoped compound library to run it against (see the
-mycology-foundation design doc). Do not build before there's something at scale
-to run.
+**Remaining (still blocked):** running the screen at real scale needs a
+wet-lab-collaborator-scoped compound library. Do not chase further throughput
+tuning before there is something at scale to run. Screening is also only justified
+after `validate_gate2.py` passes.
 
 **Source:** /plan-eng-review finding P1, 2026-08-01. Task ID T6.
