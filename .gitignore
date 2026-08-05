@@ -9,9 +9,12 @@ work/diag/
 work/ligands/
 work/screen_ligands/
 work/run2_ligands/
+work/repurposing_screen/
+work/repurposing_ligands/
 work/*_pdbqt/
 work/*.pdbqt
 work/*.log
+work/repurposing/*.log
 
 # gstack tooling is installed per-developer, not vendored
 .claude/skills/gstack/
