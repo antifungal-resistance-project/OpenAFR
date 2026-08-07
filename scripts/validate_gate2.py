@@ -21,28 +21,33 @@ from openafr.scoring import report
 
 PREREG = "work/PREREGISTRATION_run2.md"
 PREREG_SHA = "7c89d78cdadba90bae54b60ba9583eec606f6c6aec88688dd2ef353e773ddbf1"
+ACTIVES = "data/ligands/actives_holdout_final.smi"
 
 
-def check_prereg():
+def check_prereg(prereg=PREREG, prereg_sha=PREREG_SHA):
     """Refuse to grade if the pre-registration was edited after being frozen."""
-    if not os.path.exists(PREREG):
-        print(f"WARNING: {PREREG} missing — cannot verify the rules were fixed in advance.")
+    if not os.path.exists(prereg):
+        print(f"WARNING: {prereg} missing — cannot verify the rules were fixed in advance.")
         return
-    got = hashlib.sha256(open(PREREG, "rb").read()).hexdigest()
-    if got == PREREG_SHA:
+    got = hashlib.sha256(open(prereg, "rb").read()).hexdigest()
+    if got == prereg_sha:
         print(f"pre-registration verified unmodified (sha256 {got[:16]}...)")
     else:
         print("!! PRE-REGISTRATION HAS BEEN MODIFIED SINCE IT WAS FROZEN !!")
-        print(f"   expected {PREREG_SHA[:16]}...  got {got[:16]}...")
+        print(f"   expected {prereg_sha[:16]}...  got {got[:16]}...")
         print("   Any 'pass' from this run is not credible.")
 
 
-def main():
-    screen = sys.argv[1] if len(sys.argv) > 1 else "work/screen2"
-    receptor = sys.argv[2] if len(sys.argv) > 2 else "work/receptor_A.pdb"
+def run_gate(screen, receptor="work/receptor_A.pdb", prereg=PREREG,
+             prereg_sha=PREREG_SHA, actives_file=ACTIVES,
+             title="RUN 2 — PRE-REGISTERED HELD-OUT VALIDATION"):
+    """Grade a screen against the pre-registered gate. Defaults reproduce run 2 exactly;
+    the C. auris resistance-port gate calls this with a mutant receptor + its own frozen
+    pre-registration. The grading math, the pass bar (from protocol.yaml) and the
+    rank-unrankable-actives-last rule are identical across every run — only the receptor,
+    the held-out actives file and the pre-registration document change."""
     fe = iron_position(receptor)
-    actives = {l.split("\t")[1].strip()
-               for l in open("data/ligands/actives_holdout_final.smi") if "\t" in l}
+    actives = {l.split("\t")[1].strip() for l in open(actives_file) if "\t" in l}
 
     gate = protocol.load()["gate"]
     min_auc, min_ef1 = gate["min_auc"], gate["min_ef1"]
@@ -51,9 +56,10 @@ def main():
         label, rows, gating, ef_fractions, bedroc_alpha)
 
     print("=" * 70)
-    print("RUN 2 — PRE-REGISTERED HELD-OUT VALIDATION")
+    print(title)
     print("=" * 70)
-    check_prereg()
+    print(f"receptor         : {receptor}")
+    check_prereg(prereg, prereg_sha)
     protocol.verify()
     print(f"held-out actives : {len(actives)}")
     print(f"pass bar         : AUC >= {min_auc} AND EF@1% >= {min_ef1}x (mode C only)")
@@ -102,6 +108,12 @@ def main():
     print("Per pre-registration, the geometric ranking claim must be withdrawn or revised.")
     print("Do NOT invent a new ranking method and report it as a pass.")
     return 1
+
+
+def main():
+    screen = sys.argv[1] if len(sys.argv) > 1 else "work/screen2"
+    receptor = sys.argv[2] if len(sys.argv) > 2 else "work/receptor_A.pdb"
+    return run_gate(screen, receptor)
 
 
 if __name__ == "__main__":
