@@ -29,18 +29,23 @@ OUT="${2:-work/screen}"
 # core count: nproc (Linux) or sysctl (macOS / Apple Silicon), fall back to 4.
 JOBS="${3:-$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)}"
 PDBQT="${OUT}_pdbqt"
+# Receptor to dock into. Defaults to the wild-type work/receptor.pdbqt so existing
+# runs are unchanged; set RECEPTOR to dock a mutant (e.g. the C. auris resistance
+# port, work/receptor_auris_Y132F.pdbqt). The box, seed and search effort still come
+# from the frozen protocol — only the receptor structure changes.
+RECEPTOR="${RECEPTOR:-work/receptor.pdbqt}"
 
 # Box + search effort + seed, straight from the frozen protocol (single source of
 # truth shared with the gate). Sets CX CY CZ SIZE EXHAUST MODES SEED.
 eval "$(python openafr/protocol.py --shell docking)"
 
-[ -s work/receptor.pdbqt ] || { echo "missing work/receptor.pdbqt — run: python scripts/prep_receptor.py" >&2; exit 2; }
+[ -s "$RECEPTOR" ] || { echo "missing receptor: $RECEPTOR — run: python scripts/prep_receptor.py" >&2; exit 2; }
 [ -d "$LIG_SDF" ] || { echo "no ligand dir: $LIG_SDF" >&2; exit 2; }
 total=$(ls "$LIG_SDF"/*.sdf 2>/dev/null | wc -l | tr -d ' ')
 [ "$total" -gt 0 ] || { echo "no *.sdf ligands in $LIG_SDF" >&2; exit 2; }
 mkdir -p "$OUT" "$PDBQT"
 
-echo "screen: $total ligands  jobs=$JOBS  box=($CX,$CY,$CZ) size=$SIZE exhaust=$EXHAUST modes=$MODES seed=$SEED"
+echo "screen: $total ligands  receptor=$RECEPTOR  jobs=$JOBS  box=($CX,$CY,$CZ) size=$SIZE exhaust=$EXHAUST modes=$MODES seed=$SEED"
 
 # One self-contained docking job per ligand: convert to PDBQT at pH 7.4, then dock
 # under the frozen protocol. Reads only its own files, so parallel copies never
@@ -52,7 +57,7 @@ dock_one() {
   [ -s "$OUT/${name}.pdbqt" ] && { echo "SKIP  ${name}"; return 0; }
   obabel "$sdf" -O "$PDBQT/${name}.pdbqt" -p 7.4 >"$log" 2>&1
   [ -s "$PDBQT/${name}.pdbqt" ] || { echo "CONVERT_FAIL ${name}"; return 0; }
-  vina --receptor work/receptor.pdbqt --ligand "$PDBQT/${name}.pdbqt" \
+  vina --receptor "$RECEPTOR" --ligand "$PDBQT/${name}.pdbqt" \
        --center_x "$CX" --center_y "$CY" --center_z "$CZ" \
        --size_x "$SIZE" --size_y "$SIZE" --size_z "$SIZE" \
        --exhaustiveness "$EXHAUST" --num_modes "$MODES" --seed "$SEED" \
@@ -60,7 +65,7 @@ dock_one() {
   [ -s "$OUT/${name}.pdbqt" ] && echo "OK    ${name}" || echo "DOCK_FAIL ${name}"
 }
 export -f dock_one
-export OUT PDBQT CX CY CZ SIZE EXHAUST MODES SEED
+export OUT PDBQT RECEPTOR CX CY CZ SIZE EXHAUST MODES SEED
 
 ls "$LIG_SDF"/*.sdf | xargs -P "$JOBS" -I {} bash -c 'dock_one "$1"' _ {}
 

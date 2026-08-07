@@ -113,6 +113,11 @@ def main():
     ap.add_argument("pdbqt_out", nargs="?", default=DEFAULT_OUT,
                     help="docking receptor to write (default: work/receptor.pdbqt)")
     ap.add_argument("--ph", default="7.4", help="protonation pH for obabel (default: 7.4)")
+    ap.add_argument("--mutant", action="store_true",
+                    help="pdb_in is an already-extracted (chain A + heme) mutant receptor, "
+                         "e.g. from scripts/mutate_receptor.py. Skips the wild-type "
+                         "atom-identity check (a mutant is meant to differ) but still "
+                         "enforces that the heme iron matches work/receptor_A.pdb.")
     args = ap.parse_args()
 
     if shutil.which("obabel") is None:
@@ -127,7 +132,10 @@ def main():
         sys.exit(f"ERROR: no chain-{CHAIN} atoms found in {args.pdb_in}")
     n_hem = sum(1 for l in kept if l[17:20].strip() == "HEM")
     print(f"  extracted chain {CHAIN}: {len(kept)} atoms ({len(kept) - n_hem} protein, {n_hem} heme)")
-    verify_against_anchor(kept)
+    if args.mutant:
+        print("  --mutant: skipping wild-type atom-identity check (iron check still enforced below)")
+    else:
+        verify_against_anchor(kept)
 
     # obabel needs a file; write the extracted chain-A PDB to a temp file (original
     # RCSB lines, unmodified) and convert it to a rigid receptor PDBQT.
