@@ -38,6 +38,10 @@ RECEPTOR="${RECEPTOR:-work/receptor.pdbqt}"
 # Box + search effort + seed, straight from the frozen protocol (single source of
 # truth shared with the gate). Sets CX CY CZ SIZE EXHAUST MODES SEED.
 eval "$(python openafr/protocol.py --shell docking)"
+# Seed override for consensus/replicate runs (scripts/screen_consensus.sh). Unset =
+# the frozen protocol seed, so a normal single-seed screen is byte-identical to before.
+# Only the RNG seed changes; box, exhaustiveness and modes stay from the frozen protocol.
+SEED="${SEED_OVERRIDE:-$SEED}"
 
 [ -s "$RECEPTOR" ] || { echo "missing receptor: $RECEPTOR — run: python scripts/prep_receptor.py" >&2; exit 2; }
 [ -d "$LIG_SDF" ] || { echo "no ligand dir: $LIG_SDF" >&2; exit 2; }
