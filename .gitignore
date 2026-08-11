@@ -13,6 +13,7 @@ work/repurposing_screen/
 work/repurposing_ligands/
 work/screen_auris_Y132F/
 work/screen_consensus_wt/
+work/views/
 work/*_pdbqt/
 work/*.pdbqt
 work/*.log
