@@ -33,6 +33,15 @@ find 7 azole antifungals it had never seen, hidden among 348 property-matched de
 
 Permutation test (20,000 shuffles): **p = 0.0028**. Bootstrap 95% CI: 0.590–0.946.
 
+> **Caveat added by a later pre-registered check (kept here on purpose).** The AUC and its
+> permutation p-value are robust, but the **EF@1% = 12.68x figure was inflated by single-shot
+> docking.** A pre-registered reliability test (`work/RESULTS_reliability.md`) found that
+> top-1% number collapses to 0.00x once each ligand is docked over 5 seeds — under *every*
+> aggregation tried — because property-matched decoys reliably reveal genuine iron-coordinating
+> poses at the very top. Broad enrichment survives (AUC ~0.79–0.85, EF@5% ~5.6–8.5x). The
+> honest headline is a **trustworthy top-~5% shortlist, not razor-top ranking.** The table
+> above is the graded record of the run as pre-registered; this note qualifies how to read it.
+
 **The finding:** for azoles against CYP51, *how closely a molecule brings a nitrogen to the
 heme iron* discriminates real drugs from look-alike decoys far better than the docking
 program's own affinity score — on the exact same poses. Geometry beats the scoring function.

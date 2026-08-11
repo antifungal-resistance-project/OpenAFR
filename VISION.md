@@ -12,9 +12,17 @@ azole drugs jam and that drug-resistant *Candida auris* is defeating.
 Its one distinctive move: **it does not trust the docking program's affinity score.**
 Instead it ranks molecules by a *geometric, mechanistic* criterion — how closely a
 nitrogen atom reaches the heme iron at the enzyme's core, which is the actual mechanism
-by which azoles kill. On a blind held-out test that criterion hit AUC 0.794 / EF 12.68x
-(p=0.0028), while AutoDock Vina's own score ranked the real drugs *worse than random*
-(AUC 0.471) on the identical poses. **Geometry beats the scoring function on this system.**
+by which azoles kill. On a blind held-out test that criterion hit AUC 0.794 (p=0.0028),
+while AutoDock Vina's own score ranked the real drugs *worse than random* (AUC 0.471) on
+the identical poses. **Geometry beats the scoring function on this system.**
+
+**One caveat, established later and carried honestly.** The same single-search run also
+reported EF@1% 12.68x, but a pre-registered reliability check
+([RESULTS_reliability.md](work/RESULTS_reliability.md)) found that *top-1%* figure was an
+artifact of docking once — it collapses to 0.00x under 5-seed sampling, under every
+aggregation tried. What is robust is *broad* enrichment (AUC ~0.79–0.85, EF@5% ~5.6–8.5x).
+So the defensible headline is a **trustworthy top-~5% shortlist, not razor-top ranking**;
+the AUC is the durable number, EF@1% is not.
 
 Everything else — pre-registration, hash-frozen protocol, a validation gate that blocks
 the screen if it can't re-discover known drugs it has never seen — exists to *prove the
