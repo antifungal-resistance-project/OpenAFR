@@ -1,0 +1,372 @@
+# Mechanism-anchored geometric rescoring on fungal CYP51: broad enrichment is robust, top-rank enrichment is not, and property-matched decoys explain why
+
+**Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11 from
+five pre-registered runs in this repository. Every number below is traceable to a
+`work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing here is a new
+analysis, and no result was re-graded for this writeup.
+
+---
+
+## Abstract
+
+Docking scoring functions rank known azole antifungals against fungal CYP51 **worse than
+random**. A mechanism-anchored geometric criterion — the minimum distance from a ligand
+nitrogen to the heme iron — ranks the same poses at AUC 0.794 on a pre-registered, blind
+held-out set (permutation p = 0.0028), and reproduces this on a 2,776-compound unlabeled
+library by pulling seven known azoles into the top 3.2%. That part holds up.
+
+The same single-search run reported EF@1% = 12.68x. It does not survive replication. Under
+five-seed sampling, EF@1% collapses to 0.00x under both a best-pose (min) and a
+pool-size-neutral (median) aggregator, and again under an orthogonal *axial-direction*
+feature — while AUC *improves* to 0.862. We show the cause is not estimator noise and not the
+choice of geometric feature: **property-matched decoys coordinate the heme iron both closely
+(2.69–2.84 Å) and on-axis (2.7°–7.5°), indistinguishably from real azoles**, so six decoys
+outrank the best true active. We report two further findings: (i) transfer to a *C. auris*
+Y132F resistance pocket preserves broad separation (AUC 0.805) while eliminating top-rank
+enrichment via a sub-0.1 Å reshuffle; and (ii) at typical held-out sample sizes (7 actives,
+355 molecules) EF@1% is arithmetically a **Bernoulli variable** taking only the values 0.00x
+or 12.68x — it has no resolution and should not be used as a pass/fail criterion, including
+by us.
+
+We conclude that mechanism-based rescoring buys *broad* enrichment — a trustworthy top-~5%
+shortlist — and that a mechanism-matched decoy set structurally bounds what any
+mechanism-based criterion can achieve at the extreme top. All five pre-registrations,
+including the three that failed, are published with their hashes.
+
+---
+
+## 1. Background
+
+Structure-based virtual screening rests on a scoring function whose correlation with real
+affinity is, on most targets, weak. A standard response is to rescore poses against a
+*mechanistic* criterion instead — a pharmacophore, a metal-coordination constraint — and rank
+on that. The idea is decades old and is not the contribution here.
+
+Fungal CYP51 (lanosterol 14α-demethylase) is an unusually clean test bed for it. The azole
+antifungals inhibit by a single, well-defined structural event: an azole-ring nitrogen
+coordinates the heme iron as the sixth axial ligand. The mechanism reduces to one measurable
+geometric quantity, which removes the usual arbitrariness in choosing a pharmacophore. The
+target also matters clinically: *Candida auris* is on the WHO fungal priority pathogens list
+and defeats azoles largely through mutations in this enzyme.
+
+The question this work set out to answer was not "does mechanism-based rescoring beat the
+scoring function" — it does — but **how far does it carry, and where exactly does it stop.**
+
+## 2. Methods
+
+### 2.1 System
+
+Receptor: PDB **5TZ1**, *C. albicans* CYP51, chain A plus heme `HEM A 601`, rigid. Docking:
+AutoDock Vina, box 26 Å centred (70.61, 66.28, 4.18), `exhaustiveness 32`, `num_modes 20`,
+seed 42. Every parameter is read at both docking and grading time from a single hash-frozen
+`protocol.yaml` (sha256 `6eca16b1…`), whose integrity is verified by the grading script at run
+time, so what was docked and what was graded cannot silently diverge.
+
+### 2.2 Actives and decoys
+
+Actives are known azole antifungals; the primary evaluation uses **7 held out** from all
+criterion development (efinaconazole, luliconazole, fenticonazole, bifonazole, sertaconazole,
+oxiconazole, butoconazole).
+
+Decoys were generated from ChEMBL (`scripts/make_decoys.py`), 50 per active, under three
+constraints chosen to defeat two specific ways this kind of benchmark cheats:
+
+| constraint | value | what it prevents |
+|---|---|---|
+| property-matched | MW ±25, cLogP ±1.5, rotatable bonds ±2, HBD ±1, HBA ±2 | Docking score correlates with heavy-atom count at **r = −0.91** on this system; unmatched decoys let the pipeline "enrich" by preferring heavy molecules. |
+| ≥ 1 aromatic nitrogen | required | Without it, a nitrogen-to-iron criterion would separate perfectly while only asking *"does this molecule contain a nitrogen?"* — circular. |
+| Morgan(r=2) Tanimoto < 0.35 vs **every** active | required | Same physical profile, different skeleton — the basis for presuming non-binding. |
+
+348 decoys survived to the graded pool (355 molecules total; 2 docking failures, both decoys).
+**Decoys are presumed inactive, not experimentally confirmed** — see §6.
+
+### 2.3 Ranking criteria
+
+- **Mode A — Vina score** (the control).
+- **Mode C — iron-approach distance:** per molecule, the minimum over poses of the distance
+  from the nitrogen nearest the iron to the heme Fe. This is the primary criterion.
+- **Mode D —** combined rank of A and C.
+- **Mode E — axial (added later):** `S = |v| · (1 + sin θ)`, where `v = N − Fe` and `θ` is the
+  acute angle between `v` and the heme normal `n = normalize((NC−NA) × (ND−NB))`, fixed once
+  from the receptor as `(+0.6048, −0.7591, −0.2407)`. λ = 1, untuned. Rewards approaches that
+  are both close *and* on-axis.
+
+### 2.4 Metrics and the pre-registered bar
+
+AUC, EF@1%, EF@5%, EF@10%, BEDROC(α=20), plus a 20,000-shuffle permutation test and a
+bootstrap CI over actives. The pass bar, declared before any held-out result was seen and never
+lowered, was **AUC ≥ 0.70 AND EF@1% ≥ 5.0x**, evaluated on the primary mode only.
+
+### 2.5 Pre-registration procedure
+
+Each run has a pre-registration file committed *before* the run, hashed, and the hash verified
+unmodified by the grading script at grading time. Each pre-registration declares the criterion,
+the aggregation, the metrics, the bar, **and the conclusion to be drawn on failure** — so a
+negative cannot be reinterpreted after the fact. Where a run reuses existing poses, it says so
+and grades without new docking.
+
+## 3. Results
+
+### 3.1 Geometry beats the scoring function (pre-registered, blind, held out)
+
+On 7 held-out azoles among 348 property-matched decoys, sorting the *identical* poses by
+iron-approach distance rather than by Vina score inverts the outcome:
+
+| mode | AUC | EF@1% | EF@5% | BEDROC | role |
+|---|---:|---:|---:|---:|---|
+| **C — iron-approach distance** | **0.794** | 12.68x | 5.63x | 0.325 | primary — **PASS** |
+| A — Vina score alone | 0.471 | 0.00x | 0.00x | 0.002 | control — **worse than random** |
+| D — combined rank | 0.691 | 0.00x | 2.82x | 0.126 | secondary |
+
+Permutation test (20,000 label shuffles): **p = 0.0028**. Bootstrap 95% CI over actives: AUC
+0.590–0.946. Held-out active ranks (of 355): 3, 8, 29, 43, 49, 124, 274.
+
+This is the durable result. On this target, the docking program's own affinity estimate is
+anti-informative, and a single mechanistic distance recovers real drugs it has never seen.
+
+A prior run (`RESULTS_validation_gate.md`) *failed* this gate — a 3.0 Å hard metal cutoff
+discarded 4 of 8 actives, and enlarging the box from 26 Å to 30 Å without scaling search effort
+degraded sampling. That failure is published alongside the pass.
+
+### 3.2 The top-1% enrichment does not survive replication
+
+The run in §3.1 docked each molecule once. Re-docking the same 355 molecules under five seeds
+{42, 1, 2, 3, 4} and aggregating gives:
+
+| aggregator | AUC | **EF@1%** | EF@5% | EF@10% | BEDROC | actives in top 15 |
+|---|---:|---:|---:|---:|---:|---:|
+| single search (seed 42) | 0.794 | **12.68x** | 5.63x | 4.23x | 0.325 | 2/7 |
+| consensus — min over 5 seeds | 0.853 | **0.00x** | 8.45x | 5.63x | 0.389 | 3/7 |
+| reliability — median over 5 seeds | 0.830 | **0.00x** | 5.63x | 4.23x | 0.310 | 2/7 |
+
+Every *broad* measure improves or holds under more thorough sampling. The top-1% figure goes to
+zero and stays there. The two aggregators bracket the plausible options — `min` takes the best
+pose found, `median` is pool-size-neutral and robust — and pre-registration bounded the search
+to exactly these two, with the "this is a ceiling, not noise" conclusion pre-committed to the
+failure branch. Both failed.
+
+The `median` result is what distinguishes the two explanations. If the collapse were extreme-value
+bias — five searches giving decoys five chances to get lucky — a pool-size-neutral robust
+estimator would recover the signal. It does not. The signal is not there to recover.
+
+### 3.3 It is not the distance feature either: decoys coordinate axially
+
+The one remaining explanation was that N–Fe distance is the wrong number. Azole inhibition is
+*axial*; a decoy might reach the iron equatorially and be a geometric impostor. We pre-registered
+exactly one orthogonal feature — approach direction — and graded it on the same 5-seed poses with
+no new docking:
+
+| ranking key | AUC | **EF@1%** | EF@5% | EF@10% | BEDROC |
+|---|---:|---:|---:|---:|---:|
+| N–Fe distance, median over 5 seeds | 0.830 | 0.00x | 5.63x | 4.23x | 0.310 |
+| **axial `S`, median over 5 seeds** | **0.862** | **0.00x** | **8.45x** | **5.63x** | 0.340 |
+| axial angle θ **alone** | 0.861 | 0.00x | 5.63x | — | 0.240 |
+| seed-42 single-search `S` | 0.819 | 0.00x | 8.45x | — | 0.320 |
+
+AUC 0.862 is the best of any look taken. EF@1% is zero. Critically, adding the direction term to
+the *original seed-42 poses* — the ones that produced 12.68x — also gives 0.00x: the direction
+term pushes decoys up, not down.
+
+The reason is visible directly in the top of the ranking:
+
+| rank | molecule | median `S` | median θ | median N–Fe (Å) | |
+|---:|---|---:|---:|---:|---|
+| 1 | decoy_CHEMBL6328_for_efinaconazole | 2.881 | 3.4° | 2.702 | decoy |
+| 2 | decoy_CHEMBL275096_for_oxiconazole | 2.928 | 2.7° | 2.790 | decoy |
+| 3 | decoy_CHEMBL10329_for_oxiconazole | 3.017 | 3.9° | 2.793 | decoy |
+| 4 | decoy_CHEMBL447532_for_butoconazole | 3.042 | 7.5° | 2.691 | decoy |
+| 5 | decoy_CHEMBL10330_for_sertaconazole | 3.079 | 4.3° | 2.842 | decoy |
+| 6 | decoy_CHEMBL10547_for_oxiconazole | 3.094 | 4.3° | 2.827 | decoy |
+| **7** | **luliconazole** | **3.133** | **6.2°** | **2.781** | **ACTIVE** |
+
+Six decoys outrank the best real drug, and they are **not off-axis impostors**: their approach
+angles (2.7°–7.5°) are as small as or smaller than luliconazole's (6.2°). They are doing
+azole-like axial iron coordination. No weighting of distance and direction can demote them,
+because on both axes they are doing the thing the mechanism says to do.
+
+**This is the central finding of the paper.** The top-1% ceiling is not an aggregation artifact
+and not a missing feature. It is a statement about the pose geometry available to a rigid-receptor
+docking run: *closest-nitrogen distance and its approach angle saturate against a mechanism-matched
+decoy set.*
+
+### 3.4 Transfer to a resistant pocket: broad separation survives, the tip does not
+
+The mission-relevant question is whether a wild-type-validated criterion still works once the
+pocket carries the dominant *C. auris* resistance substitution **Y132F**. Controlled single
+variable: same 7 actives, same decoys, same frozen protocol; only the residue-132 side chain
+changed (Tyr→Phe by deterministic deletion of the para-hydroxyl).
+
+| mode | AUC | EF@1% | EF@5% | BEDROC | role |
+|---|---:|---:|---:|---:|---|
+| **C — iron-approach distance** | **0.805** | **0.00x** | 5.63x | 0.235 | primary — **FAIL** |
+| A — Vina score | 0.411 | 0.00x | 0.00x | 0.002 | control |
+| D — combined rank | 0.677 | 0.00x | 1.41x | 0.040 | secondary |
+
+AUC is essentially unchanged from wild type (0.805 vs 0.794). Actives rank 7, 16, 42, 46, 50, 79,
+264 of 355. The failure is confined to the tip: **the top six slots are all decoys, reaching the
+iron at 2.62–2.72 Å against the best real drug's 2.722 Å.** A sub-0.1 Å reshuffle among near-tied
+molecules is enough to zero the metric — the same phenomenon as §3.3, now triggered by a single
+atom's deletion.
+
+### 3.5 External corroboration of the broad signal on an unlabeled library
+
+Pointed at 2,776 docked compounds from the Broad Drug Repurposing Hub — screened blind, never
+told which are antifungals — the criterion placed seven known azoles in the top 3.2%:
+
+flutrimazole #1 (2.371 Å), ravuconazole #9, fosfluconazole #22, fluconazole #31, voriconazole #57,
+luliconazole #73, croconazole #89. The heme-coordinating human CYP inhibitor **letrozole** ranked #23.
+
+This is an embedded positive control on a genuinely novel library and it behaves consistently with
+§3.1–3.3: strong broad enrichment. It also exposes the per-molecule noise floor — **clotrimazole,
+a real azole antifungal, ranked #2774 of 2776** (best pose 17.97 Å from the iron), because docking
+simply failed to find a coordinating pose for it in 20 modes.
+
+Letrozole's rank is worth stating plainly as a limitation rather than a success: the criterion
+measures heme coordination, and human CYPs have heme too. **Nothing in this method addresses
+fungal-vs-human selectivity**, which is the hard problem in antifungals specifically.
+
+### 3.6 EF@1% has no resolution at this sample size
+
+With 7 actives among 355 molecules, the top 1% is the top 4 slots. Enrichment factor is
+`(a/k)/(A/N)`, so:
+
+| actives in top 4 | EF@1% |
+|---:|---:|
+| 0 | **0.00x** |
+| 1 | **12.68x** |
+| 2 | 25.36x |
+
+The metric is, in practice, a **Bernoulli variable**: every EF@1% we ever reported was either 0.00x
+or 12.68x, and the entire "12.68x → 0.00x collapse" is one molecule crossing rank 4. EF@5% is
+similarly quantized in steps of 2.82x (2 actives in the top 18 → 5.63x; 3 → 8.45x).
+
+Verified directly against the implementation this project grades with
+(`rdkit.ML.Scoring.CalcEnrichment` via `openafr/scoring.py`), not derived analytically:
+
+```python
+from openafr.scoring import metrics
+N, A = 355, 7
+for k in range(3):                                  # k actives in the top 4
+    flags = [1]*k + [0]*(4-k) + [1]*(A-k) + [0]*(N-4-(A-k))
+    print(k, metrics(flags)[1][0])                  # -> 0.0, 12.68, 25.36
+```
+
+We flag this against our own design: **the pre-registered gate should not have been conditioned on
+EF@1%**, because at n = 7 the metric cannot take a value between "fail" and "3.5x over the bar."
+This does not rescue the negative — §3.3's angle analysis establishes the ceiling mechanistically
+and independently of any enrichment metric — but it does mean that the *pass* in §3.1 was
+over-read at the time, and the subsequent "failures" were partly an instrument with two settings.
+The robust, resolved statements are AUC, EF@5%, and BEDROC.
+
+## 4. Discussion
+
+### 4.1 The decoy-construction bind
+
+Benchmark decoy sets are usually criticised for being **too easy** — property-matched-but-trivially-separable
+decoys inflate reported performance, the well-known concern with DUD-E-style sets in
+machine-learning docking evaluations. Our result is the mirror image and, we think, the more
+instructive one.
+
+To avoid circularity, we *required* every decoy to be a plausible iron-coordinator (≥1 aromatic
+nitrogen) and to match the actives on size and lipophilicity. That is the methodologically correct
+choice. But it means the decoy set was constructed to be indistinguishable from the actives *on
+precisely the axis the criterion measures*. §3.3 shows the consequence: at the tip, they are.
+
+This generalizes into a constraint on mechanism-based rescoring:
+
+> A mechanism-anchored criterion can separate actives from decoys only to the extent the decoys do
+> not share the mechanism. Match decoys on the mechanistic feature, and the criterion's measured
+> ceiling *is* the benchmark you built.
+
+The bind is real and has no computational escape. Non-matched decoys give an inflated, circular
+result; mechanism-matched decoys give a criterion that saturates at the top. The only clean exit is
+**experimentally confirmed inactives** — compounds measured not to inhibit — rather than
+computationally presumed ones. We do not have those; obtaining them for CYP51 is, in our view, the
+most useful next contribution anyone could make to this benchmark.
+
+### 4.2 Practical recommendations
+
+1. **Do not report EF@1% from a single docking run.** Ours moved from 12.68x to 0.00x on
+   re-sampling alone, with no change to the criterion. Report multi-seed aggregates.
+2. **Do not gate on EF@1% at small active counts.** Compute the achievable values first; if the
+   metric is Bernoulli, it is not a gate (§3.6).
+3. **Report AUC, EF@5%, and BEDROC together**, all under replication. On this system those were
+   stable across four independent looks (AUC 0.79–0.86) while the tip was not.
+4. **Test transfer explicitly.** A criterion validated on a wild-type structure should not be
+   assumed to hold on the resistant variant that motivates the work (§3.4). Ours did not, at the
+   tip.
+5. **State what the mechanism does not cover.** Heme coordination does not distinguish fungal from
+   human CYP (§3.5).
+
+### 4.3 What could break the ceiling
+
+Signals a rigid-receptor, single-conformer Vina pose does not contain, in rough order of promise:
+explicit iron–nitrogen coordination chemistry at a QM or semi-empirical level; induced-fit or
+ensemble receptor treatment; desolvation. None is decidable from the data used here, and we make no
+claim any of them would work.
+
+### 4.4 What the method is good for
+
+Unchanged from what the data supports: **a trustworthy top-~5% shortlist for experimental triage**
+(AUC ~0.86, EF@5% ~8.5x), not razor-top ranking. That is a real and useful thing — it makes a
+wet-lab yes/no more likely than random and cheaper to reach — and it is a smaller claim than the
+one the first run appeared to license.
+
+## 5. Pre-registration and multiple-comparison ledger
+
+Every look ever taken at the held-out data, in order, with its committed outcome:
+
+| # | run | question | pre-reg sha256 | outcome |
+|---:|---|---|---|---|
+| 0 | `RESULTS_validation_gate.md` | initial gate, 3.0 Å hard cutoff | — | **FAIL** (published; blocked the screen) |
+| 1 | `RESULTS_run2_holdout.md` | iron-approach distance, blind holdout | `7c89d78c…` | **PASS** |
+| 2 | `RESULTS_auris_Y132F.md` | does it transfer to the resistant pocket? | `689de2fd…` | **FAIL** |
+| 3 | `RESULTS_consensus.md` | 5-seed consensus (min) | `1c6ea042…` | **FAIL** |
+| 4 | `RESULTS_reliability.md` | pool-size-neutral median — noise or ceiling? | `f8aa1ff9…` | **FAIL** |
+| 5 | `RESULTS_axial.md` | one orthogonal feature: approach direction | `3ff59c29…` | **FAIL** |
+
+Four looks were taken at the wild-type poses (1, 3, 4, 5). Each pre-registration bounded the number
+of subsequent attempts and pre-committed the failure conclusion; the reliability pre-registration
+foreclosed further *aggregators*, and the axial pre-registration foreclosed further *features* on
+this dataset. **The stopping rule is now in force: no further criterion will be tried on these
+poses.** Any further attempt requires an independent dataset — new actives or a new decoy
+construction — not another feature on this one.
+
+The `RESULTS_axial.md` run also included a harness check: the reliability-distance slice reproduced
+the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.310) bit-for-bit.
+
+## 6. Limitations
+
+1. **n = 7 held-out actives.** The bootstrap 95% CI lower bound (0.590) sits *below* the 0.70 pass
+   bar; a true AUC under the bar cannot be excluded from the primary run.
+2. **Decoys are presumed inactive, not verified.** Any true binder among the 348 depresses measured
+   performance; any systematic selection bias inflates it. This is the single largest caveat and the
+   subject of §4.1.
+3. **One decoy set, four looks.** The ceiling is demonstrated *on this set*.
+4. **One rigid receptor**, *C. albicans* 5TZ1, solved with the short ligand VT-1161. No induced fit.
+   The posaconazole/itraconazole long-tail class is a known blind spot; the declared applicability
+   domain is ≤ 45 heavy atoms.
+5. **The Y132F model is a rigid single-atom deletion.** Clinical Y132F also involves conformational
+   change, H-bond network rearrangement, and co-occurring efflux and expression changes. K143R
+   (clade I) and F126L (clade III) were not tested.
+6. **One docking program** (Vina), one conformer per molecule, SMILES protonation as supplied.
+7. **The heme normal is an idealization** estimated from four atoms of a rigid porphyrin.
+8. **Nothing here has been tested against a living fungus.** Every ranked molecule is a hypothesis.
+
+## 7. Data and code availability
+
+All code, all five pre-registrations with their hashes, the frozen `protocol.yaml`, the actives and
+decoy SMILES, the full 2,776-compound ranking, and every `RESULTS_*.md` are in this repository.
+Docking intermediates (~180 MB) are regenerated rather than versioned; each results file carries an
+exact reproduce recipe. Licensed PolyForm Noncommercial 1.0.0.
+
+---
+
+### Note on framing
+
+The ingredients here are not new. Metal-coordination and pharmacophore rescoring of docking poses is
+a decades-old idea, and we are not the first to distrust a docking score. What this repository
+contributes is a pre-registered, hash-frozen, blind-holdout execution of that idea on a
+clinically important target — including four published failures and a mechanistic explanation for
+them — in a field where ranked lists are routinely published with no evidence the ranking means
+anything. The honest negative is the result.
