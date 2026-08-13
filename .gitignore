@@ -23,6 +23,13 @@ work/repurposing/*.log
 # gstack tooling is installed per-developer, not vendored
 .claude/skills/gstack/
 
+# Early-warning snapshots (issue #21): each is a multi-MB per-release NCBI pull,
+# regenerable with scripts/snapshot_ncbi_auris.py. The git-tracked memory is the
+# small INDEX.tsv manifest (release tag, date, count, content hash) + README, not
+# the blobs themselves.
+data/earlywarning/snapshots/*.tsv
+!data/earlywarning/snapshots/INDEX.tsv
+
 # Python
 __pycache__/
 *.pyc

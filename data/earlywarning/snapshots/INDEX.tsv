@@ -1,0 +1,3 @@
+release_tag	pulled_at_utc	n_isolates	n_dropped	sha256	source_url	tool_version
+PDG000000067.670	2026-08-13T20:05:01Z	29111	0	842b67e2587d48e0e5ffe67b08968713127d4eec3d4698de7933be84992e8626	https://ftp.ncbi.nlm.nih.gov/pathogen/Results/Candidozyma_auris/PDG000000067.670/Metadata/PDG000000067.670.metadata.tsv	1
+PDG000000067.671	2026-08-13T20:04:57Z	29085	0	3ae76b19517ace7f18c1c4a4ca7a4f0ee3b12f6077219d147d2086b26b52f966	https://ftp.ncbi.nlm.nih.gov/pathogen/Results/Candidozyma_auris/PDG000000067.671/Metadata/PDG000000067.671.metadata.tsv	1
