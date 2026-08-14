@@ -1,0 +1,82 @@
+# C. auris azole early-warning schedule (issue #26).
+#
+# Runs the whole pipeline on a cadence so the signal finds a human without anyone
+# remembering to look: pull the latest NCBI release -> detect emergence -> map to the
+# azole pocket -> estimate the fit so-what -> compose alerts -> deliver ONLY if there
+# is genuine new news. A no-new-emergence run commits nothing and files nothing (the
+# quiet no-op is the design; see openafr/delivery.py).
+#
+# Delivery is two artefacts, both produced only on new news:
+#   * data/earlywarning/digest/DIGEST.md + STATE.json committed back to the branch
+#     (STATE.json is the git-tracked memory of what we've already alerted on), and
+#   * an auto-filed GitHub issue whose body is that same digest.
+#
+# Honest today-state: on real snapshots every erg11_call is still empty (calls pending
+# the ERG11 re-caller, #23), so `deliver_alert.py run` correctly no-ops until there is
+# a real call to stand behind -- and lights up automatically when #23 lands.
+name: c-auris-early-warning
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # 06:17 UTC every Monday
+  workflow_dispatch:        # allow a manual run from the Actions tab
+    inputs:
+      window_days:
+        description: "Recent-window length in days"
+        default: "180"
+
+permissions:
+  contents: write   # commit the digest + state back to the branch
+  issues: write     # file the alert issue
+
+concurrency:
+  group: early-warning
+  cancel-in-progress: false
+
+jobs:
+  early-warning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compute rolling baseline cut date
+        id: dates
+        env:
+          WINDOW: ${{ github.event.inputs.window_days || '180' }}
+        run: |
+          # Recent window is (as_of, as_of + window]; for a rolling schedule the
+          # window should be the last WINDOW days, so as_of = today - WINDOW.
+          echo "window=$WINDOW" >> "$GITHUB_OUTPUT"
+          echo "as_of=$(python3 -c "import datetime,os;print((datetime.date.today()-datetime.timedelta(days=int(os.environ['WINDOW']))).isoformat())")" >> "$GITHUB_OUTPUT"
+
+      - name: Pull, detect, compose, deliver
+        id: deliver
+        run: |
+          python3 scripts/deliver_alert.py run \
+            --as-of "${{ steps.dates.outputs.as_of }}" \
+            --window "${{ steps.dates.outputs.window }}" \
+            --issue-out "$RUNNER_TEMP/issue.md" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Commit digest + state
+        if: steps.deliver.outputs.delivered == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/earlywarning/digest/DIGEST.md data/earlywarning/digest/STATE.json
+          git commit -m "early-warning: ${{ steps.deliver.outputs.title }}"
+          git push
+
+      - name: File alert issue
+        if: steps.deliver.outputs.delivered == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "${{ steps.deliver.outputs.title }}" \
+            --body-file "$RUNNER_TEMP/issue.md" \
+            --label early-warning
