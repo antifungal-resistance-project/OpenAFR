@@ -8,6 +8,16 @@ drug-resistant *Candida auris*, built around one rule:
 
 If it cannot, the validation gate exits nonzero and blocks the screen.
 
+The repo now holds **two tracks** against the same pathogen and enzyme:
+
+1. **Drug discovery** (the original, validated track) — the geometry-over-docking-score
+   triage tool described immediately below.
+2. **Genomic early-warning surveillance** (a newer, honestly-incomplete track) — watching
+   NCBI for emerging *C. auris* azole-resistance mutations and giving each one a structural
+   verdict. See [Second track: genomic early-warning surveillance](#second-track-genomic-early-warning-surveillance).
+
+Everything from here to that section is about track 1.
+
 ## Why antifungal resistance
 
 *Candida auris* is a WHO critical-priority fungal pathogen: multidrug-resistant, lethal, and
@@ -178,6 +188,72 @@ reproduce recipe runs from a fresh clone: `data/structures/5TZ1.pdb` -> `work/re
 with the extracted chain-A + heme atoms asserted identical to the tracked `work/receptor_A.pdb`
 the gate grades against. Verified by re-docking VT-1161 (top −12.1 kcal/mol; iron-bound pose
 at N–Fe 2.63 Å, matching `work/RESULTS_redock_VT1.md`).
+
+## Second track: genomic early-warning surveillance
+
+A separate pipeline that watches **NCBI Pathogen Detection** for *C. auris* isolates and
+tries to flag *emerging* azole-resistance mutations early — before they show up in the
+published surveillance record — then attaches a **structural so-what** (does fluconazole
+still fit the pocket if this spreads?) to each flag. Track 1 finds new drugs; track 2
+watches the enemy evolve against the drugs we have.
+
+### Honest status: scaffold complete, blocked on one missing piece
+
+The whole chain is **built, tested, and pulls real NCBI data** — but it cannot produce a
+validated warning yet, and the docs say so plainly. The load-bearing finding, from the
+initial spike ([work/RESULTS_earlywarning_spike.md](work/RESULTS_earlywarning_spike.md)):
+
+> **NCBI runs no AMR pipeline on *C. auris*.** It is a metadata + genome-pointer feed, not
+> a resistance feed. `AMR_genotypes` is empty for all ~29k isolates — there is no
+> resistance call to read off the feed.
+
+So the resistance signal has to be *manufactured by us*, via an **ERG11 re-caller** (SRA
+reads → azole-resistance mutation call). **That re-caller has not been built** — it is the
+single blocker for the whole track, and it is the top open item in
+[TODOS.md](TODOS.md). Because `erg11_call` is empty on every real isolate, the
+pre-registered backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md)) came back
+**NOT-YET-VALIDATED**: a walk-forward over 8 years of real snapshots flagged the target
+mutation 0 times (it correctly refuses to invent a warning from absent calls), while the
+same detector fed synthetic calls fires **397 days before** the reference date — proving
+the machinery works and the gap is the input, not the method. What *is* real: the arrival
+budget clears the bar (median 97-day lag from sample collection to NCBI visibility), so the
+re-caller is worth building.
+
+### The pieces (all shipped and tested; each has a `work/RESULTS_*.md` write-up)
+
+| Stage | Library | CLI | What it does |
+|---|---|---|---|
+| snapshot store | `openafr/earlywarning.py` | `scripts/snapshot_ncbi_auris.py` | pull → normalized, hash-versioned per-release snapshot + baseline/diff |
+| emergence detection | `openafr/emergence.py` | `scripts/detect_emergence.py` | flags first-appearing / rising ERG11 substitutions (the signal NCBI can't give) |
+| mutation → pocket mapping | `openafr/mapping.py` | `scripts/map_mutation.py` | a flagged token → where the residue sits in the modeled azole pocket; can build the mutant |
+| structural so-what | `openafr/structural.py` | `scripts/structural_sowhat.py` | does fluconazole still fit if this spreads, and how much worse — or an honest decline |
+| alert composition | `openafr/alert.py` | `scripts/compose_alert.py` | the one-screen brief a clinician acts on |
+| delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | delivers only on genuine new news; `.github/workflows/earlywarning.yml` runs it |
+| backtest / validation | `openafr/backtest.py` | `scripts/backtest_earlywarning.py` | the pre-registered credibility test for the whole track |
+
+The initial feasibility probe is `scripts/probe_ncbi_auris.py`. Persistence and delivery
+state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/README.md)
+(snapshot store) and [data/earlywarning/digest/README.md](data/earlywarning/digest/README.md)
+(delivery log). Every stage has offline tests under `tests/` (`test_earlywarning_snapshot`,
+`test_emergence`, `test_mapping`, `test_structural`, `test_alert`, `test_delivery`,
+`test_backtest`).
+
+### Try it without NCBI
+
+Each stage has a synthetic `demo` mode so a fresh clone can see the chain fire end to end
+without pulling reads or waiting on the missing re-caller:
+
+```bash
+python scripts/detect_emergence.py demo
+python scripts/structural_sowhat.py estimate Y132F K143R F126L V125A TR34
+python scripts/deliver_alert.py demo --markdown   # deliver -> re-run no-op -> escalation
+python scripts/backtest_earlywarning.py mechanism # detector produces lead time once fed calls
+```
+
+### Coverage caveat (say it out loud)
+
+The feed is **US-centric** (~88% USA). "Global early warning" is honestly "US early warning
++ thin international." The alert copy and scope claims are written to reflect that.
 
 ## License
 

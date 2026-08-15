@@ -2,6 +2,37 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
+## Build the ERG11 re-caller (reads → azole-resistance call) — OPEN, TOP PRIORITY
+
+**What:** the single missing piece that would make the genomic early-warning track (issues
+#20–27) actually work. Given an NCBI *C. auris* isolate's linked **SRA raw reads**, call the
+ERG11 (CYP51) azole-resistance substitutions — Y132F, K143R, F126L, the VF125AL/F126L
+clade-III haplotype, TR34-style tandem duplications, plus TAC1B GOF / ERG3 where feasible —
+and populate the `erg11_call` column that every downstream stage already consumes.
+
+**Why it's the whole ballgame:** the spike (#20) proved NCBI runs *no* AMR pipeline on
+*C. auris*, so there is no resistance call to read off the feed — it must be manufactured
+from reads. Every other stage (snapshot, emergence, mapping, structural so-what, alert,
+delivery) is built, tested, and — per the backtest's H3 mechanism proof — fires end to end
+the moment `erg11_call` is populated. Until then the real-data backtest is an honest null
+(H2: 0 flags over 8 years, because calls are absent, not because emergence is absent). This
+re-caller is the entire gap between "scaffold" and "validated early warning."
+
+**Where to start:** ~96.6% of isolates carry linked SRA `Run` accessions (assemblies only
+3.4%, so work from reads, not assemblies). The snapshot schema already reserves
+`erg11_call` + `resistance_source` and marks uncalled isolates `pending:sra-recaller`
+(see `data/earlywarning/README.md`). The arrival budget is adequate (backtest H1: median
+97-day deposit lag), so the effort is justified.
+
+**Validation:** the backtest (#27) is pre-registered to use an *external* truth set
+(published clade/mutation panels, CDC AR Isolate Bank strains with known ERG11 status), not
+NCBI labels — only 23 isolates carry any AST phenotype. Wire the re-caller's calls through
+`scripts/backtest_earlywarning.py replay` on a real snapshot to convert the H2 null into a
+real-data result.
+
+**Source:** spike #20 + backtest #27 (`work/RESULTS_backtest.md`), 2026-08-14. This is also
+the shared blocker gating the FKS1/v2 decision below.
+
 ## Parallelize the docking loop (screen stage) — DONE 2026-08-01
 
 **Status:** Implemented. `scripts/screen.sh` is now the single docking engine and
