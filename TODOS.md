@@ -39,6 +39,16 @@ and pan-resistance. The azole MVP may build a beautiful pipeline that rarely fir
 (#27) are pre-registered to report azole-mutation *event frequency*. If that comes
 back near-zero, this TODO is the redirection for v2.
 
+**Trigger status after #27 (2026-08-14): NOT fired — deferred behind the same
+re-caller.** The backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md))
+found azole event frequency is currently **zero-*measurable***, not measured-near-zero:
+`erg11_call` is empty on all real isolates because the ERG11 re-caller was never built,
+so the real-data walk-forward is an honest null (H2). The redirection to FKS1/v2 is only
+justified by a *measured* near-zero azole signal, which requires the re-caller first. So
+the single blocker for both the azole MVP and this v2 decision is the same: build the
+reads→ERG11 re-caller, then re-read the event frequency. The arrival budget is adequate
+(H1: median deposit lag 97 d, PASS-arrival), so the re-caller is worth building.
+
 **Context / where to start:** detection (extract FKS1 hot-spot regions, call the
 S639/F-region mutations) is tractable and mirrors the ERG11 re-caller (T1). The
 blocker is the STRUCTURAL layer: there is no FKS1 pocket tooling in the repo (the
