@@ -89,6 +89,24 @@ No. Two separable, reusable assets:
 
 The antifungal target is the **demonstration case, not the ceiling.**
 
+## Second track: genomic early-warning surveillance
+
+A second track now exists in the repo (issues #20–27): watch **NCBI Pathogen Detection**
+for emerging *C. auris* azole-resistance mutations and give each flagged mutation a
+**structural so-what** via the same CYP51 pocket tooling. Track 1 finds new drugs; track 2
+watches resistance evolve against the drugs we have. The structural verdict is what keeps it
+from being a bare novelty feed — it reuses track 1's moat rather than starting a new one.
+
+**Honest status — scaffold complete, one blocker.** The full chain (snapshot → emergence →
+mapping → structural so-what → alert → scheduled delivery) is built, tested, and pulls real
+NCBI data, but it cannot produce a validated warning yet. The killer finding: **NCBI runs no
+AMR pipeline on *C. auris*** — it's a metadata + genome-pointer feed, not a resistance feed.
+The resistance signal must be manufactured by *us* from SRA reads, via an **ERG11 re-caller
+that has not been built.** That re-caller is the single blocker (top item in
+[TODOS.md](TODOS.md)); the pre-registered backtest honestly reports NOT-YET-VALIDATED until
+it exists. This is consistent with the project ethos: the scaffold is real, the gap is named
+precisely, and nothing claims validation it hasn't earned.
+
 ## Foundation scope — diagnostics and the rest of resistance?
 
 **Recommendation: broad mission, focused execution.**
@@ -108,3 +126,9 @@ The antifungal target is the **demonstration case, not the ceiling.**
 - **Bridge:** discovery and diagnostics share a natural partner — a clinical/mycology wet
   lab. The relationship that tests your candidates could be the one that later opens the
   diagnostics work. Sequential, not competing.
+- **Where the early-warning track fits:** surveillance (the second track above) is the one
+  adjacency taken on before a validated hit, and it's defensible *because it reuses track 1's
+  structural moat* rather than opening a new competency — it is not the diagnostics expansion
+  this section is cautioning against. Keep it narrow too: azole/ERG11 only, blocked-and-honest
+  on the re-caller, no scope creep into FKS1/echinocandin until the azole MVP is validated
+  (see [TODOS.md](TODOS.md)).
