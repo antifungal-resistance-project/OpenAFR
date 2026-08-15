@@ -18,17 +18,35 @@
 #   vina       the `vina` CLI (AutoDock Vina) that does the docking.
 #   pytest     dev only: runs tests/. Installed from PyPI to match the current env.
 #
+# Early-warning re-caller orchestration (reads -> ERG11 consensus CDS; bioconda):
+#   sra-tools  `fasterq-dump` -- downloads an isolate's SRA raw reads.
+#   minimap2   short-read alignment of those reads to the pinned ERG11 CDS reference.
+#   samtools   sort/index + `samtools consensus` (needs >=1.13) to emit the consensus
+#              CDS in reference coordinates that openafr.recaller then calls.
+#   These are the binaries scripts/recall_erg11.py's `recall`/`fill` path gates on,
+#   exactly as the docking scripts gate on vina/obabel. PLATFORM NOTE: bioconda builds
+#   these for linux-64 (and osx-64), not osx-arm64 -- which is honest, because the
+#   reads->consensus step needs network + multi-GB SRA downloads and is meant to run on
+#   a Linux/x86 host, not on an Apple Silicon laptop. The deterministic `call` path and
+#   the whole tested core stay stdlib-only and run anywhere; only this orchestration
+#   layer needs the bioconda toolchain. See scripts/README_recaller_sanity.md.
+#
 # Versions are pinned to minor where the toolchain is stable and exact where it
 # materially affects docking/scoring output. Build strings are intentionally
 # omitted so the file resolves on both Apple Silicon and Linux (see README).
 name: openafr
 channels:
   - conda-forge
+  - bioconda
 dependencies:
   - python=3.11
   - rdkit=2025.09.5
   - openbabel=3.1.1
   - vina=1.2.7
+  # early-warning re-caller orchestration (linux-64/osx-64; see note above)
+  - sra-tools=3.1.1
+  - minimap2=2.28
+  - samtools=1.21
   - pip
   - pip:
       - pytest==9.1.1
