@@ -34,10 +34,25 @@ persists when NCBI re-processes an isolate.
 
 The spike (#20, `work/RESULTS_earlywarning_spike.md`) proved NCBI runs no AMR
 pipeline on C. auris: there is no azole-resistance call to read off the feed. So
-`erg11_call` stays blank and `resistance_source` records *why* —
-`pending:sra-recaller` when SRA reads are linked (the ERG11 re-caller, #23, can
-fill it) or `pending:no-reads` when they are not. An uncalled isolate is honestly
-uncalled, never silently "wild type".
+`erg11_call` starts blank and `resistance_source` records *why* —
+`pending:sra-recaller` when SRA reads are linked (the ERG11 re-caller can fill it)
+or `pending:no-reads` when they are not. An uncalled isolate is honestly uncalled,
+never silently "wild type".
+
+The **ERG11 re-caller** (`openafr/recaller.py` + `scripts/recall_erg11.py`) is what
+turns `pending:sra-recaller` into an actual call — the piece that makes the whole
+early-warning track fire on real data instead of an honest null. It manufactures the
+call NCBI does not provide, from the isolate's own ERG11 sequence, against a pinned
+B8441 reference (`erg11_reference/`, accession XM_085597798.1, sha256-verified with a
+numbering check on the V125/F126/Y132/K143 hotspots). Once it runs, `resistance_source`
+becomes one of:
+
+- `sra-recaller:called` — substitution(s) called (`erg11_call` populated),
+- `sra-recaller:wild-type` — panel fully covered, no substitution,
+- `sra-recaller:partial(panel-uncalled:…)` — a hotspot could not be covered (empty
+  call, but *never* silently wild type),
+- `sra-recaller:failed(…)` / `:refused(…)` — fetch/align failed, or the consensus was
+  out of frame (indels can't be point substitutions). The isolate is marked, not dropped.
 
 ## Commands
 
@@ -53,6 +68,22 @@ python scripts/snapshot_ncbi_auris.py baseline snapshots/PDG000000067.671.tsv --
 
 # New isolates between two pulls (the emergence-detection input, #22):
 python scripts/snapshot_ncbi_auris.py diff snapshots/PDG000000067.670.tsv snapshots/PDG000000067.671.tsv
+
+# --- ERG11 re-caller: fill the pending:sra-recaller calls ---
+
+# Deterministic (no network, no external tools): call from a consensus CDS FASTA.
+python scripts/recall_erg11.py call --consensus-fasta isolate_erg11.fasta
+
+# Orchestrated (needs fasterq-dump + minimap2 + samtools>=1.13, and network):
+python scripts/recall_erg11.py recall SRR1234567           # one isolate
+python scripts/recall_erg11.py fill snapshots/PDG000000067.671.tsv --limit 5   # a snapshot, in place
 ```
 
-Library: `openafr/earlywarning.py`. Tests: `tests/test_earlywarning_snapshot.py`.
+The re-caller is split on purpose: the **call logic** (consensus CDS → tokens) is
+stdlib-only, deterministic, and unit-tested against the pinned reference; the
+**reads → consensus** orchestration shells out to bioinformatics tools and is gated on
+their presence (exactly like the docking scripts gate on `vina`), so it is honest about
+being the un-reproducible-here layer rather than faking a call when the tools are absent.
+
+Libraries: `openafr/earlywarning.py`, `openafr/recaller.py`.
+Tests: `tests/test_earlywarning_snapshot.py`, `tests/test_recaller.py`.

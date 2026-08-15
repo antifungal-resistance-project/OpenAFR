@@ -2,36 +2,43 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Build the ERG11 re-caller (reads → azole-resistance call) — OPEN, TOP PRIORITY
+## Build the ERG11 re-caller (reads → azole-resistance call) — CORE DONE 2026-08-15, ORCHESTRATION + REAL-DATA VALIDATION OPEN
 
 **What:** the single missing piece that would make the genomic early-warning track (issues
 #20–27) actually work. Given an NCBI *C. auris* isolate's linked **SRA raw reads**, call the
-ERG11 (CYP51) azole-resistance substitutions — Y132F, K143R, F126L, the VF125AL/F126L
-clade-III haplotype, TR34-style tandem duplications, plus TAC1B GOF / ERG3 where feasible —
-and populate the `erg11_call` column that every downstream stage already consumes.
+ERG11 (CYP51) azole-resistance substitutions and populate the `erg11_call` column that every
+downstream stage already consumes.
 
-**Why it's the whole ballgame:** the spike (#20) proved NCBI runs *no* AMR pipeline on
-*C. auris*, so there is no resistance call to read off the feed — it must be manufactured
-from reads. Every other stage (snapshot, emergence, mapping, structural so-what, alert,
-delivery) is built, tested, and — per the backtest's H3 mechanism proof — fires end to end
-the moment `erg11_call` is populated. Until then the real-data backtest is an honest null
-(H2: 0 flags over 8 years, because calls are absent, not because emergence is absent). This
-re-caller is the entire gap between "scaffold" and "validated early warning."
+**What is now built (2026-08-15):**
+- `data/earlywarning/erg11_reference/` — pinned B8441 reference CDS (accession
+  XM_085597798.1, CDS sha256 764e6d1a…) + PROVENANCE.md. Verified: residues 125/126/132/143
+  translate to V/F/Y/K, so an emitted `Y132F` is guaranteed to mean residue 132.
+- `openafr/recaller.py` — the deterministic core: consensus ERG11 CDS → substitution tokens.
+  Honesty enforced + tested: asserts the reference (hash + numbering), an ambiguous codon is
+  *uncalled* not wild-type, a frameshift/length mismatch is *refused* not frame-guessed, the
+  known panel (V125A/F126L/Y132F/K143R) is *tagged* but non-panel substitutions are emitted
+  verbatim (novelty is emergence.py's job, not the re-caller's). 16 tests, all green.
+- `scripts/recall_erg11.py` — CLI. `call` = deterministic (no network/tools). `recall`/`fill`
+  = the reads→consensus orchestration (fasterq-dump + minimap2 + samtools consensus), gated on
+  those binaries like the docking scripts gate on vina. `resistance_source` becomes
+  `sra-recaller:{called,wild-type,partial(...),failed(...),refused(...)}`.
 
-**Where to start:** ~96.6% of isolates carry linked SRA `Run` accessions (assemblies only
-3.4%, so work from reads, not assemblies). The snapshot schema already reserves
-`erg11_call` + `resistance_source` and marks uncalled isolates `pending:sra-recaller`
-(see `data/earlywarning/README.md`). The arrival budget is adequate (backtest H1: median
-97-day deposit lag), so the effort is justified.
+**What remains OPEN:**
+1. **Run the orchestration on a real snapshot.** The reads→consensus half needs the external
+   tools installed (bioconda) + network + multi-GB SRA downloads — it is intentionally NOT in
+   the tested core and has not yet been run at scale. `fill --limit N` is the entry point;
+   start small, sanity-check the calls against known-genotype strains, then widen.
+2. **Convert the backtest null into a real-data result.** The backtest (#27) is pre-registered
+   to use an *external* truth set (published clade/mutation panels, CDC AR Isolate Bank strains
+   with known ERG11 status), not NCBI labels — only 23 isolates carry any AST phenotype. Run a
+   re-called snapshot through `scripts/backtest_earlywarning.py replay` to turn the H2 null
+   (0 flags because calls were *absent*) into a measured azole event frequency.
+3. **Out of scope for this CDS-level caller** (documented, not silently dropped): TR-type
+   tandem-duplication/promoter calls and non-ERG11 loci (TAC1B GOF, ERG3) — none are point
+   substitutions in the ERG11 CDS. Revisit if the measured azole signal warrants it.
 
-**Validation:** the backtest (#27) is pre-registered to use an *external* truth set
-(published clade/mutation panels, CDC AR Isolate Bank strains with known ERG11 status), not
-NCBI labels — only 23 isolates carry any AST phenotype. Wire the re-caller's calls through
-`scripts/backtest_earlywarning.py replay` on a real snapshot to convert the H2 null into a
-real-data result.
-
-**Source:** spike #20 + backtest #27 (`work/RESULTS_backtest.md`), 2026-08-14. This is also
-the shared blocker gating the FKS1/v2 decision below.
+**Source:** spike #20 + backtest #27 (`work/RESULTS_backtest.md`), core built 2026-08-15. Step
+2's measured event frequency is also the shared blocker gating the FKS1/v2 decision below.
 
 ## Parallelize the docking loop (screen stage) — DONE 2026-08-01
 
@@ -70,15 +77,16 @@ and pan-resistance. The azole MVP may build a beautiful pipeline that rarely fir
 (#27) are pre-registered to report azole-mutation *event frequency*. If that comes
 back near-zero, this TODO is the redirection for v2.
 
-**Trigger status after #27 (2026-08-14): NOT fired — deferred behind the same
-re-caller.** The backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md))
-found azole event frequency is currently **zero-*measurable***, not measured-near-zero:
-`erg11_call` is empty on all real isolates because the ERG11 re-caller was never built,
-so the real-data walk-forward is an honest null (H2). The redirection to FKS1/v2 is only
-justified by a *measured* near-zero azole signal, which requires the re-caller first. So
-the single blocker for both the azole MVP and this v2 decision is the same: build the
-reads→ERG11 re-caller, then re-read the event frequency. The arrival budget is adequate
-(H1: median deposit lag 97 d, PASS-arrival), so the re-caller is worth building.
+**Trigger status: NOT fired — still deferred behind a *measured* azole signal.** The
+backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md)) found azole event
+frequency was **zero-*measurable***, not measured-near-zero, because `erg11_call` was
+empty (no re-caller). As of 2026-08-15 the re-caller's **deterministic core is built and
+tested**, but it has not yet been *run* on a real snapshot (the reads→consensus
+orchestration needs the bioinformatics tools + SRA downloads; see the top TODO's OPEN
+step 1). So the blocker for both the azole MVP and this v2 decision is no longer "build
+the re-caller" but "**run** it and re-read the event frequency." The redirection to
+FKS1/v2 stays justified only by a *measured* near-zero azole signal. The arrival budget is
+adequate (H1: median deposit lag 97 d, PASS-arrival).
 
 **Context / where to start:** detection (extract FKS1 hot-spot regions, call the
 S639/F-region mutations) is tractable and mirrors the ERG11 re-caller (T1). The
