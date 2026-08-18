@@ -29,6 +29,9 @@ Usage
   # Orchestrated: one isolate's SRA run -> call (needs the external tools + network).
   python scripts/recall_erg11.py recall SRR1234567
 
+  # Offline preflight (no tools/network): what would a fill download and re-call?
+  python scripts/recall_erg11.py plan data/earlywarning/snapshots/PDG000000067.671.tsv
+
   # Batch: fill every pending:sra-recaller row of a snapshot in place.
   python scripts/recall_erg11.py fill data/earlywarning/snapshots/PDG000000067.671.tsv
 
@@ -42,6 +45,7 @@ marked `sra-recaller:failed(<reason>)`), not dropped and not guessed.
 import argparse
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -60,6 +64,12 @@ TOOLS = {
     "samtools": "samtools >=1.13 (samtools consensus)",
 }
 MIN_DEPTH = 10   # positions with fewer supporting reads become N -> uncalled, not wild type
+
+# The consensus pipeline's LAST step, `samtools consensus`, only exists in samtools
+# >=1.13. Presence on PATH is not enough: an older samtools passes `shutil.which` and then
+# dies on `unrecognized command: consensus` -- but only AFTER fasterq-dump has pulled the
+# isolate's multi-GB reads. We refuse up front so that failure is instant and actionable.
+SAMTOOLS_MIN = (1, 13)
 
 
 def _read_consensus_fasta(path):
@@ -118,6 +128,48 @@ def _require_tools():
             "Install them (conda-forge/bioconda), or run the deterministic `call` "
             "subcommand on a consensus FASTA you built elsewhere."
         )
+    _require_samtools_consensus()
+
+
+def _run_text(cmd):
+    """Capture a probe command's combined output; '' if it cannot be run. Never raises."""
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return (p.stdout or "") + (p.stderr or "")
+
+
+def _parse_version(text):
+    """First 'MAJOR.MINOR' in text -> (major, minor); None if none present."""
+    m = re.search(r"(\d+)\.(\d+)", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def samtools_capabilities():
+    """(version_tuple_or_None, has_consensus) for the samtools on PATH.
+
+    `consensus` is listed by `samtools --help` exactly on the versions that ship it, so
+    that listing -- not the parsed version -- is the ground-truth capability check; the
+    version is parsed only to make the error message concrete.
+    """
+    ver = _parse_version(_run_text(["samtools", "--version"]))
+    has_consensus = re.search(r"\bconsensus\b", _run_text(["samtools", "--help"])) is not None
+    return ver, has_consensus
+
+
+def _require_samtools_consensus():
+    ver, has_consensus = samtools_capabilities()
+    if has_consensus and (ver is None or ver >= SAMTOOLS_MIN):
+        return
+    vstr = ".".join(map(str, ver)) if ver else "unknown"
+    need = ".".join(map(str, SAMTOOLS_MIN))
+    sys.exit(
+        f"samtools {vstr} lacks the `consensus` subcommand (needs >= {need}). The "
+        "reads->consensus orchestration would fail at its FINAL step -- after the "
+        "multi-GB read download -- so it is refused now instead. Upgrade via "
+        f"conda-forge/bioconda (`conda install -c bioconda 'samtools>={need}'`) and retry."
+    )
 
 
 def _run(cmd, **kw):
@@ -244,6 +296,48 @@ def cmd_fill(args):
     return 0
 
 
+# ------------------------------ offline preflight ----------------------------
+
+def _pending_with_run(records):
+    """The rows `fill` would attempt, in fill's order: pending:sra-recaller + a run_acc."""
+    return [r for r in records
+            if (r.get("resistance_source") or "") == "pending:sra-recaller"
+            and (r.get("run_acc") or "").strip()]
+
+
+def cmd_plan(args):
+    """Read-only preflight: what a `fill` WOULD fetch and re-call. No tools, no network.
+
+    Runnable anywhere (incl. osx-arm64, where the orchestration itself cannot run), so a
+    snapshot can be inspected -- pending count, run_acc coverage, the exact accessions the
+    next `fill` will download -- before committing to the multi-GB downloads. Mirrors
+    cmd_fill's row selection exactly (same source/run_acc filter, same first-linked-run
+    pick, same --limit slice), so its counts ARE the next fill's workload."""
+    records = ew.read_snapshot(args.snapshot)
+    pending = [r for r in records
+               if (r.get("resistance_source") or "") == "pending:sra-recaller"]
+    with_run = _pending_with_run(records)
+    without_run = len(pending) - len(with_run)
+    attempted = with_run[:args.limit] if args.limit else with_run
+    first_runs = [r["run_acc"].split(",")[0].strip() for r in attempted]
+    distinct = sorted(set(first_runs))
+
+    print(f"snapshot:            {args.snapshot}")
+    print(f"total isolates:      {len(records)}")
+    print(f"pending:sra-recaller {len(pending)}"
+          f"  ({without_run} with no run_acc -> skipped, stay pending)")
+    print(f"fill would re-call:  {len(attempted)} isolate(s)"
+          + (f"  (--limit {args.limit})" if args.limit else "")
+          + f"  == {len(attempted)} SRA download(s)")
+    print(f"distinct run acc:    {len(distinct)}"
+          + ("" if len(distinct) == len(attempted)
+             else "  (some isolates share a run; each row still downloads once)"))
+    if args.list_runs:
+        for acc in distinct:
+            print(acc)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -264,6 +358,12 @@ def main():
     p.add_argument("--limit", type=int, default=0, help="only re-call the first N pending isolates")
     p.add_argument("--dry-run", action="store_true", help="re-call but do not write the snapshot")
     p.set_defaults(func=cmd_fill)
+
+    p = sub.add_parser("plan", help="offline preflight: what a fill would fetch (no tools/network)")
+    p.add_argument("snapshot", help="snapshot TSV to inspect (not modified)")
+    p.add_argument("--limit", type=int, default=0, help="preview fill's first-N-isolates slice")
+    p.add_argument("--list-runs", action="store_true", help="print the distinct SRA accessions")
+    p.set_defaults(func=cmd_plan)
 
     args = ap.parse_args()
     return args.func(args) or 0
