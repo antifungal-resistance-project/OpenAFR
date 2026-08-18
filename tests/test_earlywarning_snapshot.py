@@ -7,8 +7,12 @@ These lock the four guarantees the emergence layer (#22) will lean on:
   * baseline_as_of filters by NCBI visibility date, honestly excluding undated
     isolates instead of silently placing them,
   * diff surfaces exactly the newly-appeared isolates.
-No network: everything runs against synthetic NCBI-shaped rows.
+No network: everything runs against synthetic NCBI-shaped rows. The release-URL
+helpers are exercised against a stubbed _get (still no network) so the release
+parsing and its refuse-on-empty guarantee are covered without hitting NCBI.
 """
+import pytest
+
 from openafr import earlywarning as ew
 
 
@@ -110,3 +114,44 @@ def test_index_upsert_is_idempotent_per_release(tmp_path):
     rows = ew.read_snapshot(idx)
     assert [r["release_tag"] for r in rows] == [
         "PDG000000067.671", "PDG000000067.672"]  # sorted by release number
+
+
+# --- release discovery URLs (stubbed _get, no network) ----------------------
+
+def test_metadata_url_builds_the_tagged_release_path():
+    tag, url = ew.metadata_url(671)
+    assert tag == "PDG000000067.671"
+    assert url == (
+        "https://ftp.ncbi.nlm.nih.gov/pathogen/Results/Candidozyma_auris/"
+        "PDG000000067.671/Metadata/PDG000000067.671.metadata.tsv"
+    )
+
+
+def test_latest_release_picks_the_highest_published_number(monkeypatch):
+    # NCBI's directory listing links every release; latest_release must return the
+    # numeric max, not the last-listed or first-listed one.
+    listing = (
+        '<a href="PDG000000067.669/">669</a>'
+        '<a href="PDG000000067.671/">671</a>'
+        '<a href="PDG000000067.670/">670</a>'
+    ).encode("utf-8")
+    monkeypatch.setattr(ew, "_get", lambda url: listing)
+    assert ew.latest_release() == 671
+
+
+def test_latest_release_refuses_when_no_releases_are_listed(monkeypatch):
+    # An empty/HTML-shaped listing must raise, never silently return a bogus release.
+    monkeypatch.setattr(ew, "_get", lambda url: b"<html>no releases here</html>")
+    with pytest.raises(RuntimeError, match="could not list releases"):
+        ew.latest_release()
+
+
+def test_fetch_release_rows_parses_the_metadata_tsv(monkeypatch):
+    # With release pinned, fetch_release_rows must return DictReader rows plus the
+    # tag/url it fetched -- no network, no latest_release lookup.
+    tsv = b"target_acc\tRun\nPDT1.1\tSRR1\nPDT2.1\tSRR2\n"
+    monkeypatch.setattr(ew, "_get", lambda url: tsv)
+    rows, tag, url = ew.fetch_release_rows(671)
+    assert tag == "PDG000000067.671"
+    assert url.endswith("PDG000000067.671.metadata.tsv")
+    assert [r["target_acc"] for r in rows] == ["PDT1.1", "PDT2.1"]
