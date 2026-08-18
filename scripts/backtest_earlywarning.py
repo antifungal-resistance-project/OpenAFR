@@ -17,6 +17,10 @@ Three subcommands, one per pre-registered part (work/PREREGISTRATION_backtest.md
   # turns a first-appearance into a dated, positive-lead-time flag once calls exist:
   python scripts/backtest_earlywarning.py mechanism
 
+  # Azole event frequency -- the deliverable number once `fill` has populated calls:
+  python scripts/backtest_earlywarning.py prevalence \
+      data/earlywarning/snapshots/PDG000000067.673.tsv
+
 On real snapshots `erg11_call` is empty for every isolate (the ERG11 re-caller was
 never built), so `replay` honestly reports "cannot detect yet" at every step rather
 than a false all-clear. `lag` needs no calls -- it measures the arrival budget the
@@ -80,6 +84,38 @@ def cmd_replay(args):
               "refusing to emit a false all-clear, NOT a validated warning.")
     if wf["first_flag"]:
         print(f"  first flag of {args.target}: {wf['first_flag']}")
+
+
+# -------------------------- azole event frequency -----------------------------
+
+def cmd_prevalence(args):
+    """The deliverable number: azole event frequency on a re-called snapshot (TODOS step 2).
+
+    On a snapshot the re-caller has NOT touched, every row is pending, so this reports 0
+    resolved and an undefined frequency -- the honest 'not measured yet', not a zero signal.
+    After `recall_erg11.py fill`, it becomes the measured number the FKS1/v2 decision gates on.
+    """
+    records = ew.read_snapshot(args.snapshot)
+    p = bt.panel_prevalence(records)
+    print(f"snapshot {pathlib.Path(args.snapshot).name}: {p['n_total']} isolates")
+    print("\nAzole event frequency -- resolved ERG11 panel carrying a known resistance mutation")
+    ex = p["excluded"]
+    print(f"  resolved panel:   {p['n_resolved']}/{p['n_total']} "
+          f"(excluded: {ex['partial']} partial, {ex['failed']} failed/refused, "
+          f"{ex['pending']} pending -- not counted azole-negative)")
+    if p["event_frequency"] is None:
+        print("\n  NOT MEASURED YET: no isolate has a resolved panel (run "
+              "`recall_erg11.py fill` first). This is 'cannot measure', NOT a zero signal.")
+        return
+    print(f"  panel-positive:   {p['n_panel_positive']}/{p['n_resolved']} "
+          f"= {p['event_frequency']:.1%}  (azole event frequency)")
+    if p["n_called_nonpanel"]:
+        print(f"  called non-panel: {p['n_called_nonpanel']} resolved isolate(s) carry only "
+              f"non-panel substitution(s) -- azole-negative, emergence.py judges novelty")
+    if p["per_mutation"]:
+        print("  by panel mutation (resolved isolates carrying it):")
+        for tok, n in p["per_mutation"].items():
+            print(f"    {tok}: {n}  ({n / p['n_resolved']:.1%})")
 
 
 # ---------------------------- H3: mechanism -----------------------------------
@@ -166,6 +202,11 @@ def main():
     p.add_argument("--min-delta", type=float, default=0.05)
     p.add_argument("--backlog-frac", type=float, default=0.5)
     p.set_defaults(func=cmd_replay)
+
+    p = sub.add_parser("prevalence",
+                       help="azole event frequency on a re-called snapshot (the deliverable)")
+    p.add_argument("snapshot")
+    p.set_defaults(func=cmd_prevalence)
 
     p = sub.add_parser("mechanism", help="H3: lead time on a labelled (synthetic) replay")
     p.add_argument("--reference", default="2024-09-01",

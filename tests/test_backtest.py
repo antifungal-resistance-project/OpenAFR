@@ -138,3 +138,62 @@ def test_lead_time_positive_and_none():
     assert bt.lead_time_days("2023-08-01", "2024-09-01") == 397
     assert bt.lead_time_days(None, "2024-09-01") is None      # no flag -> not zero
     assert bt.lead_time_days("2023-08-01", "bad") is None
+
+
+# ---- panel_prevalence: the azole event frequency (the deliverable, TODOS step 2) ----
+
+def _pv(key, source, call=""):
+    """A minimal record carrying only what panel_prevalence reads: source + call."""
+    return {"isolate_key": key, "resistance_source": source, "erg11_call": call}
+
+
+def test_prevalence_undefined_when_nothing_resolved():
+    # A snapshot the re-caller has not touched: every row pending -> 'cannot measure',
+    # never a zero-frequency all-clear.
+    recs = [_pv("K1", "pending:sra-recaller"), _pv("K2", "pending:sra-recaller")]
+    p = bt.panel_prevalence(recs)
+    assert p["n_resolved"] == 0
+    assert p["event_frequency"] is None
+    assert p["excluded"]["pending"] == 2
+
+
+def test_prevalence_denominator_is_resolved_only():
+    # Only called/wild-type count; partial/failed/pending are excluded, NOT azole-negative.
+    recs = [
+        _pv("POS1", "sra-recaller:called", "Y132F"),
+        _pv("POS2", "sra-recaller:called", "K143R,Y132F"),
+        _pv("WT1", "sra-recaller:wild-type", ""),
+        _pv("PART", "sra-recaller:partial(panel-uncalled:132)", ""),   # excluded
+        _pv("FAIL", "sra-recaller:failed(fetch)", ""),                 # excluded
+        _pv("PEND", "pending:sra-recaller", ""),                       # excluded
+    ]
+    p = bt.panel_prevalence(recs)
+    assert p["n_resolved"] == 3                       # POS1, POS2, WT1 only
+    assert p["n_panel_positive"] == 2                 # POS1, POS2
+    assert abs(p["event_frequency"] - 2 / 3) < 1e-9
+    assert p["excluded"] == {"partial": 1, "failed": 1, "pending": 1}
+    # per-mutation counts each panel token across resolved carriers, sorted by residue
+    assert list(p["per_mutation"].items()) == [("Y132F", 2), ("K143R", 1)]
+
+
+def test_prevalence_called_nonpanel_is_resolved_but_azole_negative():
+    # A 'called' isolate whose only substitution is a non-panel clade SNP is resolved and
+    # counts in the denominator, but is NOT a panel hit -- positivity is decided by the
+    # token, not the 'called' source.
+    recs = [
+        _pv("SNP", "sra-recaller:called", "A61T"),      # non-panel substitution
+        _pv("POS", "sra-recaller:called", "Y132F"),
+    ]
+    p = bt.panel_prevalence(recs)
+    assert p["n_resolved"] == 2
+    assert p["n_panel_positive"] == 1                 # only Y132F
+    assert p["n_called_nonpanel"] == 1                # A61T isolate
+    assert p["per_mutation"] == {"Y132F": 1}
+
+
+def test_prevalence_non_panel_mutant_letter_at_panel_position_is_not_a_hit():
+    # Y132H sits at a panel RESIDUE but is not the panel MUTANT (Y132F): not azole-positive.
+    recs = [_pv("H", "sra-recaller:called", "Y132H")]
+    p = bt.panel_prevalence(recs)
+    assert p["n_panel_positive"] == 0
+    assert p["n_called_nonpanel"] == 1

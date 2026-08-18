@@ -49,7 +49,11 @@ downstream stage already consumes.
    to use an *external* truth set (published clade/mutation panels, CDC AR Isolate Bank strains
    with known ERG11 status), not NCBI labels — only 23 isolates carry any AST phenotype. Run a
    re-called snapshot through `scripts/backtest_earlywarning.py replay` to turn the H2 null
-   (0 flags because calls were *absent*) into a measured azole event frequency.
+   (0 flags because calls were *absent*) into a measured azole event frequency. The deliverable
+   number itself now has a command: `backtest_earlywarning.py prevalence <snapshot>` reports
+   the azole event frequency (panel-positive / *resolved* panel, with partial/failed/pending
+   excluded not counted azole-negative) — undefined ("NOT MEASURED YET") until `fill` populates
+   calls, then the measured value the FKS1/v2 decision below gates on.
 3. **Out of scope for this CDS-level caller** (documented, not silently dropped): TR-type
    tandem-duplication/promoter calls and non-ERG11 loci (TAC1B GOF, ERG3) — none are point
    substitutions in the ERG11 CDS. Revisit if the measured azole signal warrants it.

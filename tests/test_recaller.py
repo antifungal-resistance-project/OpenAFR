@@ -211,3 +211,32 @@ def test_emitted_call_round_trips_through_emergence_parse(ref):
     parsed = E.parse_call(call)
     assert parsed == {"Y132F", "K143R"}
     assert all(E.is_substitution(t) for t in parsed)
+
+
+# ---- is_panel_token: rebuild panel membership from a stored token string ----
+
+def test_is_panel_token_tags_the_known_panel():
+    # Every panel mutant letter at its residue is a hit; the tokens the caller tags.
+    assert R.is_panel_token("V125A")
+    assert R.is_panel_token("F126L")
+    assert R.is_panel_token("Y132F")
+    assert R.is_panel_token("K143R")
+
+
+def test_is_panel_token_rejects_non_panel_and_junk():
+    assert not R.is_panel_token("Y132H")   # panel residue, non-panel mutant letter
+    assert not R.is_panel_token("A61T")    # non-panel residue
+    assert not R.is_panel_token("K143")    # not a substitution token
+    assert not R.is_panel_token("")
+    assert not R.is_panel_token(None)
+
+
+def test_is_panel_token_matches_call_substitutions_panel_hits(ref):
+    # The rebuilt-from-string test must agree with the caller's own panel_hits, so a
+    # prevalence count never disagrees with what the caller tagged at call time.
+    cds, _ = ref
+    mut = _mutate_codon(cds, 132, "TTT")   # Y132F
+    mut = _mutate_codon(mut, 143, "AGG")   # K143R
+    result = R.call_substitutions(mut, reference=ref)
+    from_string = {t for t in result["tokens"] if R.is_panel_token(t)}
+    assert from_string == set(result["panel_hits"])
