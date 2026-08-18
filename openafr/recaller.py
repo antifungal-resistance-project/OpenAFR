@@ -91,6 +91,25 @@ RESISTANCE_PANEL = {
 # ambiguity code) makes that codon uncalled -- see honesty constraint 2.
 _CONFIDENT = set("ACGT")
 
+# A canonical point-substitution token, e.g. 'Y132F': wild-type, position, mutant.
+_TOKEN_RE = re.compile(r"^([A-Za-z])(\d+)([A-Za-z*])$")
+
+
+def is_panel_token(token):
+    """True if `token` (e.g. 'Y132F') is a KNOWN azole-resistance panel substitution.
+
+    Mirrors call_substitutions' panel_hits test exactly -- same wild-type-letter and
+    mutant-letter check against RESISTANCE_PANEL -- so a prevalence count rebuilt from
+    stored `erg11_call` strings tags precisely the tokens the caller tagged. A substitution
+    at a panel position but with a NON-panel mutant letter (e.g. Y132H) is not a panel hit.
+    """
+    m = _TOKEN_RE.match((token or "").strip())
+    if not m:
+        return False
+    wt, pos, mut = m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+    panel = RESISTANCE_PANEL.get(pos)
+    return bool(panel and wt == panel[0] and mut in panel[1])
+
 
 class ReferenceError(ValueError):
     """The reference sequence is missing, malformed, or fails its numbering check."""

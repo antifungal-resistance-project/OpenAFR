@@ -33,6 +33,7 @@ import datetime as _dt
 import re
 
 from openafr import emergence
+from openafr import recaller
 
 
 # ----------------------------- date helpers ----------------------------------
@@ -225,3 +226,76 @@ def lead_time_days(first_flag, reference_date):
     if flag is None or ref is None:
         return None
     return (ref - flag).days
+
+
+# --------------------------- azole event frequency ----------------------------
+# The number the whole re-caller run exists to produce (TODOS step 2): once `fill` has
+# populated erg11_call, what fraction of the isolates the caller could actually place at
+# the ERG11 panel carry a KNOWN azole-resistance substitution. It is also the gate on the
+# FKS1/v2 decision -- a measured near-zero (not a measured-zero-because-unmeasured) is what
+# justifies redirecting to echinocandins.
+
+# resistance_source values that mean the panel was RESOLVED (assessable) for an isolate.
+# Only these enter the denominator; partial / failed / pending are excluded, never counted
+# as azole-negative -- the same "uncalled is not wild type" honesty the re-caller enforces.
+_RESOLVED_SOURCES = ("sra-recaller:called", "sra-recaller:wild-type")
+
+
+def _resolution_bucket(source):
+    """Classify an isolate's resistance_source into resolved / partial / failed / pending."""
+    src = (source or "").strip()
+    if src in _RESOLVED_SOURCES:
+        return "resolved"
+    if src.startswith("sra-recaller:partial"):
+        return "partial"
+    if src.startswith("sra-recaller:failed") or src.startswith("sra-recaller:refused"):
+        return "failed"
+    return "pending"          # pending:sra-recaller, empty, or any other uncalled state
+
+
+def panel_prevalence(records):
+    """Azole event frequency on a (re-called) snapshot.
+
+    Of the isolates whose ERG11 panel the caller could RESOLVE (resistance_source
+    `sra-recaller:called` or `:wild-type`), how many carry a known panel substitution.
+    Note `called` != panel-positive: an isolate called only for a non-panel (clade) SNP is
+    resolved-but-azole-negative, so positivity is decided from the tokens via
+    recaller.is_panel_token, not from the source string.
+
+    Returns a dict:
+      n_total            all isolates in the snapshot
+      n_resolved         isolates with a resolved panel (the denominator)
+      n_panel_positive   resolved isolates carrying >=1 panel substitution (the numerator)
+      event_frequency    n_panel_positive / n_resolved, or None if nothing is resolved yet
+      per_mutation       {panel token -> # resolved isolates carrying it}, sorted by residue
+      n_called_nonpanel  resolved isolates called ONLY for non-panel substitution(s)
+      excluded           {partial, failed, pending} counts (reported, never counted negative)
+    """
+    n_resolved = n_positive = n_called_nonpanel = 0
+    per_mutation = {}
+    excluded = {"partial": 0, "failed": 0, "pending": 0}
+    for r in records:
+        bucket = _resolution_bucket(r.get("resistance_source"))
+        if bucket != "resolved":
+            excluded[bucket] += 1
+            continue
+        n_resolved += 1
+        panel_toks = [t for t in emergence.parse_call(r.get("erg11_call"))
+                      if recaller.is_panel_token(t)]
+        if panel_toks:
+            n_positive += 1
+            for t in panel_toks:
+                per_mutation[t] = per_mutation.get(t, 0) + 1
+        elif (r.get("erg11_call") or "").strip():
+            n_called_nonpanel += 1
+    per_mutation = dict(sorted(per_mutation.items(),
+                               key=lambda kv: int(re.search(r"\d+", kv[0]).group())))
+    return {
+        "n_total": len(records),
+        "n_resolved": n_resolved,
+        "n_panel_positive": n_positive,
+        "event_frequency": (n_positive / n_resolved) if n_resolved else None,
+        "per_mutation": per_mutation,
+        "n_called_nonpanel": n_called_nonpanel,
+        "excluded": excluded,
+    }
