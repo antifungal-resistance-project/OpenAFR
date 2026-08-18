@@ -25,9 +25,18 @@ downstream stage already consumes.
 
 **What remains OPEN:**
 1. **Run the orchestration on a real snapshot.** The reads→consensus half needs the external
-   tools installed (bioconda) + network + multi-GB SRA downloads — it is intentionally NOT in
-   the tested core and has not yet been run at scale. `fill --limit N` is the entry point;
-   start small, sanity-check the calls against known-genotype strains, then widen.
+   tools installed (bioconda) + network + multi-GB SRA downloads, and is meant for a Linux/x86
+   host (bioconda has no osx-arm64 builds). What is now *de-risked offline* (2026-08-18): the
+   orchestration **logic** is tested in `tests/test_recall_orchestration.py` — the exact
+   fetch/align/consensus pipeline `reads_to_consensus` issues (short-read preset + min-depth
+   threaded into `samtools consensus`), the `_read_consensus_fasta` bridge (joins a wrapped
+   record; refuses empty/header-only/multi-record), and `cmd_fill`'s batch behavior (re-calls
+   only pending rows carrying a run_acc, picks the first linked run, marks in place, leaves
+   resolved rows untouched, honors --limit/--dry-run). So a `fill` bug can no longer silently
+   corrupt a snapshot *after* the expensive downloads. What is still UNPROVEN and needs the
+   real run: the external tool **binaries** themselves (are they invoked correctly end-to-end,
+   do real reads assemble a callable consensus). `fill --limit N` is the entry point; start
+   small, sanity-check via `scripts/recaller_sanity.py` against known-genotype strains, widen.
 2. **Convert the backtest null into a real-data result.** The backtest (#27) is pre-registered
    to use an *external* truth set (published clade/mutation panels, CDC AR Isolate Bank strains
    with known ERG11 status), not NCBI labels — only 23 isolates carry any AST phenotype. Run a
