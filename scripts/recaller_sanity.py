@@ -11,9 +11,13 @@ azole-resistance genotype is already published. For each strain in
   2. calls substitutions with the tested deterministic core (openafr.recaller), and
   3. checks the emitted PANEL hits against the strain's expected clade genotype.
 
-The strongest row is B8441: the caller's reference CDS (XM_085597798.1) is derived from
-B8441, so B8441's own reads must call WILD-TYPE -- if that row shows spurious panel hits,
-the orchestration (alignment/consensus), not the science, is wrong.
+The wild-type control is B11220 (clade II, azole-susceptible): an independent strain that
+must emit NO panel hit through the exact Illumina path, so a spurious panel hit there means
+the orchestration (alignment/consensus), not the science, is wrong. (The reference strain
+B8441 would be a tighter self-consistency control -- its own reads must call wild-type
+against its own derived reference -- but its only run is PacBio, which misaligns under the
+`-ax sr` short-read preset; see the fixture header. Every fixture run is Illumina paired
+WGS, matching the real `fill` path.)
 
 Gated on the same bioinformatics tools as `recall`/`fill` (fasterq-dump, minimap2,
 samtools) and needs network + multi-GB downloads, so like that path it is intentionally
@@ -28,7 +32,7 @@ Outcomes per strain:
 
 Usage:
   python scripts/recaller_sanity.py                 # all rows
-  python scripts/recaller_sanity.py --only B8441     # one strain (repeatable)
+  python scripts/recaller_sanity.py --only B11220     # one strain (repeatable)
   python scripts/recaller_sanity.py --limit 1        # first row only (cheap smoke test)
   python scripts/recaller_sanity.py --keep-tmp       # keep alignment workdirs to inspect
 

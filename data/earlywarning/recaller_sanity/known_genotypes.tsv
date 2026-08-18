@@ -7,10 +7,23 @@
 # NOT NCBI's (absent) labels.
 #
 # Run accessions are the SRA runs Lockhart et al. 2017 deposited under BioProject
-# PRJNA328792 (resolved from NCBI SRA runinfo, 2026-08-15). The four B-strains are the
-# canonical clade reference isolates; the reference CDS the caller uses (XM_085597798.1)
-# is itself derived from B8441, so B8441's own reads are a positive control that must
-# call WILD-TYPE against its own reference (validates the orchestration end to end).
+# PRJNA328792 (resolved from NCBI SRA runinfo, 2026-08-15). The B-strains are canonical
+# clade reference isolates; B11220 (clade II, azole-susceptible) is the WILD-TYPE control
+# that must yield NO panel hit -- an independent strain through the exact Illumina path,
+# so a spurious panel hit there means the orchestration (alignment/consensus), not the
+# science, is wrong.
+#
+# PLATFORM: every run below is ILLUMINA paired WGS (verified via ENA, 2026-08-18). This is
+# deliberate and load-bearing: reads_to_consensus aligns with `minimap2 -ax sr` (the
+# short-read preset), which is also the path the real `fill` uses on NCBI snapshots (they
+# are overwhelmingly Illumina). A PACBIO/NANOPORE run would misalign under `-ax sr` and
+# call an honest but useless "uncalled", so the sanity set must not use one.
+#   Excluded for this reason: the reference strain B8441's own run, SRR3883469, is PacBio
+#   RS II (it is the reference-genome strain; no Illumina WGS run exists for it in this
+#   BioProject -- its other Illumina data is RNA-Seq/amplicon). Its would-be role (the
+#   reference's own reads must call wild-type) was the tightest control, but it cannot run
+#   through the Illumina-only orchestration; B11220 covers the wild-type case instead. If a
+#   long-read preset (`map-pb`/`map-ont`) is ever added, restore B8441 as a second WT row.
 #
 # expected_panel semantics: the panel (hotspot) substitution(s) the literature attributes
 # to this strain's clade -- what result['panel_hits'] must CONTAIN. Empty ("-") means the
@@ -23,8 +36,7 @@
 # Columns (tab-separated): strain  clade  run_acc  expected_panel  note  citation
 #
 strain	clade	run_acc	expected_panel	note	citation
-B8441	I (Ia)	SRR3883469	-	reference strain itself -- must call wild-type against its own B8441-derived reference (XM_085597798.1); strongest control, expect ~zero substitutions total	Lockhart 2017 CID 64:134; PROVENANCE.md (reference = B8441)
-B11220	II	SRR3883452	-	clade II (East Asia/Japan) -- azole-susceptible, no ERG11 hotspot mutation; will carry non-panel clade-II SNPs	Lockhart 2017 CID 64:134 (clade II fluconazole-susceptible)
-B11221	III	SRR7701905	F126L	clade III (South Africa) -- F126L (V125A may co-occur as the VF125AL haplotype); some reports write F126T -- if the caller emits F126T that is the nomenclature subtlety, not a bug	Lockhart 2017 CID 64:134; recaller RESISTANCE_PANEL note (F126L a.k.a. F126T)
+B11220	II	SRR3883452	-	clade II (East Asia/Japan) -- azole-susceptible, no ERG11 hotspot mutation; the WILD-TYPE control (must emit no panel hit); will carry non-panel clade-II SNPs	Lockhart 2017 CID 64:134 (clade II fluconazole-susceptible)
+B11221	III	SRR3883453	F126L	clade III (South Africa) -- F126L (V125A may co-occur as the VF125AL haplotype); some reports write F126T -- if the caller emits F126T that is the nomenclature subtlety, not a bug. (Illumina run SRR3883453; the earlier fixture used Nanopore SRR7701905, wrong for the -ax sr path.)	Lockhart 2017 CID 64:134; recaller RESISTANCE_PANEL note (F126L a.k.a. F126T)
 B11243	IV	SRR3883464	Y132F	clade IV (South America) -- Y132F	Lockhart 2017 CID 64:134 (clade IV Y132F)
 B11245	IV	SRR3883466	Y132F	clade IV (Venezuela) -- Y132F; second independent clade-IV confirmation	MRA/genome announcements (B11245 ERG11-Y132F, clade IV)
