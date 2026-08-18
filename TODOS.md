@@ -35,8 +35,16 @@ downstream stage already consumes.
    resolved rows untouched, honors --limit/--dry-run). So a `fill` bug can no longer silently
    corrupt a snapshot *after* the expensive downloads. What is still UNPROVEN and needs the
    real run: the external tool **binaries** themselves (are they invoked correctly end-to-end,
-   do real reads assemble a callable consensus). `fill --limit N` is the entry point; start
-   small, sanity-check via `scripts/recaller_sanity.py` against known-genotype strains, widen.
+   do real reads assemble a callable consensus). Run order for the real host: (0) pull a
+   fresh snapshot (`snapshot_ncbi_auris.py pull` — verified live 2026-08-18, latest release
+   PDG000000067.673, 29,153 isolates / 96.6% SRA-callable); (1) `recall_erg11.py plan
+   <snapshot>` — offline preflight (no tools/network) that reports how many rows a `fill`
+   would download/re-call and lists the accessions, so the multi-GB scope is known before
+   committing; (2) `scripts/recaller_sanity.py --only B8441` — the wild-type positive
+   control (a spurious panel hit there means the orchestration, not the science, is wrong),
+   then widen the sanity set; (3) `fill --limit N`, start small and widen. Note: the tool
+   gate now also **version-checks** samtools (needs `consensus`, >=1.13) before any download,
+   so an old-samtools box fails instantly instead of after the reads are pulled.
 2. **Convert the backtest null into a real-data result.** The backtest (#27) is pre-registered
    to use an *external* truth set (published clade/mutation panels, CDC AR Isolate Bank strains
    with known ERG11 status), not NCBI labels — only 23 isolates carry any AST phenotype. Run a

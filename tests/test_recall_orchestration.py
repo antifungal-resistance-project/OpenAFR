@@ -28,6 +28,7 @@ import pytest
 
 from openafr import recaller as R
 from openafr import earlywarning as ew
+from openafr import runlog
 
 _SCRIPT = pathlib.Path(__file__).resolve().parent.parent / "scripts" / "recall_erg11.py"
 
@@ -149,11 +150,14 @@ def _fill_args(snapshot, limit=0, dry_run=False):
 
 
 @pytest.fixture
-def patched_fill(script, monkeypatch):
+def patched_fill(script, monkeypatch, tmp_path):
     """cmd_fill with the tool gate and reference load stubbed, and a scripted
     _recall_one that records the run_acc it was handed."""
     monkeypatch.setattr(script, "_require_tools", lambda: None)
     monkeypatch.setattr(R, "load_reference", lambda *a, **k: ("CDS", "PROT"))
+    # cmd_fill logs every run via runlog; redirect it to a tmp dir so exercising the batch
+    # logic here never writes into the repo's real data/earlywarning/runlog.
+    monkeypatch.setattr(runlog, "DEFAULT_LOG_DIR", tmp_path / "runlog")
     seen = []
 
     def fake_recall_one(run_acc, reference, reference_fasta, keep_tmp=False):
