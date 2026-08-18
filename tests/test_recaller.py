@@ -69,6 +69,67 @@ def test_reference_hash_mismatch_is_refused(tmp_path):
         R.load_reference(str(bad))
 
 
+# --- reference load: every malformed-reference path refuses, none is guessed ---
+# load_reference is the gatekeeper that makes an emitted 'Y132F' mean residue 132.
+# Each raise below is a distinct way a reference can be wrong; a silent pass on any
+# would let the caller number substitutions against a frame it never verified.
+
+def test_missing_reference_file_is_refused(tmp_path):
+    with pytest.raises(R.ReferenceError, match="reference not found"):
+        R.load_reference(str(tmp_path / "does_not_exist.fasta"))
+
+
+def test_reference_file_with_no_sequence_is_refused(tmp_path):
+    empty = tmp_path / "erg11_cds.fasta"
+    empty.write_text(">header only, no bases\n")
+    with pytest.raises(R.ReferenceError, match="has no sequence"):
+        R.load_reference(str(empty))
+
+
+def test_reference_with_non_acgt_bases_is_refused(tmp_path):
+    bad = tmp_path / "erg11_cds.fasta"
+    bad.write_text(">bad\nATGNNNAAA\n")          # N is not a confidently-called base
+    with pytest.raises(R.ReferenceError, match="non-ACGT bases"):
+        R.load_reference(str(bad))
+
+
+def test_reference_length_not_multiple_of_three_is_refused(tmp_path):
+    bad = tmp_path / "erg11_cds.fasta"
+    bad.write_text(">bad\nATGAA\n")               # 5 ACGT bases, out of frame
+    # hash waived so the frame check (not the hash) is what refuses it
+    with pytest.raises(R.ReferenceError, match="not a multiple of 3"):
+        R.load_reference(str(bad), allow_hash_mismatch=True)
+
+
+def test_reference_too_short_for_panel_is_refused(tmp_path):
+    short = tmp_path / "erg11_cds.fasta"
+    short.write_text(">short\n" + "ATG" * 10 + "\n")   # 10 aa, panel needs residue 125+
+    with pytest.raises(R.ReferenceError, match="too short"):
+        R.load_reference(str(short), allow_hash_mismatch=True)
+
+
+def test_reference_failing_numbering_check_is_refused(tmp_path):
+    # A full-length, in-frame, all-ACGT CDS whose panel residues DON'T match the
+    # panel's wild-type letters. Even with the hash waived, the numbering check --
+    # which can never be waived -- must refuse it.
+    real_cds = R.load_reference()[0]                    # the pinned reference bytes
+    i = (125 - 1) * 3
+    mangled = real_cds[:i] + "GGT" + real_cds[i + 3:]   # residue 125 Val -> Gly
+    bad = tmp_path / "erg11_cds.fasta"
+    bad.write_text(">mangled\n" + mangled + "\n")
+    with pytest.raises(R.ReferenceError, match="numbering check FAILED"):
+        R.load_reference(str(bad), allow_hash_mismatch=True)
+
+
+def test_call_substitutions_loads_pinned_reference_when_omitted():
+    # With no reference passed, the caller must fall back to the pinned on-disk
+    # reference and still emit the right token (exercises the default-load path).
+    cds = R.load_reference()[0]
+    mut = _mutate_codon(cds, 132, "TTT")               # Y132F
+    res = R.call_substitutions(mut)                    # note: no reference= kwarg
+    assert res["tokens"] == ["Y132F"]
+
+
 # --- wild type: no call, and distinguishable from uncalled ------------------
 
 def test_wild_type_emits_no_call(ref):
