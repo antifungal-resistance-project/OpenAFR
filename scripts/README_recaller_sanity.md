@@ -41,6 +41,13 @@ python scripts/recaller_sanity.py --only B11221 --keep-tmp
 Exit code is nonzero iff a row **FAIL**s. `INCONCLUSIVE` (a panel residue was uncovered,
 so the caller honestly refused to guess) does not fail the run — widen coverage and retry.
 
+**Every run is logged.** Each invocation appends one JSON line to
+`../data/earlywarning/runlog/sanity.jsonl` with its full provenance (timestamp, code
+commit, tool versions, reference digest) and per-strain outcomes — so a PASS/FAIL is a
+durable, git-diffable record, not a scrolled-past terminal line. Commit that line after a
+run and add a row to the ledger in `../work/RESULTS_recaller_sanity.md`. Same applies to
+`recall_erg11.py fill` (→ `runlog/fill.jsonl`, with before/after snapshot digests).
+
 ## The truth set
 
 `../data/earlywarning/recaller_sanity/known_genotypes.tsv` — the canonical clade

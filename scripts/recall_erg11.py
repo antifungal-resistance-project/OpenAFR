@@ -50,6 +50,7 @@ import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from openafr import recaller as R          # noqa: E402
 from openafr import earlywarning as ew      # noqa: E402
+from openafr import runlog                  # noqa: E402  (append-only per-run provenance)
 
 # External binaries the orchestration layer needs. Kept in one place so the gate
 # message and the actual calls cannot drift.
@@ -177,12 +178,18 @@ def _short(e):
 def cmd_recall(args):
     _require_tools()
     reference = R.load_reference()
-    call, source = _recall_one(args.run_acc, reference, R.DEFAULT_REFERENCE,
-                               keep_tmp=args.keep_tmp)
+    with runlog.record_run("recall", reference_path=R.DEFAULT_REFERENCE,
+                           tools=list(TOOLS),
+                           extra={"run_acc": args.run_acc}) as run:
+        call, source = _recall_one(args.run_acc, reference, R.DEFAULT_REFERENCE,
+                                   keep_tmp=args.keep_tmp)
+        ok = source.startswith("sra-recaller:") and "failed" not in source
+        run.add_item(run_acc=args.run_acc, call=call, source=source)
+        run.set(status=("ok" if ok else "fail"), call=call, source=source)
     print(f"run:    {args.run_acc}")
     print(f"call:   {call or '(none)'}")
     print(f"source: {source}")
-    return 0 if source.startswith("sra-recaller:") and "failed" not in source else 1
+    return 0 if ok else 1
 
 
 def cmd_fill(args):
@@ -197,23 +204,41 @@ def cmd_fill(args):
         pending = pending[:args.limit]
     print(f"{len(pending)} isolate(s) to re-call (pending:sra-recaller with a run_acc)",
           file=sys.stderr)
+    # A `fill` overwrites the snapshot's calls in place, so without a log a re-run erases
+    # its predecessor with no trace. Log every fill (append-only) with the before/after
+    # snapshot digest, the per-isolate transcript, and full tool/code provenance. Written
+    # on exit even if a mid-batch isolate crashes -- the digests then show it never wrote.
+    digest_before = ew.snapshot_sha256(records)
     n_called = n_partial = n_failed = 0
-    for i, rec in enumerate(pending, 1):
-        run_acc = rec["run_acc"].split(",")[0].strip()   # first linked run
-        call, source = _recall_one(run_acc, reference, R.DEFAULT_REFERENCE)
-        rec["erg11_call"] = call
-        rec["resistance_source"] = source
-        if "failed" in source or "refused" in source:
-            n_failed += 1
-        elif "partial" in source:
-            n_partial += 1
-        elif call:
-            n_called += 1
-        print(f"[{i}/{len(pending)}] {rec['isolate_key']} {run_acc} -> "
-              f"{call or '(no sub)'} [{source}]", file=sys.stderr)
-    if not args.dry_run:
-        digest = ew.write_snapshot(args.snapshot, records)
-        print(f"wrote {args.snapshot} ({digest[:12]}...)", file=sys.stderr)
+    with runlog.record_run("fill", reference_path=R.DEFAULT_REFERENCE,
+                           tools=list(TOOLS),
+                           extra={"snapshot": os.path.basename(args.snapshot),
+                                  "snapshot_sha256_before": digest_before,
+                                  "n_pending": len(pending),
+                                  "limit": args.limit or None,
+                                  "dry_run": bool(args.dry_run)}) as run:
+        for i, rec in enumerate(pending, 1):
+            run_acc = rec["run_acc"].split(",")[0].strip()   # first linked run
+            call, source = _recall_one(run_acc, reference, R.DEFAULT_REFERENCE)
+            rec["erg11_call"] = call
+            rec["resistance_source"] = source
+            if "failed" in source or "refused" in source:
+                n_failed += 1
+            elif "partial" in source:
+                n_partial += 1
+            elif call:
+                n_called += 1
+            run.add_item(isolate_key=rec["isolate_key"], run_acc=run_acc,
+                         call=call, source=source)
+            print(f"[{i}/{len(pending)}] {rec['isolate_key']} {run_acc} -> "
+                  f"{call or '(no sub)'} [{source}]", file=sys.stderr)
+        digest_after = ew.snapshot_sha256(records)
+        if not args.dry_run:
+            digest = ew.write_snapshot(args.snapshot, records)
+            print(f"wrote {args.snapshot} ({digest[:12]}...)", file=sys.stderr)
+        run.set(snapshot_sha256_after=digest_after, wrote=not args.dry_run,
+                summary={"called": n_called, "partial": n_partial, "failed": n_failed,
+                         "attempted": len(pending)})
     print(f"summary: {n_called} with substitution(s), {n_partial} partial, "
           f"{n_failed} failed/refused, of {len(pending)} attempted", file=sys.stderr)
     return 0

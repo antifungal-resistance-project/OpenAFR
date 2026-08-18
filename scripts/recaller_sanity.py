@@ -45,6 +45,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))          # repo root -> openafr
 sys.path.insert(0, str(HERE))                 # scripts/ -> recall_erg11
 from openafr import recaller as R              # noqa: E402
+from openafr import runlog                      # noqa: E402  (append-only per-run provenance)
 import recall_erg11 as orch                    # noqa: E402  (reads->consensus + tool gate)
 
 DEFAULT_FIXTURE = (HERE.parent / "data" / "earlywarning" / "recaller_sanity"
@@ -121,39 +122,54 @@ def main():
           f"reference {os.path.basename(R.DEFAULT_REFERENCE)}\n", file=sys.stderr)
 
     n_pass = n_fail = n_incon = 0
-    for i, row in enumerate(rows, 1):
-        strain, run_acc = row["strain"], row["run_acc"].strip()
-        expected = _expected_set(row.get("expected_panel"))
-        exp_str = ",".join(sorted(expected)) or "wild-type"
-        print(f"[{i}/{len(rows)}] {strain} (clade {row.get('clade','?')}) "
-              f"{run_acc}  expect: {exp_str}", file=sys.stderr)
+    # Every sanity run is logged (append-only) with its full provenance and per-strain
+    # outcomes -- so a PASS/FAIL is a durable, git-diffable record, not a scrolled-past
+    # line. The record is written on exit even if a strain crashes mid-loop.
+    with runlog.record_run("sanity", reference_path=R.DEFAULT_REFERENCE,
+                           tools=list(orch.TOOLS),
+                           extra={"fixture": os.path.basename(args.fixture),
+                                  "n_strains": len(rows)}) as run:
+        for i, row in enumerate(rows, 1):
+            strain, run_acc = row["strain"], row["run_acc"].strip()
+            expected = _expected_set(row.get("expected_panel"))
+            exp_str = ",".join(sorted(expected)) or "wild-type"
+            print(f"[{i}/{len(rows)}] {strain} (clade {row.get('clade','?')}) "
+                  f"{run_acc}  expect: {exp_str}", file=sys.stderr)
 
-        tmp = tempfile.mkdtemp(prefix=f"sanity_{strain}_")
-        try:
-            cons_path = orch.reads_to_consensus(run_acc, tmp, R.DEFAULT_REFERENCE)
-            consensus = orch._read_consensus_fasta(cons_path)
-            result = R.call_substitutions(consensus, reference=reference)
-        except R.ConsensusError as e:
-            outcome, detail = "INCONCLUSIVE", f"consensus refused: {orch._short(e)}"
-            result = None
-        except Exception as e:                   # tool/fetch failure -> not a science FAIL
-            outcome, detail = "INCONCLUSIVE", f"orchestration failed: {orch._short(e)}"
-            result = None
-        else:
-            outcome, detail = _evaluate(expected, result)
-        finally:
-            if not args.keep_tmp:
-                shutil.rmtree(tmp, ignore_errors=True)
+            tmp = tempfile.mkdtemp(prefix=f"sanity_{strain}_")
+            try:
+                cons_path = orch.reads_to_consensus(run_acc, tmp, R.DEFAULT_REFERENCE)
+                consensus = orch._read_consensus_fasta(cons_path)
+                result = R.call_substitutions(consensus, reference=reference)
+            except R.ConsensusError as e:
+                outcome, detail = "INCONCLUSIVE", f"consensus refused: {orch._short(e)}"
+                result = None
+            except Exception as e:               # tool/fetch failure -> not a science FAIL
+                outcome, detail = "INCONCLUSIVE", f"orchestration failed: {orch._short(e)}"
+                result = None
+            else:
+                outcome, detail = _evaluate(expected, result)
+            finally:
+                if not args.keep_tmp:
+                    shutil.rmtree(tmp, ignore_errors=True)
 
-        if result is not None:
-            call = ",".join(result["tokens"]) or "(none)"
-            cov = f"{result['n_covered']}/{result['n_residues']} residues"
-            print(f"        call: {call}   covered: {cov}", file=sys.stderr)
-        print(f"        {outcome}: {detail}\n", file=sys.stderr)
+            call = ",".join(result["tokens"]) if result is not None else ""
+            if result is not None:
+                cov = f"{result['n_covered']}/{result['n_residues']} residues"
+                print(f"        call: {call or '(none)'}   covered: {cov}", file=sys.stderr)
+            print(f"        {outcome}: {detail}\n", file=sys.stderr)
 
-        n_pass += outcome == "PASS"
-        n_fail += outcome == "FAIL"
-        n_incon += outcome == "INCONCLUSIVE"
+            run.add_item(strain=strain, clade=row.get("clade", ""), run_acc=run_acc,
+                         expected=exp_str, call=call, outcome=outcome, detail=detail,
+                         covered=(f"{result['n_covered']}/{result['n_residues']}"
+                                  if result is not None else None))
+            n_pass += outcome == "PASS"
+            n_fail += outcome == "FAIL"
+            n_incon += outcome == "INCONCLUSIVE"
+
+        run.set(status=("fail" if n_fail else "ok"),
+                summary={"pass": n_pass, "fail": n_fail, "inconclusive": n_incon,
+                         "total": len(rows)})
 
     print(f"summary: {n_pass} PASS, {n_fail} FAIL, {n_incon} INCONCLUSIVE "
           f"of {len(rows)}", file=sys.stderr)

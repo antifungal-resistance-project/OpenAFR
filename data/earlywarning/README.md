@@ -12,6 +12,8 @@ data/earlywarning/
   snapshots/
     INDEX.tsv                    # committed: provenance of every pull
     PDG000000067.<N>.tsv         # gitignored: the per-release snapshot blobs (~3 MB each)
+  runlog/                        # committed: append-only provenance of every re-caller run
+    {sanity,fill,recall}.jsonl   #   one JSON line per run (see runlog/README.md)
 ```
 
 **Only `INDEX.tsv` is committed.** The snapshots themselves are large and fully
