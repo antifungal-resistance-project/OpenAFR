@@ -1,0 +1,45 @@
+# Test + coverage gate for the openafr core.
+#
+# The deterministic, tested core (openafr/) is stdlib + rdkit only; the docking and
+# SRA-orchestration binaries in environment.yml are never invoked by the suite (the
+# tests that touch them monkeypatch the external tools). We still build the full
+# pinned environment.yml here rather than a hand-rolled minimal one: reproducibility
+# is this repo's contract (pinned protocol, hash-frozen pre-registration, pinned env),
+# and CI that runs against a different dependency set than the one results were
+# produced under would quietly break that contract. micromamba caches the solved
+# environment so only the first run pays the full solve.
+#
+# The gate: openafr sits near 97% line coverage; --cov-fail-under=90 is a floor that
+# catches a real regression without flaking on legitimate additions.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}   # login shell so the `openafr` env is active for each step
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the pinned openafr environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Run tests with coverage gate
+        run: |
+          pytest -q \
+            --cov=openafr \
+            --cov-report=term-missing \
+            --cov-fail-under=90

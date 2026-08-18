@@ -17,6 +17,9 @@
 #   openbabel  the `obabel` CLI the docking scripts shell out to (SDF -> PDBQT).
 #   vina       the `vina` CLI (AutoDock Vina) that does the docking.
 #   pytest     dev only: runs tests/. Installed from PyPI to match the current env.
+#   pytest-cov dev only: the coverage gate CI enforces (--cov=openafr,
+#              --cov-fail-under=90). The tested core sits near 97%; the floor
+#              catches a real regression without flaking on legitimate additions.
 #
 # Early-warning re-caller orchestration (reads -> ERG11 consensus CDS; bioconda):
 #   sra-tools  `fasterq-dump` -- downloads an isolate's SRA raw reads.
@@ -50,3 +53,4 @@ dependencies:
   - pip
   - pip:
       - pytest==9.1.1
+      - pytest-cov==7.1.0

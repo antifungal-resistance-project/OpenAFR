@@ -4,7 +4,10 @@ The protocol carries the numbers most tempting to silently tune into a pass — 
 docking box, the search effort, and the gate's pass bar — so these lock both the
 values and the tamper-detection that guards them.
 """
+import json
 import pathlib
+
+import pytest
 
 from openafr import protocol
 
@@ -58,3 +61,63 @@ def test_shell_emits_docking_vars(capsys):
     out = capsys.readouterr().out.strip()
     # exactly the variables scripts/run_screen2.sh eval's, with frozen values
     assert out == "CX=70.61; CY=66.28; CZ=4.18; SIZE=26; EXHAUST=32; MODES=20; SEED=42"
+
+
+# --- parser rejects malformed input --------------------------------------
+# The parser is the sole reader of the frozen protocol. If it silently mis-reads
+# a malformed file instead of refusing it, the tamper-detection above is moot: a
+# broken protocol could still yield numbers the gate treats as authoritative.
+# Every raise below is a "refuse, don't guess" guarantee, so each gets a test.
+
+def test_parser_preserves_bare_string_values():
+    # A value that is neither int, float, nor list stays a string verbatim
+    # (e.g. a mode name), never coerced or dropped.
+    parsed = protocol._parse("sec:\n  mode: axial\n")
+    assert parsed == {"sec": {"mode": "axial"}}
+    assert isinstance(parsed["sec"]["mode"], str)
+
+
+def test_parser_rejects_top_level_line_without_colon():
+    with pytest.raises(ValueError, match="expected 'section:' header"):
+        protocol._parse("docking\n")
+
+
+def test_parser_rejects_top_level_header_carrying_a_value():
+    # A section header must be bare ("docking:"), not "docking: 26" -- otherwise a
+    # value silently attaches to nothing.
+    with pytest.raises(ValueError, match="expected 'section:' header"):
+        protocol._parse("docking: 26\n")
+
+
+def test_parser_rejects_value_before_any_section():
+    # An indented key: value with no section above it has nowhere to live.
+    with pytest.raises(ValueError, match="before any section"):
+        protocol._parse("  center_x: 70.61\n")
+
+
+def test_parser_rejects_indented_line_without_colon():
+    with pytest.raises(ValueError, match="expected 'key: value'"):
+        protocol._parse("docking:\n  center_x\n")
+
+
+# --- the CLI dispatch (main) ---------------------------------------------
+
+def test_main_show_prints_full_protocol_json(capsys):
+    assert protocol.main([]) == 0                     # default subcommand is --show
+    loaded = json.loads(capsys.readouterr().out)
+    assert loaded == protocol.load()
+
+
+def test_main_shell_emits_docking_vars(capsys):
+    assert protocol.main(["--shell"]) == 0
+    assert "EXHAUST=32" in capsys.readouterr().out
+
+
+def test_main_freeze_prints_current_digest(capsys):
+    assert protocol.main(["--freeze"]) == 0
+    assert capsys.readouterr().out.strip() == protocol._digest()
+
+
+def test_main_verify_returns_zero_for_unmodified_protocol(capsys):
+    assert protocol.main(["--verify"]) == 0
+    assert "verified unmodified" in capsys.readouterr().out
