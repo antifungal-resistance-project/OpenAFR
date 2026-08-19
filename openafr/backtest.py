@@ -30,6 +30,7 @@ openafr.earlywarning. Detection is delegated to openafr.emergence with the froze
 track defaults; this module adds no tunable that could be reverse-fit to a lead time.
 """
 import datetime as _dt
+import math
 import re
 
 from openafr import emergence
@@ -253,6 +254,38 @@ def _resolution_bucket(source):
     return "pending"          # pending:sra-recaller, empty, or any other uncalled state
 
 
+def wilson_interval(k, n, z=1.96):
+    """Wilson score confidence interval for a binomial proportion k/n.
+
+    Why Wilson and not the textbook Wald (p +/- z*sqrt(p(1-p)/n)): the prevalence
+    number this run produces will often sit near an extreme (C. auris is largely
+    azole-resistant at baseline, so p may be ~0.9) and the first samples are small.
+    Wald misbehaves exactly there -- it can emit bounds below 0 or above 1 and its
+    coverage collapses when p is near 0/1 -- whereas Wilson stays inside [0,1] and
+    keeps close to nominal coverage at small n and extreme p. z=1.96 is 95%.
+
+    Returns (lo, hi); for n == 0 returns None (nothing resolved -> no interval).
+    """
+    if n == 0:
+        return None
+    z2 = z * z
+    center = (k + z2 / 2) / (n + z2)
+    half = (z / (n + z2)) * math.sqrt(k * (n - k) / n + z2 / 4)
+    return (max(0.0, center - half), min(1.0, center + half))
+
+
+def wilson_halfwidth_worst_case(n, z=1.96):
+    """Half-width of the Wilson 95% CI at the worst case p=0.5, for run planning.
+
+    'How many isolates before the interval is tight enough?' -- answered *before*
+    looking at the data (the same decide-n-before-you-peek discipline as the
+    pre-registrations). p=0.5 maximizes the width, so this is the conservative
+    planning number; a real p near 0.9 yields a tighter interval than this.
+    """
+    lo, hi = wilson_interval(n // 2, n, z)
+    return (hi - lo) / 2
+
+
 def panel_prevalence(records):
     """Azole event frequency on a (re-called) snapshot.
 
@@ -267,6 +300,7 @@ def panel_prevalence(records):
       n_resolved         isolates with a resolved panel (the denominator)
       n_panel_positive   resolved isolates carrying >=1 panel substitution (the numerator)
       event_frequency    n_panel_positive / n_resolved, or None if nothing is resolved yet
+      ci95               Wilson 95% CI (lo, hi) on event_frequency, or None if nothing resolved
       per_mutation       {panel token -> # resolved isolates carrying it}, sorted by residue
       n_called_nonpanel  resolved isolates called ONLY for non-panel substitution(s)
       excluded           {partial, failed, pending} counts (reported, never counted negative)
@@ -295,6 +329,7 @@ def panel_prevalence(records):
         "n_resolved": n_resolved,
         "n_panel_positive": n_positive,
         "event_frequency": (n_positive / n_resolved) if n_resolved else None,
+        "ci95": wilson_interval(n_positive, n_resolved),   # None until anything is resolved
         "per_mutation": per_mutation,
         "n_called_nonpanel": n_called_nonpanel,
         "excluded": excluded,

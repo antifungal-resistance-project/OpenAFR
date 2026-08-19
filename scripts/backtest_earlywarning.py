@@ -107,8 +107,11 @@ def cmd_prevalence(args):
         print("\n  NOT MEASURED YET: no isolate has a resolved panel (run "
               "`recall_erg11.py fill` first). This is 'cannot measure', NOT a zero signal.")
         return
+    lo, hi = p["ci95"]
     print(f"  panel-positive:   {p['n_panel_positive']}/{p['n_resolved']} "
           f"= {p['event_frequency']:.1%}  (azole event frequency)")
+    print(f"  95% CI (Wilson):  [{lo:.1%}, {hi:.1%}]  (+/-{(hi - lo) / 2:.1%})"
+          f"  -- quote the interval, not the point; widen the sample to tighten it")
     if p["n_called_nonpanel"]:
         print(f"  called non-panel: {p['n_called_nonpanel']} resolved isolate(s) carry only "
               f"non-panel substitution(s) -- azole-negative, emergence.py judges novelty")

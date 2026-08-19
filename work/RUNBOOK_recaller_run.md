@@ -72,6 +72,34 @@ python scripts/recaller_sanity.py                    # then the full Illumina se
   not a bug — the harness prints the actual token to judge.
 - **Do not proceed to `fill` until the sanity run is green.**
 
+## 3b. Decide the sample size *before* you look (choose `--limit`)
+
+The prevalence this run produces is a proportion, so it comes with a confidence interval —
+and at small `n` that interval is wide. Pick `--limit` from the precision you want to quote,
+**before** running, the same decide-first discipline as the pre-registrations (a chosen `n`
+can't be rationalized after seeing the point estimate). The table is the worst-case (p=0.5)
+Wilson 95% half-width — a real *C. auris* azole prevalence near ~0.9 yields a *tighter*
+interval than this, so these are conservative:
+
+| resolved `n` | 95% CI half-width (worst case) |
+|-------------:|:-------------------------------|
+|           50 | ±13.4% |
+|          100 | ±9.6%  |
+|          200 | ±6.9%  |
+|          300 | ±5.6%  |
+|          384 | ±5.0%  (the standard "±5 points" sample) |
+|          500 | ±4.4%  |
+|         1000 | ±3.1%  |
+
+Read `n` as **resolved** isolates, not `--limit`: partial/failed rows don't count toward the
+denominator, so oversize `--limit` by the expected unresolved fraction (the first real run
+resolved 18/20 → ~10% loss). `plan --random --seed S --limit N` previews the exact sample.
+Regenerate the table for any target with
+`python3 -c "from openafr import backtest as bt; print(bt.wilson_halfwidth_worst_case(384))"`.
+For the FKS1/v2 fork a ±5% interval (**~384 resolved**) is enough to tell a non-trivial
+azole signal from a near-zero one; go tighter only if the point estimate lands ambiguously
+close to the decision boundary.
+
 ## 4. Fill — re-call real isolates, start small then widen
 
 ```bash
@@ -109,7 +137,9 @@ python scripts/backtest_earlywarning.py prevalence <snapshot>
   pending **excluded** (never counted azole-negative — the same "uncalled is not wild type"
   rule the caller enforces).
 - Before `fill` populates calls it prints **"NOT MEASURED YET"** (honest: cannot measure,
-  not a zero signal). After `fill` it prints the measured frequency + per-mutation breakdown.
+  not a zero signal). After `fill` it prints the measured frequency, its **95% Wilson CI**,
+  and the per-mutation breakdown. **Quote the interval, not the point estimate** — at the
+  `n` you chose in step 3b the half-width is what makes the number defensible (or not).
 - Also run the walk-forward null and the arrival budget for the write-up:
   `backtest_earlywarning.py replay <snapshot>` and `... lag <snapshot>`.
 
