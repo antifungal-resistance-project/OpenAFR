@@ -116,6 +116,30 @@ detector that cannot produce a warning.
    "cannot measure azole emergence until the re-caller exists," so v2 is **not** triggered
    by a measured near-zero; it is deferred behind the same re-caller.
 
+## First re-caller run — the blocker is cleared (2026-08-19)
+
+The ERG11 re-caller ran for the first time on real SRA data (GCP linux-64 host; see
+[RUNBOOK_recaller_run.md](RUNBOOK_recaller_run.md) and `data/earlywarning/runlog/fill.jsonl`).
+Sanity was **4/4** on the known genotypes (WT clean, F126L, Y132F ×2), then a leading
+`fill --limit 20` against snapshot **PDG000000067.674** (29,290 isolates):
+
+```
+resolved panel:  18/18 = 100.0% panel-positive   (2 partial excluded, 0 failed)
+  Y132F: 11 (61.1%)    K143R: 7 (38.9%)
+```
+
+**Read this correctly: it is a pipeline proof, NOT the population azole frequency.** A bare
+`--limit 20` takes the *head* of the pending list, which is in NCBI submission order and so
+clustered by study — these 20 were one resistance outbreak, hence the 100%. It proves the
+re-caller produces honest calls end-to-end on real reads (including *excluding* the 2 partials
+rather than miscounting them azole-negative), which is exactly what H2 was blocked on.
+
+**So H2 moves from "zero-measurable" to "measurable — representative estimate pending a
+randomized fill."** The `fill --random` sampling flag now exists for that (seeded, so the
+estimate is reproducible; `plan --random` previews it). The FKS1/v2 redirection gate stays
+deferred until that randomized run yields a real frequency — no longer blocked on the
+re-caller (it works), now just awaiting a representative sample.
+
 ## Issue #27 checklist
 
 - [x] Replay historical NCBI snapshots and ask whether this would have flagged Y132F

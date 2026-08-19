@@ -75,10 +75,18 @@ python scripts/recaller_sanity.py                    # then the full Illumina se
 ## 4. Fill — re-call real isolates, start small then widen
 
 ```bash
-python scripts/recall_erg11.py fill <snapshot> --limit 20         # start here
-# widen once the first batch looks right:
-python scripts/recall_erg11.py fill <snapshot> --limit 500
+python scripts/recall_erg11.py fill <snapshot> --limit 20                  # start here
+# widen once the first batch looks right -- sample RANDOMLY, not in snapshot order:
+python scripts/recall_erg11.py fill <snapshot> --limit 500 --random        # representative
 ```
+
+- **Use `--random` for any prevalence you intend to quote.** Without it, `--limit N` re-calls
+  the first N pending rows in *snapshot order*, which tracks NCBI submission order and so
+  clusters by study — the first real `--limit 20` came back all one resistance outbreak
+  (18/18 panel-positive), a biased head, not the population rate. `--random` draws a seeded
+  representative sample instead (`--seed`, default 0, makes it reproducible; `plan --random
+  --seed S` previews the exact sample). A small leading `--limit 20` without `--random` is
+  still the right *first* step — it's a fast orchestration check, not a frequency estimate.
 
 - `fill` writes `erg11_call` + `resistance_source` **in place** for pending rows, and logs
   every run (append-only) to `data/earlywarning/runlog/fill.jsonl` with before/after

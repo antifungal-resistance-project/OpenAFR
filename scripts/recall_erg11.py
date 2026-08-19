@@ -45,6 +45,7 @@ marked `sra-recaller:failed(<reason>)`), not dropped and not guessed.
 import argparse
 import os
 import pathlib
+import random
 import re
 import shutil
 import subprocess
@@ -249,12 +250,9 @@ def cmd_fill(args):
     _require_tools()
     reference = R.load_reference()
     records = ew.read_snapshot(args.snapshot)
-    pending = [r for r in records
-               if (r.get("resistance_source") or "") == "pending:sra-recaller"
-               and (r.get("run_acc") or "").strip()]
-    if args.limit:
-        pending = pending[:args.limit]
-    print(f"{len(pending)} isolate(s) to re-call (pending:sra-recaller with a run_acc)",
+    pending = _fill_order(records, args.limit, args.random, args.seed)
+    how = f"random sample, seed={args.seed}" if args.random else "snapshot order"
+    print(f"{len(pending)} isolate(s) to re-call (pending:sra-recaller with a run_acc; {how})",
           file=sys.stderr)
     # A `fill` overwrites the snapshot's calls in place, so without a log a re-run erases
     # its predecessor with no trace. Log every fill (append-only) with the before/after
@@ -268,6 +266,8 @@ def cmd_fill(args):
                                   "snapshot_sha256_before": digest_before,
                                   "n_pending": len(pending),
                                   "limit": args.limit or None,
+                                  "random": bool(args.random),
+                                  "seed": args.seed if args.random else None,
                                   "dry_run": bool(args.dry_run)}) as run:
         for i, rec in enumerate(pending, 1):
             run_acc = rec["run_acc"].split(",")[0].strip()   # first linked run
@@ -305,6 +305,24 @@ def _pending_with_run(records):
             and (r.get("run_acc") or "").strip()]
 
 
+def _fill_order(records, limit=0, shuffle=False, seed=0):
+    """The exact rows a `fill` will attempt, in the order it will attempt them.
+
+    Shared by cmd_fill and cmd_plan so the offline preflight matches the real run.
+
+    Snapshot order is not random -- it tracks NCBI accession/submission order, which
+    correlates with outbreak/study, so the head of the list is a biased sample (an early
+    `--limit 20` came back all one resistance study). With `shuffle`, deterministically
+    permute (seeded) BEFORE slicing, so a `--limit N` is a random *representative* sample
+    of the pending pool rather than its head. The seed keeps it reproducible: the same
+    snapshot + seed always yield the same sample -- the same rebuild contract as the pinned
+    environment and hash-frozen pre-registrations."""
+    rows = _pending_with_run(records)
+    if shuffle:
+        random.Random(seed).shuffle(rows)
+    return rows[:limit] if limit else rows
+
+
 def cmd_plan(args):
     """Read-only preflight: what a `fill` WOULD fetch and re-call. No tools, no network.
 
@@ -318,7 +336,7 @@ def cmd_plan(args):
                if (r.get("resistance_source") or "") == "pending:sra-recaller"]
     with_run = _pending_with_run(records)
     without_run = len(pending) - len(with_run)
-    attempted = with_run[:args.limit] if args.limit else with_run
+    attempted = _fill_order(records, args.limit, args.random, args.seed)
     first_runs = [r["run_acc"].split(",")[0].strip() for r in attempted]
     distinct = sorted(set(first_runs))
 
@@ -328,6 +346,7 @@ def cmd_plan(args):
           f"  ({without_run} with no run_acc -> skipped, stay pending)")
     print(f"fill would re-call:  {len(attempted)} isolate(s)"
           + (f"  (--limit {args.limit})" if args.limit else "")
+          + (f"  [random sample, seed={args.seed}]" if args.random else "")
           + f"  == {len(attempted)} SRA download(s)")
     print(f"distinct run acc:    {len(distinct)}"
           + ("" if len(distinct) == len(attempted)
@@ -355,13 +374,21 @@ def main():
 
     p = sub.add_parser("fill", help="orchestrated: fill a snapshot's pending rows in place")
     p.add_argument("snapshot", help="snapshot TSV to update in place")
-    p.add_argument("--limit", type=int, default=0, help="only re-call the first N pending isolates")
+    p.add_argument("--limit", type=int, default=0, help="only re-call N pending isolates")
+    p.add_argument("--random", action="store_true",
+                   help="sample the --limit slice randomly (seeded), not from snapshot order "
+                        "-- for a representative frequency, since snapshot order is study-biased")
+    p.add_argument("--seed", type=int, default=0,
+                   help="RNG seed for --random (default 0); same snapshot+seed -> same sample")
     p.add_argument("--dry-run", action="store_true", help="re-call but do not write the snapshot")
     p.set_defaults(func=cmd_fill)
 
     p = sub.add_parser("plan", help="offline preflight: what a fill would fetch (no tools/network)")
     p.add_argument("snapshot", help="snapshot TSV to inspect (not modified)")
-    p.add_argument("--limit", type=int, default=0, help="preview fill's first-N-isolates slice")
+    p.add_argument("--limit", type=int, default=0, help="preview fill's N-isolate slice")
+    p.add_argument("--random", action="store_true",
+                   help="preview the seeded random sample fill --random would take")
+    p.add_argument("--seed", type=int, default=0, help="RNG seed for --random (default 0)")
     p.add_argument("--list-runs", action="store_true", help="print the distinct SRA accessions")
     p.set_defaults(func=cmd_plan)
 
