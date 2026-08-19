@@ -145,8 +145,9 @@ def _snapshot(path, rows):
     ew.write_snapshot(str(path), records)
 
 
-def _fill_args(snapshot, limit=0, dry_run=False):
-    return argparse.Namespace(snapshot=str(snapshot), limit=limit, dry_run=dry_run)
+def _fill_args(snapshot, limit=0, dry_run=False, random=False, seed=0):
+    return argparse.Namespace(snapshot=str(snapshot), limit=limit, dry_run=dry_run,
+                              random=random, seed=seed)
 
 
 @pytest.fixture

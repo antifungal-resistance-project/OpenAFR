@@ -46,7 +46,8 @@ def test_fill_logs_run_with_before_after_digest(tmp_path, monkeypatch):
     _stub_tools(monkeypatch, tmp_path,
                 {"SRR1": ("Y132F", "sra-recaller:panel(Y132F)")})  # PDT2 (SRR2) fails
 
-    args = types.SimpleNamespace(snapshot=str(snap), limit=0, dry_run=False)
+    args = types.SimpleNamespace(snapshot=str(snap), limit=0, dry_run=False,
+                                 random=False, seed=0)
     assert rc.cmd_fill(args) == 0
 
     runs = runlog.read_runs("fill", log_dir=tmp_path / "runlog")
@@ -70,7 +71,8 @@ def test_dry_run_records_no_write_but_still_logs(tmp_path, monkeypatch):
     _stub_tools(monkeypatch, tmp_path,
                 {"SRR9": ("Y132F", "sra-recaller:panel(Y132F)")})
 
-    args = types.SimpleNamespace(snapshot=str(snap), limit=0, dry_run=True)
+    args = types.SimpleNamespace(snapshot=str(snap), limit=0, dry_run=True,
+                                 random=False, seed=0)
     assert rc.cmd_fill(args) == 0
 
     # the run is logged, but the snapshot on disk is untouched

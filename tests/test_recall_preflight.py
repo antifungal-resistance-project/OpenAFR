@@ -107,8 +107,9 @@ def _snapshot(path, rows):
     ew.write_snapshot(str(path), records)
 
 
-def _plan_args(snapshot, limit=0, list_runs=False):
-    return argparse.Namespace(snapshot=str(snapshot), limit=limit, list_runs=list_runs)
+def _plan_args(snapshot, limit=0, list_runs=False, random=False, seed=0):
+    return argparse.Namespace(snapshot=str(snapshot), limit=limit, list_runs=list_runs,
+                              random=random, seed=seed)
 
 
 _ROWS = [
@@ -158,3 +159,69 @@ def test_plan_list_runs_prints_first_linked_accession(script, tmp_path, capsys):
     assert "SRR1" in out and "SRR2" in out
     assert "SRR2b" not in out                    # secondary run is not what fill downloads
     assert "SRR4" not in out                     # resolved row is not planned
+
+
+# --- randomized sampling (--random / --seed) ---------------------------------
+#
+# Snapshot order tracks NCBI submission order, which clusters by study, so the head of
+# the pending list is a biased sample. `_fill_order(shuffle=True)` draws a seeded random
+# --limit slice instead; plan and fill share it so the preflight matches the real run.
+
+def _pending_records(n):
+    """n attemptable pending rows, K00.. / SRR00.., in snapshot order."""
+    return [{c: "" for c in ew.SNAPSHOT_COLUMNS} | {
+        "isolate_key": f"K{i:02d}", "run_acc": f"SRR{i:02d}",
+        "resistance_source": "pending:sra-recaller"} for i in range(n)]
+
+
+def _keys(rows):
+    return [r["isolate_key"] for r in rows]
+
+
+def test_fill_order_no_shuffle_is_snapshot_head(script):
+    recs = _pending_records(50)
+    assert _keys(script._fill_order(recs, limit=5)) == ["K00", "K01", "K02", "K03", "K04"]
+
+
+def test_fill_order_shuffle_is_deterministic_for_a_seed(script):
+    recs = _pending_records(50)
+    a = _keys(script._fill_order(recs, limit=10, shuffle=True, seed=0))
+    b = _keys(script._fill_order(recs, limit=10, shuffle=True, seed=0))
+    assert a == b                                   # same snapshot + seed -> same sample
+    assert len(a) == 10 and len(set(a)) == 10       # a real 10-isolate sample, no dupes
+
+
+def test_fill_order_shuffle_differs_from_head_and_across_seeds(script):
+    recs = _pending_records(50)
+    head = _keys(script._fill_order(recs, limit=10))
+    s0 = _keys(script._fill_order(recs, limit=10, shuffle=True, seed=0))
+    s1 = _keys(script._fill_order(recs, limit=10, shuffle=True, seed=1))
+    assert s0 != head          # the whole point: not the study-clustered head
+    assert s0 != s1            # a different seed draws a different sample
+    # every sampled row is still a real pending isolate (a permutation, nothing invented)
+    assert set(s0) <= set(_keys(recs))
+
+
+def test_fill_order_shuffle_then_limit_slices_the_shuffled_pool(script):
+    recs = _pending_records(50)
+    full = _keys(script._fill_order(recs, shuffle=True, seed=7))
+    sliced = _keys(script._fill_order(recs, limit=8, shuffle=True, seed=7))
+    assert sliced == full[:8]              # limit is applied AFTER the shuffle, not before
+    assert sorted(full) == sorted(_keys(recs))   # full shuffle is a permutation of the pool
+
+
+def test_plan_random_previews_the_same_sample_fill_would_take(script, tmp_path, capsys):
+    recs = _pending_records(50)
+    snap = tmp_path / "snap.tsv"
+    ew.write_snapshot(str(snap), recs)
+
+    script.cmd_plan(_plan_args(snap, limit=6, random=True, seed=3))
+    out = capsys.readouterr().out
+    assert "random sample, seed=3" in out
+    assert "re-call:  6 isolate(s)" in out
+
+    # plan's listed accessions must be exactly what a fill --random --seed 3 --limit 6 hits
+    script.cmd_plan(_plan_args(snap, limit=6, random=True, seed=3, list_runs=True))
+    listed = {ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("SRR")}
+    expected = {r["run_acc"] for r in script._fill_order(recs, limit=6, shuffle=True, seed=3)}
+    assert listed == expected
