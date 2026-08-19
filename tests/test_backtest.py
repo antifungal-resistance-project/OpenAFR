@@ -154,7 +154,49 @@ def test_prevalence_undefined_when_nothing_resolved():
     p = bt.panel_prevalence(recs)
     assert p["n_resolved"] == 0
     assert p["event_frequency"] is None
+    assert p["ci95"] is None                          # no interval without a denominator
     assert p["excluded"]["pending"] == 2
+
+
+# ---- Wilson confidence interval on the event frequency (decide-n-before-you-peek) ----
+
+def test_wilson_interval_brackets_the_point_estimate():
+    lo, hi = bt.wilson_interval(6, 10)
+    assert lo < 0.6 < hi                              # 60% point sits inside its own CI
+    assert 0.0 <= lo < hi <= 1.0
+
+
+def test_wilson_interval_stays_inside_unit_range_at_extremes():
+    # The reason we use Wilson not Wald: an all-positive small sample must not emit hi > 1.
+    lo, hi = bt.wilson_interval(20, 20)
+    assert hi <= 1.0 and lo > 0.0                     # not a degenerate [1.0, 1.0]
+    lo0, hi0 = bt.wilson_interval(0, 20)
+    assert lo0 >= 0.0 and hi0 < 1.0
+
+
+def test_wilson_interval_tightens_as_n_grows():
+    narrow = bt.wilson_interval(50, 100)
+    wide = bt.wilson_interval(5, 10)                  # same 50% point, 10x fewer samples
+    assert (narrow[1] - narrow[0]) < (wide[1] - wide[0])
+
+
+def test_wilson_interval_none_for_empty_denominator():
+    assert bt.wilson_interval(0, 0) is None
+
+
+def test_worst_case_halfwidth_is_monotonic_and_planning_grade():
+    # The run-planning table the runbook quotes: worst-case (p=0.5) half-width shrinks with n,
+    # and ~384 samples buys a +/-5% interval (the standard polling number).
+    assert bt.wilson_halfwidth_worst_case(384) < 0.05
+    assert bt.wilson_halfwidth_worst_case(100) > bt.wilson_halfwidth_worst_case(400)
+
+
+def test_prevalence_reports_ci_once_resolved():
+    recs = [_pv("POS", "sra-recaller:called", "Y132F"),
+            _pv("WT", "sra-recaller:wild-type", "")]
+    p = bt.panel_prevalence(recs)
+    lo, hi = p["ci95"]
+    assert lo < p["event_frequency"] < hi
 
 
 def test_prevalence_denominator_is_resolved_only():
