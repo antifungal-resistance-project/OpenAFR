@@ -18,6 +18,13 @@ The repo now holds **two tracks** against the same pathogen and enzyme:
 
 Everything from here to that section is about track 1.
 
+> **New here?** The [`wiki/`](wiki/README.md) is written to be picked up cold — a
+> [biology primer](wiki/01-antifungal-resistance-primer.md) for anyone new to antifungal
+> resistance, a [project overview](wiki/02-project-overview.md), code-level deep dives of
+> [track 1](wiki/03-drug-discovery-pipeline.md) and [track 2](wiki/04-early-warning-pipeline.md),
+> a [file-by-file codebase reference](wiki/05-codebase-reference.md), a
+> [glossary](wiki/06-glossary.md), and a [contributing guide](wiki/07-contributing.md).
+
 ## Why antifungal resistance
 
 *Candida auris* is a WHO critical-priority fungal pathogen: multidrug-resistant, lethal, and
