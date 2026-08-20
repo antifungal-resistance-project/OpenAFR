@@ -2,7 +2,17 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Build the ERG11 re-caller (reads → azole-resistance call) — CORE DONE 2026-08-15, ORCHESTRATION + REAL-DATA VALIDATION OPEN
+## Build the ERG11 re-caller (reads → azole-resistance call) — DONE + RUN 2026-08-20 (representative fill measured)
+
+> **UPDATE 2026-08-20 — the deliverable is measured.** The re-caller was run on a real,
+> representative sample: `fill --random --seed 0 --limit 200` on snapshot PDG000000067.675
+> (199 called / 1 partial / 0 failed; runlog `fill.jsonl` run_id `e4a0def6586a`; GCP VM
+> since deleted). **Azole event frequency = 160/199 = 80.4%, Wilson 95% CI [74.3%, 85.3%]**
+> ([work/RESULTS_prevalence.md](work/RESULTS_prevalence.md)). OPEN steps 1 and 2 below are
+> now DONE — the orchestration binaries are proven end-to-end and the H2 null is converted
+> to a measured frequency. The FKS1/v2 data gate below has **FIRED** (~80% baseline = azole
+> resistance is near-saturated, so azole *emergence* is a weak early-warning signal).
+
 
 **What:** the single missing piece that would make the genomic early-warning track (issues
 #20–27) actually work. Given an NCBI *C. auris* isolate's linked **SRA raw reads**, call the
@@ -98,16 +108,18 @@ and pan-resistance. The azole MVP may build a beautiful pipeline that rarely fir
 (#27) are pre-registered to report azole-mutation *event frequency*. If that comes
 back near-zero, this TODO is the redirection for v2.
 
-**Trigger status: NOT fired — still deferred behind a *measured* azole signal.** The
-backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md)) found azole event
-frequency was **zero-*measurable***, not measured-near-zero, because `erg11_call` was
-empty (no re-caller). As of 2026-08-15 the re-caller's **deterministic core is built and
-tested**, but it has not yet been *run* on a real snapshot (the reads→consensus
-orchestration needs the bioinformatics tools + SRA downloads; see the top TODO's OPEN
-step 1). So the blocker for both the azole MVP and this v2 decision is no longer "build
-the re-caller" but "**run** it and re-read the event frequency." The redirection to
-FKS1/v2 stays justified only by a *measured* near-zero azole signal. The arrival budget is
-adequate (H1: median deposit lag 97 d, PASS-arrival).
+**Trigger status: FIRED (2026-08-20) — via baseline saturation, measured.** The re-caller
+has now been run on a representative random sample (n=199 resolved): **azole event
+frequency = 160/199 = 80.4%, Wilson 95% CI [74.3%, 85.3%]**
+([work/RESULTS_prevalence.md](work/RESULTS_prevalence.md)). Read the nuance honestly: the
+measured number is **high, not near-zero** — but the redirection was never really about a
+near-zero *prevalence*; it was about a near-zero *emergence signal-to-noise*, which an ~80%
+saturated baseline produces. With ~4 of 5 isolates already panel-positive there is little
+headroom for azole *emergence* to be a useful early-warning trigger — the pipeline would
+fire on a mutation that is already the norm. So the redirection premise ("C. auris is
+already largely azole-resistant at baseline") is now **confirmed by data**, and v2 (FKS1)
+is the justified next direction. The arrival budget is adequate (H1: median deposit lag
+97 d, PASS-arrival).
 
 **Context / where to start:** detection (extract FKS1 hot-spot regions, call the
 S639/F-region mutations) is tractable and mirrors the ERG11 re-caller (T1). The
