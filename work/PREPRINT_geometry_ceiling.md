@@ -3,7 +3,9 @@
 **Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11 from
 five pre-registered runs in this repository. Every number below is traceable to a
 `work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing here is a new
-analysis, and no result was re-graded for this writeup.
+analysis, and no result was re-graded for this writeup. (§4.4 and §6.9 carry one later,
+clearly-labeled addition — a 2026-08-22 compound-curation finding that bounds what the method
+can claim about resistance; it is not a docking run and re-grades nothing.)
 
 ---
 
@@ -312,6 +314,22 @@ Unchanged from what the data supports: **a trustworthy top-~5% shortlist for exp
 wet-lab yes/no more likely than random and cheaper to reach — and it is a smaller claim than the
 one the first run appeared to license.
 
+One boundary on that claim is worth stating precisely, because §3.4's "broad separation survives
+Y132F" invites over-reading: **this method cannot, in principle, tell you a compound *beats*
+resistance.** We tried to validate resistance-awareness directly — assemble compounds with measured
+activity against azole-*resistant* *C. auris* and check whether the criterion ranks them above the
+azoles the mutant defeats (a 2026-08-22 curation pass, `data/ligands/PROVENANCE.md`). It cannot be
+done with this tool, for a structural rather than a data-gathering reason. The compounds that retain
+activity against the resistant strain are all large, long-tailed molecules (VT-1598, 43 heavy atoms;
+opelconazole, 50; the oteseconazole/posaconazole class) — over the rigid receptor's declared ≤45
+heavy-atom applicability domain (§6.4), because they need the induced fit a single rigid conformer
+cannot provide. The small molecules the tool docks reliably are exactly the ones resistance defeats.
+So **resistance-retention is confounded with over-domain molecular size**, and re-discovering
+Y132F-defeated azoles on the mutant pocket (§3.4) demonstrates robustness of *broad enrichment*, not
+resistance-breaker discovery. The honest ceiling is broad azole-like enrichment on a wild-type-like
+pocket. Lifting it would need a flexible-receptor / induced-fit protocol that widens the domain —
+listed in §4.3, not claimed here.
+
 ## 5. Pre-registration and multiple-comparison ledger
 
 Every look ever taken at the held-out data, in order, with its committed outcome:
@@ -352,6 +370,12 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
 6. **One docking program** (Vina), one conformer per molecule, SMILES protonation as supplied.
 7. **The heme normal is an idealization** estimated from four atoms of a rigid porphyrin.
 8. **Nothing here has been tested against a living fungus.** Every ranked molecule is a hypothesis.
+9. **Resistance-retention is confounded with molecular size, so no resistance-breaker claim is
+   possible** (2026-08-22 curation, `data/ligands/PROVENANCE.md`; see §4.4). The verifiable pool of
+   compounds active against azole-resistant *C. auris* is dominated by molecules above the ≤45
+   heavy-atom applicability domain (§6.4), where the rigid receptor fails; the compounds it docks
+   reliably are the ones resistance defeats. A validation of resistance-*breaking* is therefore not
+   achievable with this rigid tool, and the method's ceiling is broad azole-like enrichment only.
 
 ## 7. Data and code availability
 
