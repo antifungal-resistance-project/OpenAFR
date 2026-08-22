@@ -216,19 +216,42 @@ genuine resistance-aware claim needs actives that are *active against the resist
 
 Synthesized from the eng review + outside voice. Checkbox as you ship.
 
-- [ ] **T1 (P1, human: ~1wk / CC: research + curation)** — data/ligands — Expand the active set
+- [x] **T1 (P1)** — data/ligands — Expand the active set → **completed 2026-08-22 with a NEGATIVE
+  result that is the deliverable.** The expansion is not achievable, for a structural reason.
   - Surfaced by: Outside voice #5 — n=7 too thin for any AUC/EF claim; and #1 — defeated azoles
     can't demonstrate resistance-awareness
-  - Files: `data/ligands/actives_holdout_final.smi` (+ provenance), a new pre-registration
-  - Verify: holdout includes resistant-strain-relevant actives; EF@5% stable to single-active removal
+  - Files: `data/ligands/PROVENANCE.md` (curation + finding), `work/PREREGISTRATION_run3.md` (DRAFT,
+    de-prioritized — not frozen, not run)
+  - **Findings:** (a) a compound-identity error in the 2026-08-21 curation was caught and fixed —
+    CID 91886002 is quilseconazole/VT-1129, **not** VT-1598 (correct: CID 126715974); (b) the
+    verifiable in-domain resistance-active pool is **n=1** (VT-1598) — ravuconazole fails novelty
+    (Tanimoto 0.879 ≈ isavuconazole), opelconazole is over-domain (50 heavy atoms), 2024–25 hits are
+    unregistered research compounds; (c) **the confound:** every resistance-retaining compound is
+    large/long-tailed (VT-1598 43, opelconazole 50, oteseconazole/posaconazole class) — i.e. over the
+    rigid receptor's ≤45-heavy-atom domain — while the compounds it docks reliably are exactly those
+    Y132F defeats. **Resistance-retention is confounded with over-domain molecular size.**
+  - **Consequence:** a resistance-*breaker* validation is not achievable with this rigid tool; the
+    honest ceiling is broad azole-like enrichment. Fed directly into T3.
 - [x] **T2 (P2, human: ~2h / CC: ~20min)** — work/ — Add a durable-metric reading to the Y132F result
   - Surfaced by: D5 — do NOT re-grade; add an honest reading alongside the reported FAIL
   - Files: `work/RESULTS_auris_Y132F.md` (append a clearly-labeled reading; verdict unchanged)
   - Verify: FAIL verdict intact; AUC-transfers / top-rank-doesn't reading is separate and labeled
-- [ ] **T3 (P1, human: ~1wk / CC: several sessions)** — outreach/ — Wet-lab package (Phase C)
+- [~] **T3 (P1)** — outreach/ — Wet-lab package (Phase C) — **drafted 2026-08-22, ready to send
+  pending the two prerequisites below**
   - Surfaced by: Outside voice #4 — the only external deliverable; lead with honest validation
-  - Files: shortlist artifact, `outreach/` one-pager, one named target lab
-  - Verify: proposal does not overclaim resistance-breaker discovery; Y132F negative included as evidence
+  - Files: `outreach/ONE_PAGER.md` (shortlist + limitations, now carrying the T1 confound as
+    limitation #3), `outreach/EMAIL.md` (template + logistics, confound bullet added),
+    `outreach/TARGETS.md` (**NEW** — named labs + per-lab personalization)
+  - Named primary target: **P. David Rogers / Jeffrey M. Rybak** (St. Jude / UTHSC) — they built the
+    Cas9-RNP isogenic *C. auris* Y132F/K143R strain set (PMID 34878305), so our pre-registered Y132F
+    negative and the size confound are questions they framed the genetics for. Alternates:
+    Wiederhold (UTHSA Fungus Testing Lab, the VT-1598 *C. auris* data, PMID 30530603); Ghannoum (CWRU).
+  - Verify: ✅ proposal does not overclaim resistance-breaker discovery (one-pager limitation #3 now
+    states the tool *structurally cannot* evaluate resistance-breaking); ✅ Y132F negative included
+    as evidence of discipline
+  - **Blocking before send (human):** (1) post the preprint for a citable DOI (EMAIL.md §Sequencing
+    note); (2) fill in `<CONTACT EMAIL>` in ONE_PAGER.md + EMAIL.md; (3) re-verify each
+    corresponding author's current affiliation at send time
 - [x] **T4 (P3, human: ~30min / CC: ~10min)** — openafr/ — Document the triage/surveillance layering
   - Surfaced by: D7 — coupling is benign; a docstring achieves the "readable in 30s" bar
   - Files: `openafr/__init__.py` or a boundary docstring in `alert.py`
@@ -296,6 +319,12 @@ Synthesized from the eng review + outside voice. Checkbox as you ship.
   T2 (honest Y132F reading), T3 (wet-lab package). A2 repacker and core extraction deferred.
   Docking tasks gated on the cloud Linux/x86 VM (vina/obabel absent locally).
 
-**UNRESOLVED DECISIONS:**
-- Which resistant-strain-active compounds to add to the holdout (T1) — needs a literature/data pass.
-- Whether a credible resistance-breaker validation is even possible without a known-active-vs-resistant set — the honest answer may be "validate broad enrichment only, pitch accordingly."
+**UNRESOLVED DECISIONS — both RESOLVED 2026-08-22 by the T1 literature/curation pass:**
+- ~~Which resistant-strain-active compounds to add to the holdout (T1)~~ → **None are addable.**
+  VT-1598 is the only verifiable candidate and it sits at the domain edge (43 heavy atoms);
+  ravuconazole fails novelty, opelconazole is over-domain. See `data/ligands/PROVENANCE.md`.
+- ~~Whether a credible resistance-breaker validation is even possible~~ → **No, and the reason is
+  structural, not a data shortfall:** resistance-retention is confounded with over-domain molecular
+  size. The plan's own fallback is now the committed position — **validate broad enrichment only,
+  and pitch accordingly.** This is stated explicitly in the wet-lab one-pager rather than elided.
+  Revisit only if a flexible-receptor / induced-fit protocol ever lifts the domain ceiling."

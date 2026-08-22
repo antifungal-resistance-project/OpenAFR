@@ -42,21 +42,70 @@ criterion should rank the still-active compounds **above** the defeated azoles *
 mutant pocket*. That converts the validation from "rank azoles vs decoys" (tautological on
 the mutant) to "rank still-active vs defeated, in the resistant pocket" (a real claim).
 
-**Candidate additions — SMILES VERIFIED from PubChem 2026-08-21 (isomeric/stereo form,
+**Candidate additions — SMILES VERIFIED from PubChem 2026-08-22 (isomeric/stereo form,
 copied from the authoritative record, not AI-generated):**
 
+> **CORRECTION 2026-08-22 (identity error in the 2026-08-21 curation — caught before any
+> pre-registration froze).** The 2026-08-21 pass recorded "VT-1598 (quilseconazole),
+> CID 91886002" — but CID 91886002 is **quilseconazole = VT-1129** (a *Cryptococcus*-focused
+> tetrazole, `…OC(F)(F)F` tail, C22H14F7N5O2, 36 heavy atoms), **not** VT-1598. VT-1598 and
+> VT-1129 are different Viamet tetrazoles. The C. auris evidence cited below (PMID 30530603)
+> is genuinely VT-1598, so the *drug choice* was right; the *structure recorded* was wrong —
+> exactly the "a wrong SMILES silently poisons the run" failure discipline constraint #3
+> guards against. Corrected identities:
+
+- **VT-1598** — PubChem **CID 126715974**, C31H20F4N6O2, MW **584.5**, **43 heavy atoms**.
+  `C1=CC(=CC=C1COC2=CC=C(C=C2)C#CC3=CN=C(C=C3)C([C@](CN4C=NN=N4)(C5=C(C=C(C=C5)F)F)O)(F)F)C#N`
+  IUPAC: 4-[[4-[2-[6-[(2R)-2-(2,4-difluorophenyl)-1,1-difluoro-2-hydroxy-3-(tetrazol-1-yl)propyl]-3-pyridinyl]ethynyl]phenoxy]methyl]benzonitrile.
+  A large *extended* tetrazole (difluorophenyl-difluoro-tetrazolylpropanol-pyridine core +
+  ethynyl-phenoxy-benzonitrile arm) — **not** a close analogue of quilseconazole.
+- **Quilseconazole (VT-1129)** — PubChem **CID 91886002**, C22H14F7N5O2, MW 513.4, 36 heavy
+  atoms. `C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OC(F)(F)F`.
+  On record only; **NOT added** — its published activity is vs *Cryptococcus*, no
+  C. auris-specific MIC surfaced (same rule that drops oteseconazole below).
 - **Oteseconazole (VT-1161)** — PubChem **CID 77050711**, C23H16F7N5O2, MW 527.4.
-  `C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OCC(F)(F)F`
-- **VT-1598 (quilseconazole)** — PubChem **CID 91886002**, C22H14F7N5O2, MW 513.4.
-  `C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OC(F)(F)F`
+  `C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OCC(F)(F)F`.
+  On record only; **NOT added** (no *C. auris*-specific MIC — see below).
 
-Both carry a **tetrazole** metal-binding group (`CN3C=NN=N3`) rather than the
-imidazole/triazole of every current active — genuinely distinct chemistry that should clear
-the Morgan-Tanimoto novelty filter. The two differ only at the ether tail (oteseconazole
-–OCH2CF3 vs VT-1598 –OCF3).
+All three carry a **tetrazole** metal-binding group (`…N=N…`) rather than the
+imidazole/triazole of every current active — genuinely distinct chemistry that clears the
+Morgan-Tanimoto novelty filter.
 
-- (Optional) additional agents only if a primary-literature MIC vs a resistant *C. auris*
-  isolate exists.
+**Applicability-domain flag (VT-1598).** At **43 heavy atoms / MW 584** VT-1598 is the
+*largest* molecule in the entire active set (every existing active is ≤ 36 heavy atoms) and
+sits right at the run-2 declared domain edge (valid ≤ 45 heavy atoms; posaconazole/itraconazole
+class ≥ 52 failed in run 1 from induced fit a rigid receptor cannot model). A rigid-receptor
+false negative (VT-1598 fails to place a coordinating pose because of induced fit, not
+inactivity) would rank it LAST and sabotage the very test it is added for. This risk MUST be
+pre-declared in the run-3 pre-registration.
+
+**Widening pass 2026-08-22 (before concluding n=1) — two more named candidates evaluated:**
+
+- **Ravuconazole** (CID 467825, C22H17F2N5OS, MW 437.5, 31 heavy; active vs *C. auris*,
+  PMID 33609301) — **REJECTED on novelty:** Morgan r=2 Tanimoto **0.879** vs isavuconazole
+  (a training active). It is essentially isavuconazole; fails the < 0.70 filter.
+- **Opelconazole / PC945** (CID 121383526, C38H37F3N6O3, MW 682.7, **50 heavy atoms**; potent
+  vs a global *C. auris* collection, PMID 31325309) — novel (max Tanimoto 0.553, nearest
+  posaconazole) but **over the applicability domain:** 50 heavy atoms is posaconazole-class,
+  and posaconazole/itraconazole (≥ 52) failed reproducibly in run 1 from induced fit a rigid
+  receptor cannot model. Docking it would almost certainly reproduce that false negative.
+- The recent (2024–25) resistance-active CYP51 hits are unnamed research compounds
+  ("compound 7", "V23", "compound 22") with no PubChem registration → fail discipline
+  constraint #3 (verified SMILES) → not includable.
+
+### The structural confound this widening pass exposes (the real T1 finding)
+
+Every compound that **retains activity against azole-resistant *C. auris*** is a large,
+long-tailed molecule — VT-1598 (43 heavy), opelconazole (50), the oteseconazole/posaconazole
+class — precisely the size range the rigid-receptor geometry tool is **NOT validated for**
+(domain ≤ 45; posaconazole-class ≥ 52 failed in run 1). The small compounds the tool docks
+reliably (fluconazole, voriconazole ≤ ~33 heavy) are exactly the ones Y132F defeats.
+**Resistance-retention is confounded with over-domain molecular size.** This is not a
+data-gathering shortfall that a harder search fixes; it is a property of the chemistry
+(selectivity/potency against the mutant pocket is bought with extended side chains) meeting a
+property of the tool (rigid receptor, small-ligand domain). It answers the refocus plan's
+unresolved decision #2: **a resistance-*breaker* validation is not achievable with this rigid
+tool** — the molecules that would prove it are the ones it cannot honestly dock.
 
 **Activity evidence vs *C. auris* (literature search 2026-08-21 — verify numbers against the
 primary papers before freezing):**
@@ -74,11 +123,31 @@ primary papers before freezing):**
   would be the exact unsupported assumption this design guards against. Structure stays on
   record (CID 77050711) but it is NOT added as an active without a real *C. auris* source.
 
-**Net:** add **VT-1598 only** as the resistance-retained active. (It also resolves the
-0.823 self-similarity issue — with oteseconazole dropped there is no near-duplicate pair.)
-One tetrazole is thin on its own for lifting n; consider additional distinct-scaffold
-resistance-active chemotypes (e.g. a non-CYP51 agent as a positive-control active only if
-the geometric criterion is not expected to rank it — decide deliberately in the prereg).
+**Net:** add **VT-1598 only** (CID 126715974) as the resistance-retained active. This is the
+*only* verifiable resistance-active CYP51 compound the literature pass surfaced — the pool is
+n=1, not "a set of newer tetrazoles." (The earlier "0.823 self-similarity" caveat was an
+artifact of the identity error: it was oteseconazole vs *quilseconazole* — the two smaller
+tetrazoles differing only at the –OCH2CF3 / –OCF3 tail — not oteseconazole vs the real
+VT-1598.)
+
+**Consequence for the design (resolves the plan's unresolved decision #2).** The refocus plan
+asked whether a credible resistance-*breaker* validation is even possible without a set of
+known-active-vs-resistant compounds. The honest answer, after the widening pass: **no — and the
+reason is structural, not a data shortfall** (see the confound above). With n=1 verifiable
+in-domain resistance-active (VT-1598, itself at the domain edge) there is no
+differential-activity permutation test, and the compounds that would populate one are
+systematically over-domain. This is the more valuable result than any single-probe run would
+have been: it says *what the tool can and cannot honestly claim*, which is exactly what the
+T3 wet-lab package must lead with.
+
+**Decision (2026-08-22):** do NOT spend a cloud run on the VT-1598 single-probe
+(`work/PREREGISTRATION_run3.md` stays a DRAFT, frozen-ready but de-prioritized — a domain-edge
+n=1 anecdote is low-yield). Carry the confound finding into T3 instead: OpenAFR credibly
+triages **broad azole-like enrichment** on both the WT and Y132F pockets (AUC ~0.79–0.81), and
+the honest pitch stops there — it must **not** be sold as finding resistance-breakers, both
+because n=1 and because resistance-retention is confounded with over-domain size. Revisit run 3
+only if a flexible-receptor / induced-fit protocol is ever added (would lift the domain ceiling
+that makes the probe uninformative today).
 
 ## Discipline constraints (do NOT shortcut)
 
@@ -99,17 +168,24 @@ the geometric criterion is not expected to rank it — decide deliberately in th
 ## Status
 
 - [x] Current sets documented (this file).
-- [x] Verified + recorded CID + isomeric SMILES for oteseconazole (CID 77050711) and
-      VT-1598 (CID 91886002) from PubChem.
+- [x] **CID/SMILES identity corrected 2026-08-22** (see CORRECTION box above): VT-1598 =
+      **CID 126715974** (C31H20F4N6O2, MW 584.5, 43 heavy atoms), NOT CID 91886002
+      (= quilseconazole/VT-1129). Oteseconazole = CID 77050711. All re-verified from PubChem.
 - [x] Literature check for MIC vs resistant *C. auris*: VT-1598 SUPPORTED (PMID 30530603,
-      modal MIC 0.25 µg/mL); oteseconazole NOT supported for *C. auris* → dropped. Add
-      VT-1598 only. (Confirm exact MICs against the paper before freezing the prereg.)
-- [ ] Write the expanded-run pre-registration with the differential-activity hypothesis and bar.
-- [x] Novelty-filtered vs the 15 existing actives (Morgan r=2, 2048-bit, run under
-      `conda run -n openafr`, rdkit 2025.09.5, 2026-08-21):
-      oteseconazole max Tanimoto **0.333** (nearest fluconazole); VT-1598 **0.358**
-      (nearest fluconazole). Both PASS (< 0.70) — genuinely novel vs the azole panel.
-      **Caveat:** oteseconazole vs VT-1598 = **0.823** (same tetrazole scaffold), so by the
-      project's own 0.70 rule the two are near-duplicates of EACH OTHER — put one in the
-      holdout and the other in training, not both in the same blind set.
-- [ ] Dock + grade on the cloud VM (AUC/EF@5%; do NOT lean on EF@1%).
+      modal MIC 0.25 µg/mL); oteseconazole + quilseconazole NOT supported for *C. auris* →
+      dropped. The verifiable resistance-active CYP51 pool is **n=1 (VT-1598)**.
+- [x] Novelty-filtered on the CORRECTED VT-1598 vs the 15 existing actives (Morgan r=2,
+      2048-bit, `conda run -n openafr`, rdkit 2025.09.5, 2026-08-22): VT-1598 max Tanimoto
+      **0.312** (nearest fluconazole) → PASS (< 0.70). (The earlier "0.358 / 0.823 caveat"
+      was computed on quilseconazole, not VT-1598; discard it.)
+- [x] **Widening pass done (2026-08-22):** ravuconazole rejected (novelty 0.879), opelconazole
+      over-domain (50 heavy). Conclusion: verifiable in-domain resistance-active pool = n=1,
+      and resistance-retention is confounded with over-domain size (see finding above).
+- [x] **Decision:** run 3 de-prioritized — no cloud run for an n=1 domain-edge probe. Draft
+      pre-registration kept frozen-ready (`work/PREREGISTRATION_run3.md`, DRAFT). The T1
+      deliverable is the confound finding, which feeds T3.
+- [ ] **NEXT (T3):** fold the confound finding into the wet-lab package — pitch broad
+      azole-enrichment triage (AUC ~0.79–0.81, WT + Y132F), explicitly NOT resistance-breaker
+      discovery. See `docs/designs/refocus-resistant-cyp51-triage.md` T3.
+- [ ] (Deferred) Dock the VT-1598 probe only if a flexible-receptor protocol lifts the domain
+      ceiling; grade on AUC/EF@5% (never EF@1%).
