@@ -30,6 +30,11 @@ the evidence.
 >   showing the top-1% enrichment is an artifact of docking once. What survives replication is broad
 >   enrichment (~8x over random in the top 5%), not razor-top ranking. I'd rather send you the
 >   honest version of the claim than the impressive one.
+> - I also tried to show the method is *resistance-aware* and concluded it can't be, for a
+>   structural reason: every compound with measured activity against azole-resistant *C. auris* is
+>   large and long-tailed (VT-1598, opelconazole, the oteseconazole class) — exactly where a rigid
+>   receptor fails — while the molecules it docks reliably are the ones resistance defeats. So the
+>   claim stops at broad azole-like enrichment on a wild-type pocket, and I say so up front.
 >
 > Attached is a one-page summary with the compounds, the suggested panel, and — at more length than
 > is probably normal — everything I already know is wrong with it, including that the method says
@@ -65,6 +70,10 @@ link the repo. Don't attach the preprint unless asked — offer it if they reply
   independently saying the shortlist is chemically implausible is a result.
 
 ## Who to send it to
+
+**Named first targets — with the personalization sentence for each — are in
+[TARGETS.md](TARGETS.md).** Start there (primary: the Rogers/Rybak group that built the isogenic
+*C. auris* Y132F/K143R strain set); the tiers below are how to extend the list past those.
 
 Send **~25–30**, individually, over about two weeks. Expect a low single-digit number of replies and
 one yes if it goes well. Personalize one sentence per email — reference an actual paper of theirs;

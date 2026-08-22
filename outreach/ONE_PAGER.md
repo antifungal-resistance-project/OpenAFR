@@ -90,13 +90,24 @@ We would rather you hear these from us.
    *C. auris* Y132F resistance substitution and pre-registered the transfer test — **it failed** at
    the top of the ranking, though broad separation held (AUC 0.805). So the *auris* claim is weaker
    than the *albicans* claim, and we are not hiding that.
-3. **The per-molecule noise floor is real.** In the same 2,776-compound run, clotrimazole — an
+3. **This tool cannot, in principle, tell you a compound *beats* resistance — and we can show why.**
+   We tried to validate resistance-awareness directly: assemble compounds with measured activity
+   against azole-*resistant* *C. auris* and check whether the criterion ranks them above the azoles
+   the mutant defeats. It doesn't work, for a structural reason rather than a data-gathering one. The
+   compounds that retain activity against the resistant strain are all large, long-tailed molecules
+   (VT-1598, 43 heavy atoms; opelconazole, 50; the oteseconazole/posaconazole class) — precisely the
+   size range where a rigid receptor fails, because they need induced fit our model can't provide.
+   The small molecules the tool docks reliably are exactly the ones resistance defeats. Resistance-
+   retention is confounded with molecular size, so **the honest ceiling on this method is broad
+   azole-like enrichment on a wild-type pocket — not resistance-breaker discovery.** We would rather
+   state that plainly than let the *auris* framing imply more than the tool can carry.
+4. **The per-molecule noise floor is real.** In the same 2,776-compound run, clotrimazole — an
    actual azole antifungal — ranked #2774 of 2776, because docking failed to find it a coordinating
    pose. A criterion that puts a real drug dead last on one molecule has genuine per-molecule
    variance. The *ranking* is enriched; individual ranks are not reliable.
-4. **A single rigid pose says nothing about permeability, efflux, or metabolic stability**, all of
+5. **A single rigid pose says nothing about permeability, efflux, or metabolic stability**, all of
    which kill antifungal candidates routinely. *C. auris* in particular has formidable efflux.
-5. **Nothing here has touched a living organism.** Most computational hits die at exactly this step.
+6. **Nothing here has touched a living organism.** Most computational hits die at exactly this step.
    We expect that. It is why we want the experiment run rather than the list published as if it
    meant more.
 
