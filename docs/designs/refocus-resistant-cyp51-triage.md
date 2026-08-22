@@ -250,8 +250,11 @@ Synthesized from the eng review + outside voice. Checkbox as you ship.
     states the tool *structurally cannot* evaluate resistance-breaking); ✅ Y132F negative included
     as evidence of discipline
   - **Blocking before send (human):** (1) post the preprint for a citable DOI (EMAIL.md §Sequencing
-    note); (2) fill in `<CONTACT EMAIL>` in ONE_PAGER.md + EMAIL.md; (3) re-verify each
-    corresponding author's current affiliation at send time
+    note) — **the preprint is now finalized 2026-08-22:** numbers audited against every source
+    `RESULTS_*.md`, the T1 resistance-breaker/size confound folded into §4.4 + §6.9, rendered to
+    `work/PREPRINT_geometry_ceiling.pdf` (cover + TOC, no CONFIDENTIAL footer); only the act of
+    posting to a preprint server remains; (2) fill in `<CONTACT EMAIL>` in ONE_PAGER.md + EMAIL.md;
+    (3) re-verify each corresponding author's current affiliation at send time
 - [x] **T4 (P3, human: ~30min / CC: ~10min)** — openafr/ — Document the triage/surveillance layering
   - Surfaced by: D7 — coupling is benign; a docstring achieves the "readable in 30s" bar
   - Files: `openafr/__init__.py` or a boundary docstring in `alert.py`
