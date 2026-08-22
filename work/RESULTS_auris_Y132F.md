@@ -98,3 +98,55 @@ python scripts/prep_ligands.py /tmp/run2_all.smi work/run2_ligands
 RECEPTOR=work/receptor_auris_Y132F.pdbqt scripts/screen.sh work/run2_ligands work/screen_auris_Y132F
 python scripts/validate_gate_auris.py work/screen_auris_Y132F     # exits 0 on pass, 1 on fail
 ```
+
+---
+
+## Addendum — durable-metric reading (added 2026-08-21; the verdict above is UNCHANGED)
+
+> This section is a *reading* of the numbers already graded above, added later. It does
+> **not** re-grade the run and does **not** flip the pre-registered outcome: the gate FAILED
+> and stays FAILED. Re-scoring a sha-frozen FAIL into a pass on a different metric is the
+> exact p-hacking move pre-registration exists to prevent (refocus plan D5). What this
+> addendum does instead is read the same table through the lens of the
+> [reliability run](RESULTS_reliability.md) (2026-08-11), which settled *which metrics on
+> this decoy set are trustworthy* — a determination made after this run's pre-registration
+> was frozen.
+
+**The metric that fails the bar is the one later shown to be unreliable.** The Y132F FAIL is
+driven entirely by `EF@1% = 0.00x` (AUC 0.805 clears the `≥ 0.70` half of the bar; only the
+`EF@1% ≥ 5.0x` half fails). The reliability run then demonstrated — on the *wild-type* poses,
+pre-committed, two robust aggregators — that top-1% enrichment on this property-matched decoy
+set is a **single-shot docking artifact, not a durable property of the criterion**: run five
+searches and combine them any way and WT EF@1% collapses 12.68x → 0.00x, because with more
+sampling the decoys reliably reveal genuine iron-coordinating poses. The project's committed
+conclusion there was that **AUC and EF@5% are the defensible metrics and EF@1% is noise.**
+
+**Read on the durable metrics, the criterion transfers to the Y132F pocket essentially intact:**
+
+| durable metric | wild-type (run 2) | Y132F | reading |
+|---|---:|---:|---|
+| AUC | 0.794 | **0.805** | transfers (unchanged, even marginally higher) |
+| EF@5% | 5.63x | **5.63x** | transfers (identical) |
+| EF@1% *(discredited)* | 12.68x → 0.00x under resampling | 0.00x | not a durable signal — see reliability run |
+
+So the honest technical reading is: **broad enrichment (a trustworthy top-~5% shortlist)
+survives the dominant *C. auris* azole-resistance substitution; razor-top-1% ranking does
+not — but that top-1% figure was already known not to survive even in wild-type.** The FAIL
+is a FAIL against a bar that leans on a since-discredited metric; the pre-registration's
+EF@1% clause is a recorded weakness of *the bar*, not new evidence the tool broke on Y132F.
+
+**The catch that keeps this honest (refocus plan, outside-voice #1 — do NOT overclaim).**
+That AUC is *unchanged* by the mutation (0.805 ≈ 0.794) cuts both ways. It means the geometric
+criterion is **nearly insensitive to the Y132F change** — so "broad enrichment transfers to
+Y132F" is close to a **tautology**, not evidence the tool can pick molecules that *defeat*
+resistance. The held-out actives here are the 7 known azoles that Y132F clinically defeats;
+ranking defeated drugs well on the mutant pocket demonstrates robustness of enrichment, **not**
+resistance-breaker discovery. A genuine resistance-aware claim needs actives that are
+*measured active against the resistant strain* (the T1 active-set expansion), not this panel.
+This reading must never be pitched as "OpenAFR triages molecules that beat resistance."
+
+**Net for the wet-lab package (T3):** lead with the pre-registered FAIL as evidence of
+discipline ("I ran the does-it-still-work-on-the-mutant check almost no docking repo runs, and
+reported the negative honestly"), then add this durable-metric reading as nuance — broad
+enrichment is robust to Y132F; top-1% ranking is not durable in *either* pocket; and neither
+result claims resistance-breaker discovery, which is what the expanded active set is for.

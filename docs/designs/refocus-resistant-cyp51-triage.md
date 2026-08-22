@@ -221,7 +221,7 @@ Synthesized from the eng review + outside voice. Checkbox as you ship.
     can't demonstrate resistance-awareness
   - Files: `data/ligands/actives_holdout_final.smi` (+ provenance), a new pre-registration
   - Verify: holdout includes resistant-strain-relevant actives; EF@5% stable to single-active removal
-- [ ] **T2 (P2, human: ~2h / CC: ~20min)** — work/ — Add a durable-metric reading to the Y132F result
+- [x] **T2 (P2, human: ~2h / CC: ~20min)** — work/ — Add a durable-metric reading to the Y132F result
   - Surfaced by: D5 — do NOT re-grade; add an honest reading alongside the reported FAIL
   - Files: `work/RESULTS_auris_Y132F.md` (append a clearly-labeled reading; verdict unchanged)
   - Verify: FAIL verdict intact; AUC-transfers / top-rank-doesn't reading is separate and labeled
@@ -229,7 +229,7 @@ Synthesized from the eng review + outside voice. Checkbox as you ship.
   - Surfaced by: Outside voice #4 — the only external deliverable; lead with honest validation
   - Files: shortlist artifact, `outreach/` one-pager, one named target lab
   - Verify: proposal does not overclaim resistance-breaker discovery; Y132F negative included as evidence
-- [ ] **T4 (P3, human: ~30min / CC: ~10min)** — openafr/ — Document the triage/surveillance layering
+- [x] **T4 (P3, human: ~30min / CC: ~10min)** — openafr/ — Document the triage/surveillance layering
   - Surfaced by: D7 — coupling is benign; a docstring achieves the "readable in 30s" bar
   - Files: `openafr/__init__.py` or a boundary docstring in `alert.py`
   - Verify: a reader can tell the two products + shared core apart without a refactor
