@@ -1,0 +1,20 @@
+# Candidate resistance-retaining CYP51 inhibitors for the domain-lifted pool audit (Stage 0).
+#
+# Every row is a named compound proposed as a "resistance-active" holdout member: a CYP51
+# inhibitor with MEASURED activity against azole-resistant Candida auris. The audit
+# (scripts/domain_lifted_pool_audit.py) decides which rows survive into the validation pool
+# under the RIGID (<=45 heavy) vs DOMAIN-LIFTED (no size cap) regimes.
+#
+# Discipline (data/ligands/PROVENANCE.md, constraint #3): each SMILES is the isomeric SMILES
+# copied verbatim from the PubChem record for the listed CID (NOT AI-generated), and each
+# activity claim carries a primary-literature PMID. cauris_evidence = "none" means no
+# C. auris-specific MIC surfaced in the 2026-08-23 literature pass -> excluded on evidence,
+# independent of molecular size.
+#
+# Columns (tab-separated): name  cid  cauris_evidence  smiles
+name	cid	cauris_evidence	smiles
+VT-1598	126715974	PMID:30530603	C1=CC(=CC=C1COC2=CC=C(C=C2)C#CC3=CN=C(C=C3)C([C@](CN4C=NN=N4)(C5=C(C=C(C=C5)F)F)O)(F)F)C#N
+opelconazole	121383526	PMID:31325309	CC1=C(C=CC(=C1)N2CCN(CC2)C3=CC=C(C=C3)C(=O)NC4=CC=C(C=C4)F)OC[C@H]5C[C@](OC5)(CN6C=NC=N6)C7=C(C=C(C=C7)F)F
+oteseconazole	77050711	none	C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OCC(F)(F)F
+quilseconazole	91886002	none	C1=CC(=CC=C1C2=CN=C(C=C2)C([C@](CN3C=NN=N3)(C4=C(C=C(C=C4)F)F)O)(F)F)OC(F)(F)F
+ravuconazole	467825	PMID:33609301	C[C@@H](C1=NC(=CS1)C2=CC=C(C=C2)C#N)[C@](CN3C=NC=N3)(C4=C(C=C(C=C4)F)F)O
