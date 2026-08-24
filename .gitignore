@@ -14,12 +14,20 @@ work/score/
 work/repurposing_ligands/
 work/screen_auris_Y132F/
 work/screen_consensus_wt/
+work/screen_verified/
+work/verified_ligands/
 work/views/
 work/*_pdbqt/
 work/*.pdbqt
 work/*.log
 work/*.runlog
 work/repurposing/*.log
+
+# ChEMBL bioactivity cache for the verified-inactive decoy construction: ~88k raw
+# activity records, re-pullable with scripts/make_verified_inactives.py fetch. The
+# git-tracked memory is the built data/ligands/verified_inactives.smi + its provenance
+# stanza (record counts + cache sha256), not the raw dump.
+work/chembl/
 
 # gstack tooling is installed per-developer, not vendored
 .claude/skills/gstack/
@@ -36,3 +44,6 @@ __pycache__/
 *.pyc
 .venv/
 work/dock_batch_output.txt
+
+# pytest-cov artifact
+.coverage

@@ -7,6 +7,28 @@ analysis, and no result was re-graded for this writeup. (§4.4 and §6.9 carry o
 clearly-labeled addition — a 2026-08-22 compound-curation finding that bounds what the method
 can claim about resistance; it is not a docking run and re-grades nothing.)
 
+
+---
+
+> **UPDATE 2026-08-23 — look #6, on an independent dataset: the decoy ceiling is REAL, not an
+> artifact of decoy construction.** §4.1 below names experimentally confirmed inactives as "the
+> most useful next contribution anyone could make to this benchmark", and §5's stopping rule
+> permits exactly one thing: a new decoy construction. Both have now been done
+> ([RESULTS_verified_inactives.md](RESULTS_verified_inactives.md), pre-registered and graded).
+> The 7 held-out azoles were re-ranked, under the identical protocol, criterion and seed,
+> against **279 compounds MEASURED not to inhibit *C. albicans*** (ChEMBL, consistent-inactivity
+> rule). Result: **AUC 0.716 — the gate passes**, so the separation reported below is *not* a
+> product of how the decoys were built, and Limitation 2 is discharged. But the tip is worse,
+> not better: **7 measured inactives outrank the best real drug**, and of the 39 molecules
+> inside the validated iron-bound band, **33 are compounds measured not to work and only 2 are
+> actives**. A pre-specified subgroup split locates the effect precisely — AUC **0.810** against
+> non-azole chemotypes versus **0.650** against measured-inactive *azole analogues*, below the
+> bar. What the criterion mostly measures is chemotype, not potency. §4.1's bind is therefore a
+> fact about the chemistry rather than about our decoy generator, and §4.4's "trustworthy
+> top-~5% shortlist" should be read with the added caveat that such a shortlist will be crowded
+> with azole-like molecules that have already been tried and failed.
+> *(The PDF in this directory predates this update.)*
+
 ---
 
 ## Abstract
@@ -342,6 +364,7 @@ Every look ever taken at the held-out data, in order, with its committed outcome
 | 3 | `RESULTS_consensus.md` | 5-seed consensus (min) | `1c6ea042…` | **FAIL** |
 | 4 | `RESULTS_reliability.md` | pool-size-neutral median — noise or ceiling? | `f8aa1ff9…` | **FAIL** |
 | 5 | `RESULTS_axial.md` | one orthogonal feature: approach direction | `3ff59c29…` | **FAIL** |
+| 6 | `RESULTS_verified_inactives.md` | **new dataset**: same criterion vs 279 *measured* inactives | `d2926f77…` | **PASS** (AUC 0.716) |
 
 Four looks were taken at the wild-type poses (1, 3, 4, 5). Each pre-registration bounded the number
 of subsequent attempts and pre-committed the failure conclusion; the reliability pre-registration
@@ -349,6 +372,12 @@ foreclosed further *aggregators*, and the axial pre-registration foreclosed furt
 this dataset. **The stopping rule is now in force: no further criterion will be tried on these
 poses.** Any further attempt requires an independent dataset — new actives or a new decoy
 construction — not another feature on this one.
+
+Look 6 is that independent dataset, and it obeys the rule: **no new criterion, no new feature,
+no re-aggregation** — the same mode-C distance, the same protocol hash, the same seed, the same
+7 actives, re-run against a decoy set built from measurement rather than assumption. It is the
+only kind of look this ledger still permits, and it was pre-registered before any of its
+molecules were docked.
 
 The `RESULTS_axial.md` run also included a harness check: the reliability-distance slice reproduced
 the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.310) bit-for-bit.

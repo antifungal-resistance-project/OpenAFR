@@ -109,6 +109,15 @@ Permutation test (20,000 shuffles): **p = 0.0028**. Bootstrap 95% CI: 0.590–0.
 heme iron* discriminates real drugs from look-alike decoys far better than the docking
 program's own affinity score — on the exact same poses. Geometry beats the scoring function.
 
+> **Confirmed on measured inactives (2026-08-23, look #6).** Those 348 decoys were *presumed*
+> inactive — never tested. The criterion has now been re-run, unchanged, against **279 compounds
+> measured not to inhibit *C. albicans*** (`work/RESULTS_verified_inactives.md`): **AUC 0.716,
+> gate passes**, so the result above is not an artifact of how the decoys were built. Two things
+> got *worse* under measurement and are the honest headline: **7 measured inactives outrank the
+> best real drug**, and a pre-specified split puts the criterion at **AUC 0.810 against non-azole
+> chemotypes but 0.650 against azole analogues measured not to work** — below its own bar. Most
+> of what it detects is *chemotype*, not potency.
+
 Full write-ups, including a run that **failed** its gate first, are in `work/`.
 
 ## Honest limitations
@@ -128,6 +137,7 @@ data/structures/5TZ1.pdb          C. albicans CYP51 + heme + bound azole (RCSB)
 data/ligands/actives.smi          8 known azoles (training)
 data/ligands/actives_holdout_final.smi   7 held-out azoles (never used to form hypotheses)
 data/ligands/decoys*.smi          property-matched decoys, 50 per active
+data/ligands/verified_inactives.smi  compounds MEASURED not to inhibit (n=279)
 
 protocol.yaml                     the frozen run protocol (box, search effort, pass bar), hash-pinned
 
@@ -138,6 +148,8 @@ openafr/protocol.py               loads + hash-verifies protocol.yaml
 scripts/prep_receptor.py          5TZ1.pdb -> work/receptor.pdbqt, chain-A+heme, matches the anchor
 scripts/prep_ligands.py           SMILES -> 3D, deterministic, failures logged not dropped
 scripts/make_decoys.py            property-matched decoy generation from ChEMBL
+scripts/make_verified_inactives.py   measured-inactive set from ChEMBL bioactivity
+scripts/validate_gate_verified.py    grades the criterion vs measured inactives (look #6)
 scripts/filter_library.py         applicability-domain filter — keep only what the gate validated
 scripts/screen.sh                 the docking engine — one fixed protocol, all cores, resumable
 scripts/run_screen2.sh            thin wrapper: run-2 held-out validation via screen.sh
@@ -228,6 +240,11 @@ Two traps this pipeline is explicitly built to avoid, both documented in `work/`
 2. **Size shortcuts.** Docking score correlates with heavy-atom count at r = −0.91 on this
    system. Unmatched decoys would let the pipeline "succeed" by preferring heavy molecules.
    Decoys are matched on MW, cLogP, heavy atoms, and rotatable bonds.
+3. **Presumed inactivity.** A decoy nobody tested is an assumption, not a measurement, and it was
+   the largest caveat on the published result. `data/ligands/verified_inactives.smi` (n=279,
+   `scripts/make_verified_inactives.py`) is built only from compounds with **consistent measured
+   inactivity** in ChEMBL — at least one inactive-grade record and zero active or ambiguous ones,
+   including on the CYP51 enzyme target.
 
 ## Status
 

@@ -97,6 +97,23 @@ def verify_against_anchor(kept):
     print(f"  anchor check: {len(kept)} atoms match work/receptor_A.pdb exactly")
 
 
+def normalize_name_remark(pdbqt_path, source_pdb):
+    """Rewrite obabel's `REMARK  Name = <scratch path>` to name the real input structure.
+
+    obabel copies its input filename into the first REMARK, and the input here is a
+    randomly-named temp file — so two byte-identical receptors hashed differently on every
+    rebuild, and the receptor could not be hash-pinned the way protocol.yaml and the
+    pre-registrations are. The atom records were always identical; only this one line moved.
+    """
+    lines = open(pdbqt_path).readlines()
+    for i, line in enumerate(lines):
+        if line.startswith("REMARK") and "Name =" in line:
+            lines[i] = f"REMARK  Name = {os.path.basename(source_pdb)}\n"
+            break
+    with open(pdbqt_path, "w") as fh:
+        fh.writelines(lines)
+
+
 def sha256(path):
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -156,6 +173,8 @@ def main():
 
     if proc.returncode != 0 or not os.path.exists(args.pdbqt_out) or os.path.getsize(args.pdbqt_out) == 0:
         sys.exit(f"ERROR: obabel conversion failed\n{proc.stderr}")
+
+    normalize_name_remark(args.pdbqt_out, args.pdb_in)
 
     # The receptor is useless for this pipeline if the heme iron did not survive the
     # conversion, or moved: every gate distance is measured to it.

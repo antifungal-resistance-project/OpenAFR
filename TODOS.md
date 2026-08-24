@@ -2,6 +2,42 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
+## Rank WITHIN the azole class — the gap look #6 exposed (OPEN, 2026-08-23)
+
+**What happened.** The verified-inactive benchmark ran and passed
+(`work/RESULTS_verified_inactives.md`, look #6): the criterion separates real azoles from 279
+compounds *measured* not to inhibit *C. albicans* at AUC 0.716, so the published separation is
+**not** an artifact of presumed-inactive decoy construction. Limitation 2 of the preprint —
+"the single largest caveat" — is discharged.
+
+**What it exposed.** A pre-specified subgroup split locates the criterion's power precisely:
+
+    vs non-azole chemotypes            AUC 0.810   (EF@5% 4.98x, BEDROC 0.487, 4/7 in top 15)
+    vs azole analogues measured inactive  AUC 0.650   (below the 0.70 bar)
+
+Most of what the criterion detects is **chemotype, not potency**. Of the 39 molecules inside
+the validated 2.47–2.88 Å iron-bound band, 33 are compounds measured not to work and only 2 are
+true actives; 7 measured inactives outrank the best real drug. So a shortlist this tool produces
+will be crowded with azole-like molecules that have already been tried and failed — which is
+exactly the molecules a wet-lab collaborator is least interested in.
+
+**Why this is the next question.** Every downstream ambition (a candidate worth an email, the
+parked wet-lab package) needs ranking *within* the azole class, and that is measured at 0.650.
+Note this is now a **well-posed supervised problem** for the first time: 162 azole-bearing
+compounds with measured inactivity and 7 (plus the 8 training) azoles with measured activity are
+in the repo. Possible attacks, none yet scoped:
+  - a feature that is not iron distance and not iron direction (both foreclosed on the old poses,
+    but this is a NEW dataset, so the stopping rule does not bind here);
+  - the substituent/tail interactions that azole SAR actually turns on, which a single rigid
+    conformer may simply not contain (cf. §4.3 desolvation / induced fit);
+  - accepting the boundary and re-scoping the product to novel-chemotype triage only, where the
+    measured AUC is 0.810.
+**Any new criterion needs its own pre-registration.** Do not fish on the verified-inactive poses
+(`work/screen_verified/`) — the one-look discipline applies to this dataset too.
+
+**Source:** look #6, 2026-08-23. Depends on nothing; the dataset and poses reproduce from
+`work/RESULTS_verified_inactives.md`.
+
 ## Build the ERG11 re-caller (reads → azole-resistance call) — DONE + RUN 2026-08-20 (representative fill measured)
 
 > **UPDATE 2026-08-20 — the deliverable is measured.** The re-caller was run on a real,
