@@ -13,7 +13,7 @@ honest command, and never fakes the parts that need a cloud VM.
       |                  The method makes no claim here; docking it would imply one.
      yes
       |  (2) prep_ligands.py             SMILES -> deterministic 3D SDF
-      |  (3) screen.sh                   vina under the hash-frozen protocol   [needs a VM]
+      |  (3) screen.sh                   vina under the hash-frozen protocol   [needs openafr env]
       |  (4) analyze_poses.analyze       closest N-Fe, iron-bound pose count
       v
     per-molecule geometry readout, contextualized against the validated actives' iron-bound
@@ -22,9 +22,11 @@ honest command, and never fakes the parts that need a cloud VM.
 Two honest gates, both load-bearing:
   * Only molecules the triage puts *inside* the validated envelope proceed to docking. A
     molecule the method has no validated basis for is reported and stopped, never docked.
-  * Docking needs vina + obabel and a prepared receptor, which live on the Linux/x86 VM.
-    If those are absent this prints the *exact* command to finish the run there and stops
-    cleanly — it never silently skips the geometry or invents a number.
+  * Docking needs vina + obabel and a prepared receptor, provided by the pinned `openafr`
+    conda env (these install on Apple Silicon and Linux alike — unlike the recaller's
+    Linux/x86-only reads tools, docking has no cloud-VM requirement). If they are absent on
+    this machine this prints the *exact* command to finish the run and stops cleanly — it
+    never silently skips the geometry or invents a number.
 
 What a geometry readout does and does NOT mean (carried into the printed report):
   * A high rank / tight N-Fe is a *hypothesis for a wet lab*, never a hit.
@@ -119,9 +121,9 @@ def render_molecule(name, triage, geom, pending):
                  "molecule, so no pose was computed.")
         return "\n".join(L)
     if pending:
-        L.append("- geometry : PENDING — inside the envelope; dock on the VM to get the "
-                 "N-Fe read (run scripts/score_molecule.py without --triage-only on a host "
-                 "with vina + a prepared receptor).")
+        L.append("- geometry : PENDING — inside the envelope; run the dock to get the "
+                 "N-Fe read (scripts/score_molecule.py without --triage-only in the openafr "
+                 "env, with vina + a prepared receptor).")
         return "\n".join(L)
     if geom is None:
         L.append("- geometry : docking produced NO usable pose — no ranking evidence for "
@@ -153,8 +155,8 @@ def _dock_instructions(smi_path, workdir, receptor_pdbqt, receptor_pdb):
     lig_dir = os.path.join(workdir, "ligands")
     screen_dir = os.path.join(workdir, "screen")
     return (
-        "Docking needs vina + obabel + a prepared receptor, which live on the Linux/x86 VM.\n"
-        "They are not on this machine, so the geometry read is PENDING. To finish there:\n\n"
+        "Docking needs vina + obabel + a prepared receptor from the pinned openafr env.\n"
+        "They are not available on this machine, so the geometry read is PENDING. To finish:\n\n"
         f"  # (once) prepare the receptor if {receptor_pdbqt} is missing:\n"
         f"  conda run -n openafr python scripts/prep_receptor.py\n\n"
         f"  conda run -n openafr python scripts/prep_ligands.py {smi_path} {lig_dir}\n"

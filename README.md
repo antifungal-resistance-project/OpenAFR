@@ -138,6 +138,39 @@ same `protocol.yaml`, so what is docked and what is graded can never silently dr
 Changing the protocol is a conscious act: edit `protocol.yaml`, re-freeze with
 `python -m openafr.protocol --freeze`, update `PROTOCOL_SHA`, and record why.
 
+## Score your own molecule
+
+One command takes a SMILES string through the whole validated pipeline — applicability triage
+→ ligand prep → docking → the nitrogen-to-iron geometry read — and prints an honest verdict.
+No cloud VM: the docking tools (`vina`, `openbabel`) install locally from `environment.yml` on
+Apple Silicon and Linux alike.
+
+```bash
+conda activate openafr
+python scripts/prep_receptor.py                      # once: build work/receptor.pdbqt (gitignored)
+
+# a single molecule (this is voriconazole):
+python scripts/score_molecule.py \
+  --smiles "C[C@@H](C1=NC=NC=C1F)[C@](CN2C=NC=N2)(C3=C(C=C(C=C3)F)F)O" --name voriconazole
+
+# or a whole library file of `SMILES<TAB>name` rows:
+python scripts/score_molecule.py candidates.smi
+
+# just the triage (no docking, runs anywhere rdkit is installed):
+python scripts/score_molecule.py --smiles "<SMILES>" --triage-only
+```
+
+Two honest gates are load-bearing. **(1)** Only molecules the triage puts *inside* the validated
+envelope (in-envelope-novel / near-known) are docked; anything out-of-scope, out-of-domain, or
+unparseable is reported and stopped, never docked — the method makes no claim there. **(2)** If
+the docking tools or a prepared receptor are absent, the geometry read is reported `PENDING`
+with the exact command to finish it; a number is never invented or silently skipped.
+
+Read every geometry readout as a **hypothesis for a wet lab, never a hit**: reaching the iron
+like the validated actives is necessary but *not* sufficient (property-matched decoys reach it
+too — the decoy ceiling), and the durable validated metric is AUC ≈ 0.79. The pipeline was run
+end-to-end on known azoles as a sanity check — see [`work/RESULTS_frontdoor_dogfood.md`](work/RESULTS_frontdoor_dogfood.md).
+
 ## Design notes worth knowing
 
 Two traps this pipeline is explicitly built to avoid, both documented in `work/`:
