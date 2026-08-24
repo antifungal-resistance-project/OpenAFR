@@ -12,7 +12,7 @@ import pathlib
 
 import pytest
 
-from scripts.prep_receptor import atom_key, extract_chain_a
+from scripts.prep_receptor import atom_key, extract_chain_a, normalize_name_remark
 
 _ROOT = pathlib.Path(__file__).resolve().parent.parent
 _RAW = _ROOT / "data" / "structures" / "5TZ1.pdb"
@@ -38,3 +38,25 @@ def test_extraction_keeps_only_chain_a_protein_and_heme():
     hetero = {l[17:20].strip() for l in kept if l[:6].strip() == "HETATM"}
     assert hetero == {"HEM"}                                     # heme kept, water/VT1 dropped
     assert sum(1 for l in kept if l[17:20].strip() == "HEM") == 43
+
+
+def test_name_remark_is_normalized_so_the_receptor_can_be_hash_pinned(tmp_path):
+    """obabel stamps its input filename into the first REMARK, and that input is a random
+    temp file — which made two byte-identical receptors hash differently on every rebuild.
+    The atom records must be untouched; only that one line is rewritten."""
+    p = tmp_path / "receptor.pdbqt"
+    body = "ATOM      1  N   LYS A   1      85.031  77.855  30.232  0.00  0.00    +0.000 N \n"
+    p.write_text("REMARK  Name = /var/folders/xx/tmpABC123.pdb\nREMARK  keep me\n" + body)
+    normalize_name_remark(str(p), "/some/where/data/structures/5TZ1.pdb")
+    lines = p.read_text().splitlines(keepends=True)
+    assert lines[0] == "REMARK  Name = 5TZ1.pdb\n"
+    assert lines[1] == "REMARK  keep me\n"
+    assert lines[2] == body
+
+
+def test_name_remark_normalization_tolerates_a_file_without_one(tmp_path):
+    p = tmp_path / "receptor.pdbqt"
+    p.write_text("ATOM      1  N   LYS A   1       1.000   2.000   3.000  0.00  0.00 N \n")
+    before = p.read_text()
+    normalize_name_remark(str(p), "5TZ1.pdb")
+    assert p.read_text() == before

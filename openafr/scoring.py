@@ -18,6 +18,8 @@ All three metrics come from rdkit.ML.Scoring, the canonical implementations:
 EF_FRACTIONS and BEDROC_ALPHA are the metric *definitions*; the tunable pass bar
 (min AUC / min EF) lives in the hash-frozen protocol.yaml, not here.
 """
+import random
+
 from rdkit.ML.Scoring import Scoring
 
 EF_FRACTIONS = [0.01, 0.05, 0.10]
@@ -52,3 +54,55 @@ def report(label, ranked, gating=False, ef_fractions=EF_FRACTIONS, bedroc_alpha=
     top = [r[0] for r in ordered[:15] if r[2]]
     print(f"  actives in top 15: {len(top)}/{n_act}  {top if top else ''}")
     return auc, efs, bedroc
+
+
+def _decoys_before(ordered_flags):
+    """Per active, how many decoys are ranked ahead of it. (n_decoys, [count per active])"""
+    seen_dec, per_active = 0, []
+    for flag in ordered_flags:
+        if flag:
+            per_active.append(seen_dec)
+        else:
+            seen_dec += 1
+    return seen_dec, per_active
+
+
+def auc_from_positions(n_decoys, decoys_before):
+    """Mann-Whitney AUC straight from active positions: the mean fraction of decoys each
+    active outranks. Identical to Scoring.CalcAUC on untied data (locked by a test), but it
+    takes positions rather than a flag list, so actives can be resampled for a bootstrap."""
+    if not decoys_before or n_decoys == 0:
+        return 0.0
+    return sum(n_decoys - d for d in decoys_before) / (len(decoys_before) * n_decoys)
+
+
+def permutation_p(ordered_flags, n_shuffles=20000, seed=42):
+    """One-sided permutation test on AUC: how often does a random relabelling of the SAME
+    ranking do at least as well? Reported as (1 + #{perm >= observed}) / (1 + n_shuffles) --
+    the add-one form, so a p of exactly 0 is never claimed from a finite number of shuffles.
+    Deterministic under the given seed."""
+    rng = random.Random(seed)
+    observed = metrics(ordered_flags)[0]
+    flags = list(ordered_flags)
+    at_least = 0
+    for _ in range(n_shuffles):
+        rng.shuffle(flags)
+        n_dec, before = _decoys_before(flags)
+        if auc_from_positions(n_dec, before) >= observed:
+            at_least += 1
+    return (1 + at_least) / (1 + n_shuffles)
+
+
+def bootstrap_auc_ci(ordered_flags, n_boot=10000, seed=42, alpha=0.05):
+    """Percentile bootstrap CI for AUC, resampling the ACTIVES with replacement and holding
+    the decoy pool fixed -- the small-n set is the actives, and they are what the interval is
+    about. Returns (lo, hi). Deterministic under the given seed."""
+    rng = random.Random(seed)
+    n_dec, before = _decoys_before(ordered_flags)
+    if not before or n_dec == 0:
+        return (0.0, 0.0)
+    draws = sorted(auc_from_positions(n_dec, [rng.choice(before) for _ in before])
+                   for _ in range(n_boot))
+    lo = draws[int(alpha / 2 * n_boot)]
+    hi = draws[min(n_boot - 1, int((1 - alpha / 2) * n_boot))]
+    return lo, hi

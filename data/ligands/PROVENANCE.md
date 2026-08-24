@@ -22,6 +22,31 @@ butoconazole. (`actives_holdout.smi` is the pre-filter list of 10.)
 ### Decoys — `decoys.smi`, `decoys_holdout.smi`
 Property-matched presumed-inactives (see `scripts/make_decoys.py`).
 
+### Verified inactives — `verified_inactives.smi` (n=279, added 2026-08-23)
+Compounds **measured** not to inhibit *C. albicans*, not presumed inactive — the independent
+decoy construction the preprint's stopping rule requires (§5) and the exit §4.1 names for the
+decoy-construction bind. Built by `scripts/make_verified_inactives.py` from an 88,695-record
+ChEMBL bioactivity pull (87,879 whole-cell *C. albicans* + 816 on the CYP51 enzyme target
+CHEMBL1780); the evidence rule lives in `openafr/inactives.py`.
+
+A compound qualifies only under **consistent inactivity**: at least one inactive-grade record
+(MIC `>` X ≥ 32 µg/mL, MIC `=` X ≥ 64 µg/mL, or an explicit "Not Active" comment) and **zero**
+active or ambiguous records anywhere, including on the enzyme target. Of 43,004 compounds ever
+tested against *C. albicans*, 8,908 qualify; 279 survive the filters.
+
+Those filters are byte-identical to `make_decoys.py` — property matching (MW ± 25, cLogP ± 1.5,
+rotatable bonds ± 2, HBD ± 1, HBA ± 2), ≥ 1 aromatic nitrogen, Tanimoto < 0.35 against every
+active, ≤ 50 per active — plus the ≤ 45 heavy-atom applicability domain. The swap is
+single-variable: only the provenance of "inactive" changes. Achieved match vs the 7 held-out
+actives: MW 379.9 / 392.5, cLogP 4.8 / 5.7, heavy atoms 26.3 / 25.4, rotatable bonds 4.6 / 5.4.
+
+**Read this before comparing it to `decoys_holdout.smi`:** 58.4 % of the verified inactives
+carry an azole ring, against 27.4 % of the presumed decoys, because the only compounds anyone
+measures against *C. albicans* are antifungal medicinal-chemistry programs. More than half of
+this set is **failed azole analogues** — same warhead as the drugs, measured not to work. That
+makes it a harder benchmark, not a like-for-like one. Frozen with
+`work/PREREGISTRATION_verified_inactives.md`; sha256 in `work/PREREG_verified_inactives.sha256`.
+
 ## The problem T1 fixes
 
 Two independent findings converged on the active set:

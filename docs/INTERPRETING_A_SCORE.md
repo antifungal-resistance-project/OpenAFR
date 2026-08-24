@@ -53,7 +53,8 @@ molecule under the hash-frozen protocol and reports the single validated criteri
 The readout contextualizes that distance against the **validated actives' iron-bound band,
 2.47–2.88 Å** — the range spanned by every azole drug that produced an iron-bound pose in the
 validation run. Landing inside that band means your molecule reaches the iron like the known
-drugs; it does **not** mean it is active (see below).
+drugs; it does **not** mean it is active (see below) — most molecules measured *in* that band are
+compounds measured **not** to inhibit.
 
 If docking cannot run on your machine (missing `vina`/`obabel` or an unprepared receptor), the
 geometry line reads `PENDING` and the tool prints the exact commands to finish the run. It never
@@ -69,11 +70,21 @@ in the tool's own printed header for a reason.
 1. **It is a hypothesis, not a hit.** Docking produces hypotheses; published hit rates are low.
    A tight distance is a reason to *consider* an assay, not evidence of activity.
 
-2. **Coordinating the iron is necessary but NOT sufficient.** Property-matched *decoys* — random
-   look-alike molecules with no antifungal activity — also reach the iron. This is the **decoy
-   ceiling** (`work/RESULTS_axial.md`): a single molecule landing in the band cannot, by itself,
-   be distinguished from a decoy that happened to land there too. The method's evidence is
-   *statistical enrichment across a ranked library*, not a verdict on one molecule.
+2. **Coordinating the iron is necessary but NOT sufficient — and this is now measured, not
+   assumed.** Look-alike molecules reach the iron too. That was first shown with *presumed*-inactive
+   decoys (the **decoy ceiling**, `work/RESULTS_axial.md`), and it has since been confirmed against
+   279 compounds **measured** not to inhibit *C. albicans*
+   (`work/RESULTS_verified_inactives.md`): **seven of them coordinate the iron more closely than
+   the best real drug**, and of the 39 molecules landing inside the 2.47–2.88 Å band, **33 are
+   compounds measured not to work and only 2 are true actives.** A single molecule landing in the
+   band therefore tells you very little on its own. The method's evidence is *statistical
+   enrichment across a ranked library*, never a verdict on one molecule.
+
+   **The sharpest form of this caveat:** on that measured benchmark the criterion scores AUC 0.810
+   against non-azole chemotypes but only **0.650 against azole analogues that were measured not to
+   work** — below its own 0.70 pass bar. Most of what it detects is *"is this azole-like?"*, not
+   *"does this azole work?"* If your molecule is itself an azole, the criterion is close to
+   uninformative about whether it will be active.
 
 3. **The durable metric is a shortlist, not a razor-top rank.** The validated performance is
    **AUC ≈ 0.79** — a trustworthy top-~5% shortlist. An earlier eye-catching "12.68× enrichment
@@ -97,7 +108,9 @@ in the tool's own printed header for a reason.
 Used honestly, this tool does one useful thing well: **it triages a library so you don't waste
 an assay — or a claim — on molecules the validated method has no basis for.** An
 `in-envelope-novel` molecule that lands in the actives' iron-bound band is a defensible
-*candidate to prioritize for the next, more expensive step* — not a discovery.
+*candidate to prioritize for the next, more expensive step* — not a discovery. That prioritization
+is strongest when the molecule is a **new chemotype**; for another azole analogue, the measured
+benchmark says the criterion is close to uninformative (caveat 2).
 
 If you have a compound you want to check, that is exactly the intended use. Bring the SMILES,
 run the front door, and read the verdict with this page open.

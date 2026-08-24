@@ -151,3 +151,68 @@ def test_report_return_matches_metrics_on_reconstructed_order():
     # hand-reconstruct: ok sorted [a1(1), d1(2), d2(3)] + bad [a2] -> [1,0,0,1]
     expected = g.metrics([1, 0, 0, 1])
     assert got == expected
+
+
+# --- statistical support (permutation p, bootstrap CI) --------------------------------
+#
+# Run 2 reported a permutation p and a bootstrap AUC CI, but the code that produced them
+# was never committed, so those two headline numbers could not be re-derived. These lock
+# the committed versions.
+
+def test_positions_auc_matches_rdkit_exactly():
+    """The bootstrap needs AUC from active POSITIONS (so actives can be resampled). It must
+    be the same statistic rdkit computes, or the CI would describe a different quantity."""
+    for flags in ([1, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+                  [1, 1, 1, 0, 0, 0],
+                  [0, 0, 0, 1, 1, 1],
+                  [0, 1, 0, 1, 0, 1]):
+        n_dec, before = g._decoys_before(flags)
+        assert g.auc_from_positions(n_dec, before) == pytest.approx(g.metrics(flags)[0])
+
+
+def test_decoys_before_counts_what_outranks_each_active():
+    n_dec, before = g._decoys_before([0, 1, 0, 0, 1])
+    assert n_dec == 3
+    assert before == [1, 3]
+
+
+def test_permutation_p_is_significant_for_a_perfect_ranking():
+    flags = [1] * 5 + [0] * 95
+    assert g.permutation_p(flags, n_shuffles=2000) < 0.01
+
+
+def test_permutation_p_is_unremarkable_for_a_random_ranking():
+    flags = [0] * 48 + [1] + [0] * 2 + [1] + [0] * 48
+    assert g.permutation_p(flags, n_shuffles=2000) > 0.2
+
+
+def test_permutation_p_never_claims_exactly_zero():
+    """The add-one form: a finite shuffle count cannot license p = 0."""
+    flags = [1] * 7 + [0] * 279
+    assert g.permutation_p(flags, n_shuffles=200) == pytest.approx(1 / 201)
+
+
+def test_permutation_p_is_deterministic_under_its_seed():
+    flags = [1, 0, 0, 1, 0, 0, 0, 1, 0, 0]
+    assert g.permutation_p(flags, 500, seed=7) == g.permutation_p(flags, 500, seed=7)
+    assert g.permutation_p(flags, 500, seed=7) != g.permutation_p(flags, 500, seed=8)
+
+
+def test_bootstrap_ci_brackets_the_point_estimate_and_is_deterministic():
+    flags = [1, 0, 0, 1, 0, 0, 0, 1, 0, 0] * 3
+    point = g.metrics(flags)[0]
+    lo, hi = g.bootstrap_auc_ci(flags, n_boot=2000)
+    assert lo <= point <= hi
+    assert g.bootstrap_auc_ci(flags, n_boot=2000) == (lo, hi)
+
+
+def test_bootstrap_ci_is_wide_at_small_active_counts():
+    """The n=7 caveat, made numeric: with few actives the interval is uninformative-wide."""
+    flags = [0] * 3 + [1] + [0] * 20 + [1] + [0] * 30
+    lo, hi = g.bootstrap_auc_ci(flags, n_boot=2000)
+    assert hi - lo > 0.2
+
+
+def test_statistics_degrade_safely_with_no_actives():
+    assert g.auc_from_positions(5, []) == 0.0
+    assert g.bootstrap_auc_ci([0, 0, 0], n_boot=100) == (0.0, 0.0)
