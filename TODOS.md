@@ -4,6 +4,22 @@ Deferred work captured during review. Each item has enough context to pick up co
 
 ## Rank WITHIN the azole class — the gap look #6 exposed (OPEN, 2026-08-23)
 
+> **UPDATE 2026-08-24 — the attack is pre-registered and frozen; the one look is UNSPENT.**
+> Option A (attack the 0.650) is now a frozen pre-registration:
+> `work/PREREGISTRATION_channel_engagement.md` (sha256 `62592a10…`, checkfile
+> `work/PREREG_channel_engagement.sha256` verifies clean). The one orthogonal feature is
+> **mode F — channel engagement**: count of distinct channel-lining residues the tail contacts
+> in the *coordinating* pose (same min-N-Fe pose mode C uses), where the channel-shell is
+> defined LABEL-BLIND from the co-crystal ligand VT1. Zero tuned parameters; AUC is the
+> threshold-free gate on the matched 7-active + azole-bearing pool (the exact pool where mode C
+> scored 0.650). Grader `scripts/validate_gate_channel.py` (hash-gated, tests in
+> `tests/test_channel_gate.py`, all green). **NOT YET RUN** — running the docking IS the one
+> graded look, and it is deliberate: reproduce the verified-inactive poses (~2.5 h, look #6) +
+> dock the 8 training azoles, then `validate_gate_channel.py`. PASS re-opens within-class
+> triage (read the size-residualized AUC first); FAIL is the decisive evidence for Option B
+> (re-scope to novel-chemotype triage, 0.810) and points the next attempt at ensemble/flexible
+> poses ([[outreach-hold-build-first]]). The stopping rule binds: one feature, no re-run.
+
 **What happened.** The verified-inactive benchmark ran and passed
 (`work/RESULTS_verified_inactives.md`, look #6): the criterion separates real azoles from 279
 compounds *measured* not to inhibit *C. albicans* at AUC 0.716, so the published separation is
