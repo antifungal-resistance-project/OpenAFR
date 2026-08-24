@@ -9,6 +9,15 @@ Protocol: unchanged and hash-verified — box 26 Å @ 70.61/66.28/4.18, exhausti
 num_modes 20, seed 42, rigid 5TZ1 chain A + heme. Criterion unchanged (mode C).
 Host: Apple Silicon, `openafr` env, ~2.5 h wall for 286 dockings on 12 cores.
 
+> **Erratum (not corrected in place, on purpose).** The pre-registration quotes the inactive
+> set's sha256 inline as `37a20eec1c026c42c…`; the true value is
+> `37a20eec1c026c42d3c8efb53c1dd27cda2f9057ca541cfc1afed21a35faea6b` (one transcribed character
+> differs). The frozen document is **not** edited to fix it — a pre-registration amended after
+> the result is known is worth nothing, and its own sha256 is what the grading script verifies.
+> The authoritative, machine-checkable hashes are in `work/PREREG_verified_inactives.sha256`,
+> which verifies clean (`shasum -a 256 -c`) for all three frozen files. Nothing about the run
+> depends on the typo.
+
 ## RESULT: GATE PASSED — and the pre-specified subgroup is the real finding
 
 **H1 passes: AUC 0.716 ≥ 0.70.** The geometric criterion does separate real azoles from
