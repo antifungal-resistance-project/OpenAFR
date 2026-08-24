@@ -18,6 +18,7 @@ from scripts.score_molecule import (
     HEADER_CAVEATS,
     VALIDATED_FE_BAND,
     classify_geometry,
+    molecule_record,
     plan,
     render_molecule,
 )
@@ -125,6 +126,52 @@ def test_render_scored_molecule_shows_geometry_and_number(panel):
     assert "2.600 A" in out
     assert "3/9" in out
     assert "-8.4 kcal/mol" in out
+
+
+# ---- molecule_record(): the JSON mirror of render_molecule -------------------------------
+
+def test_record_out_of_scope_is_not_docked(panel):
+    t = classify(BENZENE, panel)
+    rec = molecule_record("benzene", BENZENE, t, geom=None, pending=False)
+    assert rec["triage"] == "out-of-scope"
+    assert rec["dockable"] is False
+    assert rec["geometry_status"] == "not-docked"
+    assert rec["geometry"] is None
+
+
+def test_record_in_envelope_pending(panel):
+    t = classify(VT_1598, panel)
+    rec = molecule_record("vt1598", VT_1598, t, geom=None, pending=True)
+    assert rec["dockable"] is True
+    assert rec["geometry_status"] == "pending"
+    assert rec["geometry"] is None
+
+
+def test_record_docked_no_pose(panel):
+    t = classify(VT_1598, panel)
+    rec = molecule_record("vt1598", VT_1598, t, geom=None, pending=False)
+    assert rec["geometry_status"] == "no-pose"
+
+
+def test_record_scored_carries_geometry_and_interpretation(panel):
+    t = classify(VT_1598, panel)
+    geom = {"best_fe": 2.60, "n_passing": 3, "n_poses": 9, "best_score": -8.4}
+    rec = molecule_record("vt1598", VT_1598, t, geom=geom, pending=False)
+    assert rec["geometry_status"] == "scored"
+    g = rec["geometry"]
+    assert g["closest_n_fe"] == 2.60
+    assert g["iron_bound_poses"] == 3
+    assert g["n_poses"] == 9
+    assert g["vina_score"] == -8.4
+    assert g["coordinates_iron"] is True
+    assert "within the validated actives' band" in g["interpretation"]
+
+
+def test_record_is_json_serializable(panel):
+    import json
+    t = classify(VT_1598, panel)
+    rec = molecule_record("vt1598", VT_1598, t, geom=None, pending=True)
+    json.dumps(rec)  # must not raise
 
 
 # ---- honesty caveats are carried, not just in docstrings ---------------------------------

@@ -25,6 +25,52 @@ Everything from here to that section is about track 1.
 > a [file-by-file codebase reference](wiki/05-codebase-reference.md), a
 > [glossary](wiki/06-glossary.md), and a [contributing guide](wiki/07-contributing.md).
 
+## Score your own molecule
+
+The validated method has a front door: give it a SMILES string and it tells you, honestly,
+whether the method even applies to your molecule — and if so, how closely it coordinates the
+heme iron the way real azole drugs do. **Read [`docs/INTERPRETING_A_SCORE.md`](docs/INTERPRETING_A_SCORE.md)
+before acting on any number: a score here is a hypothesis for a wet lab, never a hit.**
+
+**1. Install the environment (once).** Resolves on both Apple Silicon and Linux:
+
+```
+conda env create -f environment.yml     # or: mamba env create -f environment.yml
+```
+
+**2. Triage — does the validated method even cover your molecule?** Runs anywhere in seconds,
+no docking, no cloud:
+
+```
+conda run -n openafr python scripts/applicability_triage.py \
+    --smiles "CC(C)c1nc(cs1)..." --name my_compound
+```
+
+You get one verdict: `in-envelope-novel`, `near-known`, `out-of-domain`, `out-of-scope`, or
+`unparseable`. Only the first two are inside the validated envelope; the rest are reported and
+stopped, because the method makes no claim about them.
+
+**3. Score — the full SMILES → geometry pipeline in one command.** Triage → prep → dock →
+N-to-iron geometry read, on your laptop in ~9 s per molecule:
+
+```
+conda run -n openafr python scripts/prep_receptor.py                # once, builds work/receptor.pdbqt
+conda run -n openafr python scripts/score_molecule.py \
+    --smiles "C[C@@H](C1=NC=NC=C1F)[C@](CN2C=NC=N2)(C3=C(C=C(C=C3)F)F)O" --name voriconazole
+```
+
+**Confirm your install** with that voriconazole command (a real azole drug): triage returns
+`near-known`, and the geometry read should report **closest N–Fe ≈ 2.69 Å**, inside the
+validated actives' iron-bound band (2.47–2.88 Å). If you see that, the whole pipeline works on
+your machine. To score without docking (triage only, runs anywhere), add `--triage-only`; the
+tool also prints the exact commands to finish a run if `vina`/`obabel` are missing, and never
+fakes a number.
+
+You can pass a whole library instead of `--smiles`: a `SMILES<TAB>name` file as the first
+argument. Add `--json` to get one machine-readable object on stdout (human text goes to
+stderr), so the front door is scriptable as a benchmark. What a readout does and does not
+establish is spelled out in [`docs/INTERPRETING_A_SCORE.md`](docs/INTERPRETING_A_SCORE.md).
+
 ## Why antifungal resistance
 
 *Candida auris* is a WHO critical-priority fungal pathogen: multidrug-resistant, lethal, and
