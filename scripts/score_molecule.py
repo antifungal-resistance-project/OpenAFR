@@ -40,9 +40,11 @@ Usage:
     conda run -n openafr python scripts/score_molecule.py --smiles "<SMILES>" [--name X]
     conda run -n openafr python scripts/score_molecule.py LIBRARY.smi   # SMILES<TAB>name
     # options: --receptor-pdbqt work/receptor.pdbqt  --receptor-pdb work/receptor_A.pdb
-    #          --workdir work/score  --triage-only
+    #          --workdir work/score  --triage-only  --json
+    # --json emits one machine-readable object on stdout (human text -> stderr).
 """
 import argparse
+import json
 import os
 import pathlib
 import shutil
@@ -138,6 +140,41 @@ def render_molecule(name, triage, geom, pending):
     return "\n".join(L)
 
 
+def molecule_record(name, smiles, triage, geom, pending):
+    """One molecule's readout as a JSON-serializable dict (the machine mirror of
+    render_molecule). Pure. `geometry_status` is the single stable cause a caller keys on:
+    not-docked (outside the envelope) / pending (in-envelope, dock still to run) / no-pose
+    (docked, no usable pose) / scored. `geometry` is populated only when scored."""
+    rec = {
+        "name": name,
+        "smiles": smiles,
+        "triage": triage["verdict"],
+        "heavy_atoms": triage["heavy"],
+        "nearest_active": triage["nearest"],
+        "max_tanimoto": triage["max_tc"],
+        "dockable": triage["verdict"] in DOCKABLE,
+        "geometry": None,
+    }
+    if triage["verdict"] not in DOCKABLE:
+        rec["geometry_status"] = "not-docked"
+    elif pending:
+        rec["geometry_status"] = "pending"
+    elif geom is None:
+        rec["geometry_status"] = "no-pose"
+    else:
+        label, coordinating = classify_geometry(geom["best_fe"], geom["n_passing"])
+        rec["geometry_status"] = "scored"
+        rec["geometry"] = {
+            "closest_n_fe": geom["best_fe"],
+            "iron_bound_poses": geom["n_passing"],
+            "n_poses": geom["n_poses"],
+            "vina_score": geom["best_score"],
+            "coordinates_iron": coordinating,
+            "interpretation": label,
+        }
+    return rec
+
+
 HEADER_CAVEATS = (
     "OpenAFR — score your own molecule\n"
     "=================================\n"
@@ -213,18 +250,24 @@ def main():
                     help="stop after triage; never dock (runs anywhere)")
     ap.add_argument("--from-screen", metavar="SCREEN_DIR",
                     help="skip docking; read poses already docked into SCREEN_DIR")
+    ap.add_argument("--json", action="store_true",
+                    help="emit one JSON object on stdout (caveats + per-molecule records); "
+                         "human/progress text goes to stderr")
     args = ap.parse_args()
 
     if bool(args.library) == bool(args.smiles):
         ap.error("give exactly one of: a LIBRARY file, or --smiles")
 
+    # In --json mode, stdout must be pure JSON; route all human/progress text to stderr.
+    info = (lambda *a, **k: print(*a, file=sys.stderr, **k)) if args.json else print
+
     rows = [(args.name, args.smiles)] if args.smiles else read_library(args.library)
     panel = load_panel()
     planned = plan(rows, panel)
 
-    print(HEADER_CAVEATS)
-    print(f"validated panel: {len(panel)} actives | domain <= 45 heavy | "
-          f"actives iron-bound band {VALIDATED_FE_BAND[0]:.2f}-{VALIDATED_FE_BAND[1]:.2f} A\n")
+    info(HEADER_CAVEATS)
+    info(f"validated panel: {len(panel)} actives | domain <= 45 heavy | "
+         f"actives iron-bound band {VALIDATED_FE_BAND[0]:.2f}-{VALIDATED_FE_BAND[1]:.2f} A\n")
 
     dock_rows = [(n, s) for n, s, _, d in planned if d]
     geom = {}
@@ -245,23 +288,35 @@ def main():
                         fh.write(f"{s}\t{n}\n")
                 why = (f"missing tools: {', '.join(missing)}" if missing
                        else f"receptor not prepared: {args.receptor_pdbqt}")
-                print(f"[{len(dock_rows)} molecule(s) inside the envelope — geometry PENDING] "
-                      f"{why}\n")
-                print(_dock_instructions(smi_path, args.workdir,
-                                         args.receptor_pdbqt, args.receptor_pdb))
-                print()
+                info(f"[{len(dock_rows)} molecule(s) inside the envelope — geometry PENDING] "
+                     f"{why}\n")
+                info(_dock_instructions(smi_path, args.workdir,
+                                        args.receptor_pdbqt, args.receptor_pdb))
+                info()
             else:
                 geom = _run_docking(dock_rows, args.workdir,
                                     args.receptor_pdbqt, args.receptor_pdb)
                 docked = True
 
-    for name, _smi, triage, dock in planned:
+    records = []
+    for name, smi, triage, dock in planned:
         # pending = in-envelope but no docking ran yet (triage-only, or VM step still to do).
         # When docking DID run, a name absent from geom means it produced no pose (None).
         pending = dock and not docked
         g = geom.get(name)
-        print(render_molecule(name, triage, g, pending))
-        print()
+        if args.json:
+            records.append(molecule_record(name, smi, triage, g, pending))
+        else:
+            print(render_molecule(name, triage, g, pending))
+            print()
+
+    if args.json:
+        print(json.dumps({
+            "tool": "openafr/score_molecule",
+            "caveats": HEADER_CAVEATS.strip(),
+            "validated_band_angstrom": list(VALIDATED_FE_BAND),
+            "molecules": records,
+        }, indent=2))
 
 
 if __name__ == "__main__":
