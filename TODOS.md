@@ -2,54 +2,32 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Rank WITHIN the azole class — the gap look #6 exposed (OPEN, 2026-08-23)
+## Rank WITHIN the azole class — CLOSED 2026-08-25 (decisive FAIL → re-scoped to Option B)
 
-> **UPDATE 2026-08-24 — the attack is pre-registered and frozen; the one look is UNSPENT.**
-> Option A (attack the 0.650) is now a frozen pre-registration:
-> `work/PREREGISTRATION_channel_engagement.md` (sha256 `62592a10…`, checkfile
-> `work/PREREG_channel_engagement.sha256` verifies clean). The one orthogonal feature is
-> **mode F — channel engagement**: count of distinct channel-lining residues the tail contacts
-> in the *coordinating* pose (same min-N-Fe pose mode C uses), where the channel-shell is
-> defined LABEL-BLIND from the co-crystal ligand VT1. Zero tuned parameters; AUC is the
-> threshold-free gate on the matched 7-active + azole-bearing pool (the exact pool where mode C
-> scored 0.650). Grader `scripts/validate_gate_channel.py` (hash-gated, tests in
-> `tests/test_channel_gate.py`, all green). **NOT YET RUN** — running the docking IS the one
-> graded look, and it is deliberate: reproduce the verified-inactive poses (~2.5 h, look #6) +
-> dock the 8 training azoles, then `validate_gate_channel.py`. PASS re-opens within-class
-> triage (read the size-residualized AUC first); FAIL is the decisive evidence for Option B
-> (re-scope to novel-chemotype triage, 0.810) and points the next attempt at ensemble/flexible
-> poses ([[outreach-hold-build-first]]). The stopping rule binds: one feature, no re-run.
+> **UPDATE 2026-08-25 — look #7 (mode F, channel engagement) ran and FAILED. Stopping rule
+> binds. Item closed.**
+>
+> Mode F AUC 0.590 on the matched 7-active + azole-bearing-inactive pool (mode C comparator:
+> 0.650). An orthogonal, mechanistically-motivated tail-fit feature also cannot separate
+> working from failed azoles on a single rigid conformer. Size-residualized AUC 0.612 —
+> the failure is not explained by mode F re-measuring molecular weight. Result:
+> `work/RESULTS_channel_engagement.md`.
+>
+> **Per pre-registration, this is the decisive evidence for Option B: re-scope the product
+> to novel-chemotype triage (non-azole pool, AUC 0.810, EF@5% 4.98x).** The within-azole
+> ceiling is a property of the rigid pose, not of any specific feature. Any further within-class
+> attack requires ensemble/flexible-receptor poses (new dataset, new pre-registration).
+> No further feature attempts on `work/screen_verified/` are permitted.
 
-**What happened.** The verified-inactive benchmark ran and passed
-(`work/RESULTS_verified_inactives.md`, look #6): the criterion separates real azoles from 279
-compounds *measured* not to inhibit *C. albicans* at AUC 0.716, so the published separation is
-**not** an artifact of presumed-inactive decoy construction. Limitation 2 of the preprint —
-"the single largest caveat" — is discharged.
+**History.** Look #6 (`work/RESULTS_verified_inactives.md`) passed overall (AUC 0.716) but
+located the ceiling: AUC 0.810 vs non-azole chemotypes, AUC 0.650 vs azole-bearing inactives.
+Mode C (iron-approach distance) detects chemotype, not potency. Look #7 tested mode F
+(channel engagement) as the one permitted orthogonal feature — it also failed (0.590 < 0.70),
+confirming the rigid-conformer limitation rather than any feature-specific weakness.
 
-**What it exposed.** A pre-specified subgroup split locates the criterion's power precisely:
-
-    vs non-azole chemotypes            AUC 0.810   (EF@5% 4.98x, BEDROC 0.487, 4/7 in top 15)
-    vs azole analogues measured inactive  AUC 0.650   (below the 0.70 bar)
-
-Most of what the criterion detects is **chemotype, not potency**. Of the 39 molecules inside
-the validated 2.47–2.88 Å iron-bound band, 33 are compounds measured not to work and only 2 are
-true actives; 7 measured inactives outrank the best real drug. So a shortlist this tool produces
-will be crowded with azole-like molecules that have already been tried and failed — which is
-exactly the molecules a wet-lab collaborator is least interested in.
-
-**Why this is the next question.** Every downstream ambition (a candidate worth an email, the
-parked wet-lab package) needs ranking *within* the azole class, and that is measured at 0.650.
-Note this is now a **well-posed supervised problem** for the first time: 162 azole-bearing
-compounds with measured inactivity and 7 (plus the 8 training) azoles with measured activity are
-in the repo. Possible attacks, none yet scoped:
-  - a feature that is not iron distance and not iron direction (both foreclosed on the old poses,
-    but this is a NEW dataset, so the stopping rule does not bind here);
-  - the substituent/tail interactions that azole SAR actually turns on, which a single rigid
-    conformer may simply not contain (cf. §4.3 desolvation / induced fit);
-  - accepting the boundary and re-scoping the product to novel-chemotype triage only, where the
-    measured AUC is 0.810.
-**Any new criterion needs its own pre-registration.** Do not fish on the verified-inactive poses
-(`work/screen_verified/`) — the one-look discipline applies to this dataset too.
+**Product re-scope (effective immediately):** the tool's defensible claim is
+**novel-chemotype triage at AUC 0.810**. Shortlists should be filtered to exclude azole-class
+molecules; within-class azole ranking is out of scope until ensemble/flexible poses exist.
 
 **Source:** look #6, 2026-08-23. Depends on nothing; the dataset and poses reproduce from
 `work/RESULTS_verified_inactives.md`.
