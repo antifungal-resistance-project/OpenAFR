@@ -113,23 +113,33 @@ def classify_record(rec):
     return "ignore"
 
 
+def verdict_from_tally(tally):
+    """A tally of classified labels -> the compound-level verdict, contrary evidence first.
+
+    The priority is the whole point: one active or ambiguous record anywhere outranks any
+    number of inactive ones, because the cost of a false inactive in a benchmark is silent and
+    asymmetric. Factored out so every caller that aggregates classified labels (across sources,
+    across targets) applies exactly this order and cannot drift from it.
+    """
+    if tally["active"]:
+        return "has-active-evidence"
+    if tally["ambiguous"]:
+        return "ambiguous"
+    if tally["inactive"]:
+        return "verified-inactive"
+    return "no-usable-evidence"
+
+
 def compound_verdict(records):
     """All of one compound's records -> (verdict, tally).
 
     'verified-inactive' requires consistent inactivity: >= 1 inactive record and no active
-    or ambiguous ones. Any contrary evidence anywhere wins, because the cost of a false
-    inactive in a benchmark is silent and asymmetric.
+    or ambiguous ones (see verdict_from_tally for the ordering rule).
     """
     tally = {"active": 0, "inactive": 0, "ambiguous": 0, "ignore": 0}
     for r in records:
         tally[classify_record(r)] += 1
-    if tally["active"]:
-        return "has-active-evidence", tally
-    if tally["ambiguous"]:
-        return "ambiguous", tally
-    if tally["inactive"]:
-        return "verified-inactive", tally
-    return "no-usable-evidence", tally
+    return verdict_from_tally(tally), tally
 
 
 def props(mol):

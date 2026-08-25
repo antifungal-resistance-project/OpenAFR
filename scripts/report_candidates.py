@@ -34,7 +34,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from openafr import protocol
+from openafr import precedent, protocol
 from openafr.pdbqt import iron_position
 from scripts.analyze_poses import FE_CUTOFF, analyze
 
@@ -67,7 +67,40 @@ def _fmt(v, spec, na="—"):
     return format(v, spec) if v is not None else na
 
 
-def render(screen_dir, receptor_pdb, fe, rows, top):
+def collect_precedent(rows, library_smi, sources):
+    """Look up assay precedent for the screened molecules, keyed by name.
+
+    library_smi maps the screen back to structures (`SMILES<TAB>name`, the filter_library.py
+    output — the pdbqt poses carry no SMILES). Returns {name: summary}; a molecule absent from
+    the library, or whose lookup errors, is recorded so the report can say 'not checked' rather
+    than imply a clean miss. Network: one call per molecule, isolated per molecule.
+    """
+    name2smi = {}
+    for line in open(library_smi):
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) == 2:
+            name2smi[parts[1]] = parts[0]
+    out = {}
+    for r in rows:
+        smi = name2smi.get(r["name"])
+        if smi is None:
+            out[r["name"]] = {"verdict": "not-in-library"}
+            continue
+        try:
+            out[r["name"]] = precedent.lookup(smi, sources=sources)
+        except Exception as e:
+            out[r["name"]] = {"verdict": "lookup-failed", "error": str(e)}
+    return out
+
+
+def _prec_cell(summary):
+    """The short prior-testing label for the ranked table (details go in the per-candidate block)."""
+    if summary is None:
+        return "—"
+    return summary["verdict"]
+
+
+def render(screen_dir, receptor_pdb, fe, rows, top, prec=None):
     """Return the Markdown report as one string."""
     digest = hashlib.sha256(protocol.PROTOCOL.read_bytes()).hexdigest()
     verified = digest == protocol.PROTOCOL_SHA
@@ -115,17 +148,32 @@ def render(screen_dir, receptor_pdb, fe, rows, top):
 
     L.append("## Ranked candidates")
     L.append("")
-    L.append("| rank | ligand | N–Fe (Å) | iron-bound poses | Vina (kcal/mol) |")
-    L.append("|---:|---|---:|---:|---:|")
+    head = "| rank | ligand | N–Fe (Å) | iron-bound poses | Vina (kcal/mol) |"
+    sep = "|---:|---|---:|---:|---:|"
+    if prec is not None:
+        head += " prior testing |"
+        sep += "---|"
+    L.append(head)
+    L.append(sep)
     for i, r in enumerate(rows, 1):
         d = _fmt(r["best_fe"], ".3f", na="no pose")
         poses = f"{r['n_passing']}/{r['n_poses']}" if r["n_poses"] else "0/0"
         sc = _fmt(r["best_score"], ".1f", na="NA")
-        L.append(f"| {i} | {r['name']} | {d} | {poses} | {sc} |")
+        line = f"| {i} | {r['name']} | {d} | {poses} | {sc} |"
+        if prec is not None:
+            line += f" {_prec_cell(prec.get(r['name']))} |"
+        L.append(line)
     L.append("")
     L.append("*N–Fe = closest nitrogen-to-iron approach (the deciding criterion). "
              "Iron-bound poses = how many docked poses reach coordination distance. "
              "Vina = affinity, secondary only.*")
+    if prec is not None:
+        L.append("")
+        L.append("> **Prior testing** is a ChEMBL/PubChem check for a deposited assay against the "
+                 "CYP51 enzyme, run by `scripts/check_precedent.py`. `tested-inactive` means a wet "
+                 "lab already measured this molecule inactive — heed it. `no-precedent` means no "
+                 "record was found, which is **not** proof it was never tested: a failing "
+                 "measurement is often never deposited. It does not affect the rank above.")
     L.append("")
 
     detail = rankable[:top]
@@ -147,6 +195,23 @@ def render(screen_dir, receptor_pdb, fe, rows, top):
                          "which is weaker evidence.")
             L.append(f"- **Vina affinity:** {_fmt(r['best_score'], '.1f', na='NA')} kcal/mol "
                      "(secondary — does not decide rank).")
+            if prec is not None:
+                s = prec.get(r["name"], {})
+                v = s.get("verdict", "—")
+                ids = " / ".join(x for x in (
+                    f"ChEMBL {s['chembl_id']}" if s.get("chembl_id") else "",
+                    f"PubChem {s['pubchem_cid']}" if s.get("pubchem_cid") else "") if x)
+                extra = f" ({ids})" if ids else ""
+                if v == "tested-inactive":
+                    L.append(f"- **Prior testing:** ⚠️ **{v}**{extra} — a wet lab has already "
+                             "measured this molecule inactive against the CYP51 enzyme. Weigh "
+                             "that before proposing it for the bench.")
+                elif v == "no-precedent":
+                    L.append(f"- **Prior testing:** {v} — no deposited enzyme record found. This "
+                             "is not proof it was never tested (failing results are often not "
+                             "deposited), only that none is on record.")
+                else:
+                    L.append(f"- **Prior testing:** {v}{extra}.")
             L.append("")
 
     L.append("---")
@@ -164,10 +229,20 @@ def main():
     ap.add_argument("-o", "--out", help="write the Markdown report here (default: stdout)")
     ap.add_argument("-n", "--top", type=int, default=10,
                     help="how many candidates to expand in full detail (default 10)")
+    ap.add_argument("--precedent", metavar="LIBRARY.smi",
+                    help="add a prior-testing column by checking ChEMBL/PubChem for each molecule "
+                         "(SMILES<TAB>name, the filter_library.py output). Makes network calls.")
+    ap.add_argument("--precedent-source", choices=["both", "chembl", "pubchem"], default="both",
+                    help="which databases the --precedent check queries (default: both)")
     args = ap.parse_args()
 
     fe, rows = collect(args.screen_dir, args.receptor_pdb)
-    report = render(args.screen_dir, args.receptor_pdb, fe, rows, args.top)
+    prec = None
+    if args.precedent:
+        sources = {"both": ("chembl", "pubchem"), "chembl": ("chembl",),
+                   "pubchem": ("pubchem",)}[args.precedent_source]
+        prec = collect_precedent(rows, args.precedent, sources)
+    report = render(args.screen_dir, args.receptor_pdb, fe, rows, args.top, prec)
 
     if args.out:
         pathlib.Path(args.out).write_text(report)

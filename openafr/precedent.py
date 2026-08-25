@@ -1,0 +1,383 @@
+"""Assay precedent — has this candidate already been measured against the target?
+
+Why this module exists
+----------------------
+The triage pipeline ranks *novel* molecules by heme-iron geometry (rank_candidates.py),
+but "novel to us" is not "never tested". A wet lab may already have assayed a molecule
+against fungal CYP51 and found it inactive — and, because of publication bias, that result
+often never reaches a paper (it sits in a file drawer). Ranking such a compound highly and
+proposing it for the bench re-runs an experiment someone already lost. This module asks the
+one question the ranker cannot: *is there a deposited assay record for this molecule against
+the target, and what did it say?*
+
+Two sources, because inactives hide in both
+-------------------------------------------
+  ChEMBL   curated literature + HTS activities, quantitative (MIC/IC50). Verdict comes from
+           the measured value via openafr.inactives (CLSI-anchored bands).
+  PubChem  BioAssay — the largest store of HTS *inactives*, each assay pre-adjudicated by the
+           depositor as Active / Inactive / Inconclusive / Unspecified. Verdict comes from
+           that outcome directly; 'Unspecified' is read as no verdict (ignored), never as a
+           non-inhibition claim.
+The two are merged at the tally level, so a candidate flagged inactive in either is caught,
+and one active record in either flips the verdict — the same 'contrary evidence wins' rule
+inactives.verdict_from_tally encodes, applied once across both sources.
+
+What it can and cannot tell you (stated plainly)
+------------------------------------------------
+A hit here is strong: the molecule was measured and the record exists. But a *miss* is weak:
+
+    NO record  !=  never tested.
+
+It may mean only that a failing measurement was never deposited. This module reports
+"no-precedent", never "untested" — the absence is not evidence.
+
+On-target vs. phenotypic vs. off-target
+---------------------------------------
+Records are sorted into three buckets, and the sort differs by source because the two label
+their targets differently:
+  on_target   the CYP51/ERG11 enzyme itself — the only direct verdict. ChEMBL: target id in
+              CYP51_TARGETS. PubChem: assay name names the enzyme (cyp51/erg11/sterol
+              14-demethylase), since PubChem has no single CYP51 target id to filter on.
+  phenotypic  a whole-cell MIC — ChEMBL: any non-enzyme record in µg/mL; PubChem: an assay
+              named antifungal/Candida/Aspergillus/etc. Weaker (permeability/efflux confound)
+              and, for PubChem, matched by name only — a coarse hint to go read the assays,
+              never a fungal verdict on its own.
+  off_target  everything else — not a resistance signal, a *novelty* signal: a compound already
+              characterised against other targets is a known molecule, not a fresh chemotype.
+
+Near-neighbour precedent
+------------------------
+Even when the exact molecule is absent, a very close analogue measured inactive is a soft
+negative. nearest_tested_neighbour() reports the most similar previously-tested compound
+(Tanimoto over the same Morgan fingerprint the pipeline uses elsewhere). It annotates a
+geometry rank, never overrides it.
+
+Network boundary
+----------------
+Every ChEMBL/PubChem call lives behind an injectable `opener` (default: urllib) so the pure
+bucket/verdict logic is exercised offline with canned JSON. The network functions make no
+promises about availability and fail per-molecule, never taking down a whole run.
+"""
+import json
+import re
+import urllib.error
+import urllib.parse
+import urllib.request
+
+from rdkit import Chem, DataStructs, RDLogger
+
+from openafr import inactives
+
+RDLogger.DisableLog("rdApp.*")
+
+# ChEMBL target(s) that ARE the enzyme we triage against. C. albicans sterol 14-alpha
+# demethylase (CYP51 / ERG11); the same target inactives.py names for disqualifying
+# enzyme-level actives. Frozen here so a precedent verdict is auditable; extend only with a
+# target that is genuinely the same enzyme (e.g. an orthologue) and say so in the run notes.
+CYP51_TARGETS = frozenset({"CHEMBL1780"})
+
+# PubChem has no single CYP51 target id, so its buckets are read from the assay name. Kept
+# deliberately specific: ENZYME must name the sterol-demethylase itself (a bare "demethylase"
+# would sweep in unrelated histone/DNA demethylases), PHENOTYPIC names a whole-organism assay.
+_ENZYME_ASSAY = re.compile(
+    r"cyp51|erg11|sterol\s*14|14\W*alpha[\s\-]*demethyl|lanosterol[\s\-]*14", re.I)
+_PHENOTYPIC_ASSAY = re.compile(
+    r"antifungal|candida|aspergillus|cryptococc|trichophyton|dermatophyt|\bfungal\b", re.I)
+
+# PubChem's own adjudication -> our shared vocabulary. 'Unspecified' is NOT a non-inhibition
+# claim (the depositor simply did not call it), so it is ignored, never read as inactive.
+_PUBCHEM_LABEL = {"Active": "active", "Inactive": "inactive", "Inconclusive": "ambiguous"}
+
+# A near neighbour this similar to a previously-tested compound inherits that compound's
+# result as a *soft* signal. Set well above the novelty floor make_decoys.py uses (0.35): we
+# only speak up when the analogy is strong enough that a chemist would not dismiss it.
+NEIGHBOUR_TANIMOTO = 0.85
+
+_CHEMBL_BASE = "https://www.ebi.ac.uk/chembl/api/data"
+_PUBCHEM_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
+
+# candidate-facing label <- inactives verdict label. The two are the same finding: a molecule
+# that would qualify as a verified-inactive decoy is one a wet lab measured inactive.
+_VERDICT_LABEL = {
+    "has-active-evidence": "tested-active",
+    "verified-inactive": "tested-inactive",
+    "ambiguous": "tested-ambiguous",
+    "no-usable-evidence": "record-inconclusive",
+}
+
+
+def inchikey(smiles):
+    """Canonical InChIKey for a SMILES, or None if RDKit cannot parse/standardise it.
+
+    The InChIKey is the join key against both databases: it collapses tautomer/charge notation
+    that differs between our library and a deposited record, so two writings of the same
+    molecule still match. A None here is a candidate we cannot look up, reported as such —
+    never a silent skip.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    key = Chem.MolToInchiKey(mol)
+    return key or None
+
+
+# --- the source-agnostic bucket/tally core --------------------------------------------
+
+def _empty_buckets():
+    """Per-bucket tallies of classified labels. Merging two sources is a field-wise sum."""
+    return {b: {"active": 0, "inactive": 0, "ambiguous": 0, "ignore": 0}
+            for b in ("on_target", "phenotypic", "off_target")}
+
+
+def _add(tally, label):
+    tally[label] += 1
+
+
+def merge_buckets(a, b):
+    """Field-wise sum of two bucket dicts — how ChEMBL and PubChem evidence is combined."""
+    out = _empty_buckets()
+    for bucket in out:
+        for label in out[bucket]:
+            out[bucket][label] = a[bucket][label] + b[bucket][label]
+    return out
+
+
+def _bucket_verdict(tally):
+    """One bucket's tally -> {'verdict', 'tally'}, or None when the bucket is empty."""
+    if sum(tally.values()) == 0:
+        return None
+    return {"verdict": _VERDICT_LABEL[inactives.verdict_from_tally(tally)], "tally": tally}
+
+
+def render(buckets):
+    """Bucketed tallies -> the candidate-facing summary dict.
+
+    Keys: verdict (on-target, candidate-facing; 'no-precedent' when the enzyme bucket is
+    empty), tally, phenotypic (secondary whole-cell verdict or None), n_off_target (novelty
+    signal), n_records. This is the pure renderer both sources feed; it touches no network.
+    """
+    on = _bucket_verdict(buckets["on_target"])
+    pheno = _bucket_verdict(buckets["phenotypic"])
+    n_off = sum(buckets["off_target"].values())
+    n_records = sum(sum(t.values()) for t in buckets.values())
+    return {
+        "verdict": on["verdict"] if on else "no-precedent",
+        "tally": on["tally"] if on else None,
+        "phenotypic": pheno,
+        "n_off_target": n_off,
+        "n_records": n_records,
+    }
+
+
+def fingerprint(smiles):
+    """Morgan fingerprint for a SMILES (the pipeline's shared one), or None if unparseable."""
+    mol = Chem.MolFromSmiles(smiles)
+    return inactives.fingerprint(mol) if mol is not None else None
+
+
+def load_neighbours(path):
+    """Read a previously-tested set for the near-neighbour check.
+
+    Format per line: `smiles<TAB>id[<TAB>verdict]`. The verified-inactives set this repo already
+    builds (scripts/make_verified_inactives.py) is the intended input — every entry there is a
+    measured inactive, so an omitted third column defaults to 'tested-inactive'. Unparseable
+    SMILES are skipped (they cannot seed a similarity), never silently miscounted.
+    """
+    out = []
+    for line in open(path):
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) < 2:
+            continue
+        smi, ident = parts[0], parts[1]
+        verdict = parts[2] if len(parts) > 2 else "tested-inactive"
+        fp = fingerprint(smi)
+        if fp is not None:
+            out.append({"id": ident, "fp": fp, "verdict": verdict})
+    return out
+
+
+def nearest_tested_neighbour(query_fp, neighbours):
+    """Most similar previously-tested compound to a candidate, above NEIGHBOUR_TANIMOTO.
+
+    query_fp   : the candidate's Morgan fingerprint (inactives.fingerprint).
+    neighbours : [{"id", "fp", "verdict"}, ...] — compounds with a known precedent verdict.
+    Returns the single best {"id", "verdict", "similarity"} at or above the threshold, or None
+    when nothing is close enough. A soft signal only: it annotates a rank, never changes it.
+    """
+    best = None
+    for n in neighbours:
+        s = DataStructs.TanimotoSimilarity(query_fp, n["fp"])
+        if s >= NEIGHBOUR_TANIMOTO and (best is None or s > best["similarity"]):
+            best = {"id": n["id"], "verdict": n["verdict"], "similarity": s}
+    return best
+
+
+# --- ChEMBL adapter -------------------------------------------------------------------
+
+def group_by_target(records):
+    """Split ChEMBL activity records into (on_target, phenotypic, off_target).
+
+    on_target  : records against a CYP51_TARGETS enzyme target — the direct verdict.
+    phenotypic : any non-enzyme record reported in µg/mL — a whole-cell MIC. Weaker evidence
+                 (permeability/efflux confound) and NOT organism-filtered, so this is a coarse
+                 secondary hint, reported separately, never a fungal verdict on its own.
+    off_target : everything else — a 'this is a known compound' novelty signal, kept as a count.
+    A record with no target id is treated as off-target; it cannot support an on-target claim.
+    """
+    on_target, phenotypic, off_target = [], [], []
+    for r in records:
+        tid = r.get("target_chembl_id")
+        if tid in CYP51_TARGETS:
+            on_target.append(r)
+        elif (r.get("standard_units") or "").strip() == "ug.mL-1":
+            phenotypic.append(r)
+        else:
+            off_target.append(r)
+    return on_target, phenotypic, off_target
+
+
+def chembl_buckets(records):
+    """ChEMBL activity records -> bucketed tallies, via target grouping + inactives.classify_record."""
+    on, pheno, off = group_by_target(records)
+    b = _empty_buckets()
+    for bucket, recs in (("on_target", on), ("phenotypic", pheno), ("off_target", off)):
+        for r in recs:
+            _add(b[bucket], inactives.classify_record(r))
+    return b
+
+
+def candidate_verdict(on_target_records):
+    """On-target ChEMBL records -> a candidate-facing precedent verdict {'verdict', 'tally'}.
+
+    With no records the verdict is 'no-precedent' — deliberately NOT 'untested', because a
+    missing record does not prove the molecule was never measured (see the module docstring).
+    """
+    if not on_target_records:
+        return {"verdict": "no-precedent", "tally": None}
+    raw, tally = inactives.compound_verdict(on_target_records)
+    return {"verdict": _VERDICT_LABEL[raw], "tally": tally}
+
+
+def summarise(records):
+    """All of a molecule's ChEMBL activity records -> the full precedent summary (ChEMBL only)."""
+    return render(chembl_buckets(records))
+
+
+# --- PubChem adapter ------------------------------------------------------------------
+
+def classify_pubchem_outcome(outcome):
+    """PubChem 'Activity Outcome' -> our shared label. 'Unspecified'/unknown -> 'ignore'."""
+    return _PUBCHEM_LABEL.get(outcome, "ignore")
+
+
+def pubchem_bucket(assay_name):
+    """Route a PubChem assay to a bucket by its name (PubChem has no CYP51 target id)."""
+    name = assay_name or ""
+    if _ENZYME_ASSAY.search(name):
+        return "on_target"
+    if _PHENOTYPIC_ASSAY.search(name):
+        return "phenotypic"
+    return "off_target"
+
+
+def pubchem_buckets(rows):
+    """PubChem assay rows [{'outcome', 'assay_name'}, ...] -> bucketed tallies."""
+    b = _empty_buckets()
+    for r in rows:
+        _add(b[pubchem_bucket(r.get("assay_name"))], classify_pubchem_outcome(r.get("outcome")))
+    return b
+
+
+# --- network layer (thin, injectable, not exercised against the real services) --------
+
+def _get_json(url, opener):
+    with opener(url, timeout=30) as resp:
+        return json.load(resp)
+
+
+def _get_json_or_none_on_404(url, opener):
+    """PubChem returns HTTP 404 for 'compound/assay not found' — a normal miss, not an error."""
+    try:
+        return _get_json(url, opener)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+
+
+def chembl_id_for_inchikey(ik, opener=urllib.request.urlopen):
+    """First ChEMBL molecule id whose standard InChIKey matches `ik`, or None if unknown."""
+    q = urllib.parse.urlencode({"molecule_structures__standard_inchi_key": ik})
+    data = _get_json(f"{_CHEMBL_BASE}/molecule.json?{q}", opener)
+    mols = data.get("molecules") or []
+    return mols[0]["molecule_chembl_id"] if mols else None
+
+
+def chembl_activities(chembl_id, opener=urllib.request.urlopen, page_limit=1000):
+    """All ChEMBL activity records for a molecule id, following pagination to the end."""
+    q = urllib.parse.urlencode({"molecule_chembl_id": chembl_id, "limit": page_limit})
+    url = f"{_CHEMBL_BASE}/activity.json?{q}"
+    out = []
+    while url:
+        data = _get_json(url, opener)
+        out.extend(data.get("activities") or [])
+        nxt = (data.get("page_meta") or {}).get("next")
+        url = f"https://www.ebi.ac.uk{nxt}" if nxt else None
+    return out
+
+
+def pubchem_cid_for_inchikey(ik, opener=urllib.request.urlopen):
+    """First PubChem CID whose InChIKey matches `ik`, or None if PubChem has never seen it."""
+    data = _get_json_or_none_on_404(
+        f"{_PUBCHEM_BASE}/compound/inchikey/{urllib.parse.quote(ik)}/cids/JSON", opener)
+    cids = ((data or {}).get("IdentifierList") or {}).get("CID") or []
+    return cids[0] if cids else None
+
+
+def pubchem_assays(cid, opener=urllib.request.urlopen):
+    """PubChem assay summary for a CID -> [{'outcome', 'assay_name'}, ...] (empty if none).
+
+    The assaysummary endpoint returns a column-oriented Table; this reads the two columns the
+    bucket/verdict logic needs by name, so PubChem re-ordering or adding columns cannot shift
+    the wrong field into place.
+    """
+    data = _get_json_or_none_on_404(
+        f"{_PUBCHEM_BASE}/compound/cid/{cid}/assaysummary/JSON", opener)
+    table = (data or {}).get("Table")
+    if not table:
+        return []
+    cols = table["Columns"]["Column"]
+    oi, ni = cols.index("Activity Outcome"), cols.index("Assay Name")
+    return [{"outcome": row["Cell"][oi], "assay_name": row["Cell"][ni]}
+            for row in table.get("Row", [])]
+
+
+def lookup(smiles, sources=("chembl", "pubchem"), opener=urllib.request.urlopen):
+    """Full precedent check for one SMILES across the requested sources.
+
+    Canonicalises to an InChIKey, resolves it in each source, fetches records, and renders one
+    merged summary. Returns summarise()'s keys plus 'inchikey', 'chembl_id', 'pubchem_cid'.
+    Distinguishes 'unparseable' (RDKit rejected the SMILES) from 'no-precedent' (a real molecule
+    with no enzyme record found). Network errors propagate to the caller, which isolates them
+    per-molecule.
+    """
+    ik = inchikey(smiles)
+    if ik is None:
+        return {"inchikey": None, "chembl_id": None, "pubchem_cid": None,
+                "verdict": "unparseable", "tally": None, "phenotypic": None,
+                "n_off_target": 0, "n_records": 0}
+
+    buckets = _empty_buckets()
+    chembl_id = pubchem_cid = None
+    if "chembl" in sources:
+        chembl_id = chembl_id_for_inchikey(ik, opener)
+        if chembl_id:
+            buckets = merge_buckets(buckets, chembl_buckets(chembl_activities(chembl_id, opener)))
+    if "pubchem" in sources:
+        pubchem_cid = pubchem_cid_for_inchikey(ik, opener)
+        if pubchem_cid:
+            buckets = merge_buckets(buckets, pubchem_buckets(pubchem_assays(pubchem_cid, opener)))
+
+    summary = render(buckets)
+    summary.update({"inchikey": ik, "chembl_id": chembl_id, "pubchem_cid": pubchem_cid})
+    return summary
