@@ -321,6 +321,18 @@ most useful next contribution anyone could make to this benchmark.
    tip.
 5. **State what the mechanism does not cover.** Heme coordination does not distinguish fungal from
    human CYP (§3.5).
+6. **Check assay precedent before proposing a shortlist for the bench.** Novel-to-a-fingerprint is
+   not never-tested: a molecule may already have a deposited ChEMBL/PubChem record showing it
+   inactive against fungal CYP51, and because failing measurements are under-published, a geometry
+   rank can quietly re-run a lost experiment. We wired an exact-match plus near-neighbour precedent
+   check as the last stage of the pipeline (`scripts/check_precedent.py`) and ran it over the top 100
+   of the repurposing screen (§3.5) as a worked example. It validated in-run — the only enzyme-level
+   flags were the known azole controls (fluconazole, voriconazole), never a novel hit — and demoted
+   seven top-ranked repurposing candidates that a whole-cell assay had already found inactive, while
+   the near-neighbour probe against the verified-inactive azole analogues returned nothing at
+   Tanimoto ≥ 0.85, consistent with the hits being genuinely off the azole scaffold. Absence of a
+   record is reported as `no-precedent`, never "untested." The full read-out is in the repository's
+   candidate-shortlist result.
 
 ### 4.3 What could break the ceiling
 

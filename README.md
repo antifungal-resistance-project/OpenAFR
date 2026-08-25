@@ -71,6 +71,26 @@ argument. Add `--json` to get one machine-readable object on stdout (human text 
 stderr), so the front door is scriptable as a benchmark. What a readout does and does not
 establish is spelled out in [`docs/INTERPRETING_A_SCORE.md`](docs/INTERPRETING_A_SCORE.md).
 
+**4. Check precedent — has a wet lab already measured it?** Geometry ranks a molecule; it
+has no idea whether that molecule was already assayed against fungal CYP51 and found
+inactive. Because failing measurements are under-published, a high rank can quietly re-run a
+lost experiment. This step asks ChEMBL and PubChem, per molecule, *is there a deposited assay
+record, and what did it say?* — reported honestly (a missing record is `no-precedent`, never
+"untested"):
+
+```
+conda run -n openafr python scripts/check_precedent.py \
+    my_library.smi --near data/ligands/verified_inactives.smi -o precedent.tsv
+```
+
+**Worked example — a real, filtered candidate shortlist.** Running the full flow (triage →
+dock → rank → precedent) over the top of the Drug Repurposing Hub screen produces
+[`work/RESULTS_candidate_shortlist.md`](work/RESULTS_candidate_shortlist.md): the precedent
+layer validates itself in-run (it flags the known azole controls fluconazole/voriconazole and
+nothing else at the enzyme), demotes seven novel hits a cell assay already found inactive, and
+leaves a short list of geometry-clean, precedent-clean hypotheses. Every rank there is still a
+hypothesis for a wet lab, never a hit.
+
 ## Why antifungal resistance
 
 *Candida auris* is a WHO critical-priority fungal pathogen: multidrug-resistant, lethal, and
@@ -276,7 +296,15 @@ python scripts/prep_ligands.py work/in_domain.smi work/screen_ligands   # SMILES
 ./scripts/screen.sh                                                  # dock all cores -> work/screen/
 python scripts/rank_candidates.py work/screen -o work/candidates.tsv # ranked by validated criterion
 python scripts/report_candidates.py work/screen -o work/report.md    # human-readable report + evidence
+python scripts/check_precedent.py work/in_domain.smi \
+    --near data/ligands/verified_inactives.smi -o work/precedent.tsv  # already measured (and failed)?
 ```
+
+The final `check_precedent.py` step is the file-drawer guard: it annotates the ranked
+list with any deposited ChEMBL/PubChem assay verdict so a high geometry rank never
+silently proposes a molecule a wet lab already found inactive. A worked run over the
+repurposing screen is written up in
+[`work/RESULTS_candidate_shortlist.md`](work/RESULTS_candidate_shortlist.md).
 
 The `filter/` step drops molecules the gate's evidence does not cover *before* any
 docking compute — > 45 heavy atoms (the pre-registered applicability domain, the
