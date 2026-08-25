@@ -79,3 +79,31 @@ def test_render_reports_protocol_integrity(screen):
     fe, rows = collect(screen_dir, rec)
     md = render(screen_dir, rec, fe, rows, top=10)
     assert "unmodified since freezing" in md
+
+
+def test_precedent_column_is_absent_by_default(screen):
+    # No --precedent -> the report is byte-for-byte the geometry-only report (no network).
+    screen_dir, rec = screen
+    fe, rows = collect(screen_dir, rec)
+    md = render(screen_dir, rec, fe, rows, top=10)
+    assert "prior testing" not in md.lower()
+
+
+def test_precedent_column_annotates_but_keeps_order_and_caveats(screen):
+    screen_dir, rec = screen
+    fe, rows = collect(screen_dir, rec)
+    prec = {
+        "close": {"verdict": "tested-inactive", "chembl_id": "CHEMBL1", "pubchem_cid": 7},
+        "far": {"verdict": "no-precedent", "chembl_id": None, "pubchem_cid": None},
+        "nopose": {"verdict": "not-in-library"},
+    }
+    md = render(screen_dir, rec, fe, rows, top=10, prec=prec)
+    # the column and its honest framing are present
+    assert "prior testing" in md.lower()
+    assert "tested-inactive" in md and "not affect the rank" in md
+    # a measured-inactive top candidate is flagged in its detail block
+    assert "already measured this molecule inactive" in md
+    # ranking is unchanged: every molecule still appears exactly once, close still first
+    for name in ("close", "far", "nopose"):
+        assert md.count(f"| {name} |") == 1
+    assert md.index("| close |") < md.index("| far |") < md.index("| nopose |")
