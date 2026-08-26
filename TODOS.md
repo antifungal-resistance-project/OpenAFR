@@ -2,10 +2,35 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
-## Rank WITHIN the azole class — CLOSED 2026-08-25 (decisive FAIL → re-scoped to Option B)
+## Rank WITHIN the azole class — CLOSED (for good) 2026-08-26 by the independent confirmation (#9 FAIL)
 
-> **UPDATE 2026-08-25 — look #7 (mode F, channel engagement) ran and FAILED. Stopping rule
-> binds. Item closed.**
+> **UPDATE 2026-08-26 — look #9 (independent-active confirmation) FAILED. The within-azole line is
+> now closed on BOTH the rigid and the exhaustive-ensemble receptor. Do NOT re-open without a
+> genuinely new axis (not another conformer set).**
+>
+> Look #8's ensemble PASS (AUC 0.750) was on only 7 held-out azoles with a wide CI (0.683–0.825),
+> and its own PASS branch demanded a pre-registered confirmation on an INDEPENDENT active set
+> before any within-class claim. That confirmation ran: an independent N=200 (seed 42) sample of
+> 3,609 ChEMBL measured-active azoles (novelty-filtered <0.70 vs all 15 actives + the 5TZ1
+> co-crystal), same frozen ensemble/criterion/inactives — **only the actives changed**. Result:
+> **ensemble-min mode C AUC 0.682 < 0.70** (tight CI 0.647–0.715 at n=200; permutation p<0.0001,
+> so the signal is REAL but sub-threshold). The lift is genuine but small — 5TZ1 alone 0.638 →
+> ensemble 0.682 — and which conformer helps is itself sample-dependent (5FSA carried look #8;
+> 5V5Z is best here at 0.701). Novel-chemotype guard still holds at 0.823 (comparator 0.810), so
+> the PRODUCT is intact — the failure is specifically within-class ranking.
+> Pre-reg `work/PREREGISTRATION_ensemble_confirm.md` (frozen sha `7754050e…`); result
+> `work/RESULTS_ensemble_confirm.md`; grader `scripts/validate_gate_ensemble_confirm.py`; active-set
+> builder `scripts/make_verified_actives.py`. **Settled conclusion:** pose geometry over a fixed
+> *C. albicans* CYP51 target (rigid OR full crystallographic ensemble) cannot rank working azoles
+> above failed azole analogues to the 0.70 bar — a property of the QUESTION, not of any one
+> feature or conformer. The defensible product remains novel-chemotype triage (AUC 0.810–0.823).
+
+> **SUPERSEDED 2026-08-25 — look #8 (ensemble receptor) PASSED at AUC 0.750 and briefly re-opened
+> this line, but look #9 above shows that PASS did not replicate on an independent set (n=7 → n=200).
+> Look #8 stands as graded (`work/RESULTS_ensemble.md`) but is superseded in interpretation.**
+
+> **SUPERSEDED 2026-08-25 — look #7 (mode F, channel engagement) FAILED, closing the line on the
+> RIGID conformer. The ensemble looks #8/#9 extended the test to the conformer ensemble; #9 closes it.**
 >
 > Mode F AUC 0.590 on the matched 7-active + azole-bearing-inactive pool (mode C comparator:
 > 0.650). An orthogonal, mechanistically-motivated tail-fit feature also cannot separate
