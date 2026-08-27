@@ -76,6 +76,31 @@ def test_not_reaching_iron_is_flagged():
     assert any("does not reach fungal iron" in c for c in concerns)
 
 
+def test_resistance_lost_is_flagged_for_novel_candidate():
+    # vatalanib: 5/5 stable in WT but collapses to 2/5 in the C. auris Y132F pocket
+    res = {"verdict": "LOST"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False, res)
+    assert any("Y132F" in c for c in concerns)
+
+
+def test_resistance_retained_is_not_a_concern():
+    res = {"verdict": "RETAINED"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False, res)
+    assert not any("Y132F" in c for c in concerns)
+
+
+def test_resistance_lost_is_not_a_strike_against_a_control():
+    # controls are the Y132F-defeated azoles; their mutant behavior is a robustness check
+    res = {"verdict": "LOST"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, True, res)
+    assert not any("Y132F" in c for c in concerns)
+
+
+def test_resistance_unchecked_adds_no_concern():
+    # backward-compatible default: no resistance record -> no concern
+    assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
+
+
 def test_unchecked_axis_set_is_nonempty_so_every_card_carries_it():
     # the honesty guard: there is always at least one axis a card must admit it skipped
     assert len(NOT_YET_CHECKED) >= 1

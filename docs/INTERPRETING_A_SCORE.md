@@ -98,8 +98,12 @@ in the tool's own printed header for a reason.
 
 5. **It says nothing about resistance-breaking.** The method was validated on wild-type CYP51.
    A separate pre-registered test found the criterion **failed** its gate in the *C. auris*
-   Y132F resistance pocket (`work/RESULTS_auris_Y132F.md`). Do not read an in-band score as
-   evidence a molecule defeats azole resistance.
+   Y132F resistance pocket (`work/RESULTS_auris_Y132F.md`). A per-candidate retention check
+   (`work/RESULTS_candidate_resistance.md`) then docked the shortlist itself into that pocket:
+   it can **demote** a candidate whose coordination collapses there (e.g. vatalanib, LOST), but
+   a molecule that *retains* coordination is not thereby a resistance-breaker — the criterion is
+   nearly insensitive to Y132F, so even the Y132F-defeated azole controls "retain." Do not read
+   an in-band score, or a RETAINED verdict, as evidence a molecule defeats azole resistance.
 
 ---
 
@@ -123,4 +127,5 @@ run the front door, and read the verdict with this page open.
 - Reliability / the top-1% artifact: `work/RESULTS_reliability.md`
 - Decoy ceiling: `work/RESULTS_axial.md`
 - Resistance-pocket negative: `work/RESULTS_auris_Y132F.md`
+- Per-candidate resistance retention: `work/RESULTS_candidate_resistance.md` (+ `work/PREREGISTRATION_candidate_resistance.md`)
 - The full method write-up: `work/PREPRINT_geometry_ceiling.md` (+ `.pdf`)

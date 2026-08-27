@@ -16,6 +16,8 @@ work/screen_auris_Y132F/
 work/screen_consensus_wt/
 work/candidates/dock_fungal/
 work/candidates/dock_human/
+work/candidates/dock_auris_Y132F/
+work/candidates/cand_ligands/
 work/candidates/focus_ligands/
 work/candidates/dock_run.log
 work/candidates/human_control/*.pdbqt

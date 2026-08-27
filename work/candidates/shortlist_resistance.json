@@ -1,0 +1,263 @@
+{
+  "fe_cutoff": 3.0,
+  "retention_tol": 0.5,
+  "min_coord_seeds": 3,
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "wt_consensus": 2.371,
+      "y132f_consensus": 2.358,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.066,
+      "retention_shift": -0.013,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.373,
+        "2": 2.377,
+        "3": 2.358,
+        "4": 2.424,
+        "42": 2.397
+      }
+    },
+    {
+      "name": "verinurad",
+      "wt_consensus": 2.417,
+      "y132f_consensus": 2.369,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.095,
+      "retention_shift": -0.048,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.369,
+        "2": 2.406,
+        "3": 2.464,
+        "4": 2.45,
+        "42": 2.392
+      }
+    },
+    {
+      "name": "vatalanib",
+      "wt_consensus": 2.479,
+      "y132f_consensus": 2.51,
+      "y132f_seeds_coordinating": "2/5",
+      "y132f_spread": 0.016,
+      "retention_shift": null,
+      "verdict": "LOST",
+      "per_seed_y132f": {
+        "1": 3.292,
+        "2": 4.149,
+        "3": 2.51,
+        "4": 2.526,
+        "42": 4.178
+      }
+    },
+    {
+      "name": "flucloxacillin",
+      "wt_consensus": 2.517,
+      "y132f_consensus": 2.538,
+      "y132f_seeds_coordinating": "4/5",
+      "y132f_spread": 0.039,
+      "retention_shift": 0.021,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.538,
+        "2": 4.344,
+        "3": 2.542,
+        "4": 2.541,
+        "42": 2.577
+      }
+    },
+    {
+      "name": "taranabant",
+      "wt_consensus": 2.564,
+      "y132f_consensus": 2.534,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.122,
+      "retention_shift": -0.03,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.534,
+        "2": 2.581,
+        "3": 2.634,
+        "4": 2.656,
+        "42": 2.562
+      }
+    },
+    {
+      "name": "lersivirine",
+      "wt_consensus": 2.572,
+      "y132f_consensus": 2.636,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.061,
+      "retention_shift": 0.064,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.697,
+        "2": 2.671,
+        "3": 2.643,
+        "4": 2.645,
+        "42": 2.636
+      }
+    },
+    {
+      "name": "L-838417",
+      "wt_consensus": 2.58,
+      "y132f_consensus": 2.555,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.077,
+      "retention_shift": -0.025,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.578,
+        "2": 2.555,
+        "3": 2.626,
+        "4": 2.63,
+        "42": 2.632
+      }
+    },
+    {
+      "name": "LDN-27219",
+      "wt_consensus": 2.603,
+      "y132f_consensus": 2.586,
+      "y132f_seeds_coordinating": "1/5",
+      "y132f_spread": 0.0,
+      "retention_shift": null,
+      "verdict": "LOST",
+      "per_seed_y132f": {
+        "1": 4.817,
+        "2": 5.669,
+        "3": 2.586,
+        "4": 5.62,
+        "42": 4.789
+      }
+    },
+    {
+      "name": "R-1479",
+      "wt_consensus": 2.621,
+      "y132f_consensus": 2.677,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.157,
+      "retention_shift": 0.056,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.805,
+        "2": 2.677,
+        "3": 2.811,
+        "4": 2.8,
+        "42": 2.835
+      }
+    },
+    {
+      "name": "ravuconazole",
+      "wt_consensus": 2.653,
+      "y132f_consensus": 2.644,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.077,
+      "retention_shift": -0.009,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.722,
+        "2": 2.644,
+        "3": 2.691,
+        "4": 2.69,
+        "42": 2.668
+      }
+    },
+    {
+      "name": "voriconazole",
+      "wt_consensus": 2.657,
+      "y132f_consensus": 2.656,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.038,
+      "retention_shift": -0.001,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.664,
+        "2": 2.694,
+        "3": 2.677,
+        "4": 2.687,
+        "42": 2.656
+      }
+    },
+    {
+      "name": "nolatrexed",
+      "wt_consensus": 2.677,
+      "y132f_consensus": 2.644,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.063,
+      "retention_shift": -0.033,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.697,
+        "2": 2.644,
+        "3": 2.691,
+        "4": 2.694,
+        "42": 2.707
+      }
+    },
+    {
+      "name": "olprinone",
+      "wt_consensus": 2.68,
+      "y132f_consensus": 2.667,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.068,
+      "retention_shift": -0.013,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.719,
+        "2": 2.667,
+        "3": 2.735,
+        "4": 2.708,
+        "42": 2.706
+      }
+    },
+    {
+      "name": "letrozole",
+      "wt_consensus": 2.705,
+      "y132f_consensus": 2.674,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.057,
+      "retention_shift": -0.031,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.697,
+        "2": 2.731,
+        "3": 2.684,
+        "4": 2.698,
+        "42": 2.674
+      }
+    },
+    {
+      "name": "fluconazole",
+      "wt_consensus": 2.711,
+      "y132f_consensus": 2.697,
+      "y132f_seeds_coordinating": "5/5",
+      "y132f_spread": 0.06,
+      "retention_shift": -0.014,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 2.745,
+        "2": 2.757,
+        "3": 2.73,
+        "4": 2.697,
+        "42": 2.708
+      }
+    },
+    {
+      "name": "ketoconazole",
+      "wt_consensus": 2.921,
+      "y132f_consensus": 2.703,
+      "y132f_seeds_coordinating": "3/5",
+      "y132f_spread": 0.138,
+      "retention_shift": -0.218,
+      "verdict": "RETAINED",
+      "per_seed_y132f": {
+        "1": 3.89,
+        "2": 3.63,
+        "3": 2.758,
+        "4": 2.841,
+        "42": 2.703
+      }
+    }
+  ]
+}

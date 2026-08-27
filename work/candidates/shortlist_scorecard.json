@@ -13,12 +13,13 @@
     "admet",
     "synthesizability",
     "applicability_domain",
-    "assay_precedent"
+    "assay_precedent",
+    "resistance_retention (C. auris Y132F)"
   ],
   "axes_not_yet_checked": {
     "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
     "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-    "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+    "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
     "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
     "stereoisomers": "all-stereoisomer docking (#85)",
     "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -72,10 +73,18 @@
         "chembl_id": "CHEMBL2107430",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.358,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.013
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -135,10 +144,18 @@
         "chembl_id": "CHEMBL3707347",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.369,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.048
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -195,16 +212,25 @@
         "chembl_id": "CHEMBL101253",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "LOST",
+        "y132f_consensus_nfe_A": 2.51,
+        "seeds_coordinating": "2/5",
+        "retention_shift_A": null
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
       },
       "concerns": [
-        "ADMET: hERG?"
+        "ADMET: hERG?",
+        "loses coordination in C. auris Y132F pocket"
       ]
     },
     {
@@ -257,10 +283,18 @@
         "chembl_id": "CHEMBL222645",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.538,
+        "seeds_coordinating": "4/5",
+        "retention_shift_A": 0.021
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -321,10 +355,18 @@
         "chembl_id": "CHEMBL220360",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.534,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.03
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -382,10 +424,18 @@
         "chembl_id": "CHEMBL571987",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.636,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": 0.064
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -440,10 +490,18 @@
         "chembl_id": "CHEMBL373250",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.555,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.025
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -498,17 +556,26 @@
         "chembl_id": "CHEMBL179945",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "LOST",
+        "y132f_consensus_nfe_A": 2.586,
+        "seeds_coordinating": "1/5",
+        "retention_shift_A": null
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
-        "ADMET: alert"
+        "ADMET: alert",
+        "loses coordination in C. auris Y132F pocket"
       ]
     },
     {
@@ -559,10 +626,18 @@
         "chembl_id": "CHEMBL393857",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.677,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": 0.056
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -619,10 +694,18 @@
         "chembl_id": "CHEMBL294029",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.644,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.009
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -677,10 +760,18 @@
         "chembl_id": "CHEMBL638",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.656,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.001
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -737,10 +828,18 @@
         "chembl_id": "CHEMBL320775",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.644,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.033
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -797,10 +896,18 @@
         "chembl_id": "CHEMBL1474900",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.667,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.013
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -857,10 +964,18 @@
         "chembl_id": "CHEMBL1444",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.674,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.031
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -917,10 +1032,18 @@
         "chembl_id": "CHEMBL106",
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.697,
+        "seeds_coordinating": "5/5",
+        "retention_shift_A": -0.014
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
@@ -977,10 +1100,18 @@
         "chembl_id": null,
         "near_verdict": "\u2014"
       },
+      "resistance_retention": {
+        "status": "proven",
+        "pocket": "C. auris Y132F",
+        "verdict": "RETAINED",
+        "y132f_consensus_nfe_A": 2.703,
+        "seeds_coordinating": "3/5",
+        "retention_shift_A": -0.218
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
         "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
-        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
         "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
