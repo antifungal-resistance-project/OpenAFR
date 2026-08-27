@@ -98,6 +98,24 @@ does, with no deposited assay (exact or near) saying they've already failed:
   conformer, per-molecule variance — clotrimazole ranked #2774 — SMILES as-supplied,
   *C. albicans* stand-in receptor, coordination necessary not sufficient).
 
+## Follow-up confidence layers (2026-08-26)
+
+Two of the shortlist's biggest caveats have since been attacked directly, on the survivors above:
+
+- **Seed stability** ([RESULTS_shortlist_consensus.md](RESULTS_shortlist_consensus.md), #68):
+  re-docked under 5 seeds, 8 of the 10 novel survivors coordinate the iron reproducibly.
+  **LDN-27219 (#7) and olprinone (#13) are demoted as single-dock artifacts** — LDN-27219
+  coordinates in only 2 of 5 searches (three seeds put it at ~5.5 Å). Its rank was search luck.
+- **Human-CYP51 selectivity** ([RESULTS_human_selectivity.md](RESULTS_human_selectivity.md),
+  #73, *provisional*): vatalanib, flucloxacillin, taranabant and lersivirine reach the fungal
+  iron but never the human iron (margins +1.8–2.7 Å) — a clean structural selectivity window;
+  nolatrexed hits human CYP51 as readily as fungal (flagged). Provisional because the
+  pre-registered ketoconazole positive control did not converge.
+
+**Refined tiering:** strongest = vatalanib, flucloxacillin, taranabant, lersivirine (stable +
+selective); stable/provisional = verinurad, L-838417, R-1479; demoted = LDN-27219, olprinone
+(unstable), nolatrexed (hits human).
+
 ## Reproduce
 
     conda run -n openafr python work/candidates/build_shortlist.py 100
