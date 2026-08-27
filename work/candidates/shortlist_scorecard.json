@@ -1,0 +1,994 @@
+{
+  "fe_cutoff_A": 3.0,
+  "n_candidates": 16,
+  "n_controls": 6,
+  "domain_thresholds": {
+    "max_heavy_atoms": 45,
+    "min_aromatic_n": 1
+  },
+  "axes_measured": [
+    "geometry (single-dock + 5-seed consensus)",
+    "pose_stability (5-seed)",
+    "human_CYP51_selectivity",
+    "admet",
+    "synthesizability",
+    "applicability_domain",
+    "assay_precedent"
+  ],
+  "axes_not_yet_checked": {
+    "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+    "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+    "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+    "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+    "stereoisomers": "all-stereoisomer docking (#85)",
+    "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+  },
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 1,
+        "single_dock_nfe_A": 2.371,
+        "consensus_nfe_A": 2.371,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.017,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.311,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": -0.061
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "alert",
+        "ro5_violations": "1",
+        "esol_logs": "-5.53",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.71,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 26,
+        "aromatic_n": 2,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL2107430",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "no fungal-vs-human selectivity window",
+        "ADMET: alert"
+      ]
+    },
+    {
+      "name": "verinurad",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 2,
+        "single_dock_nfe_A": 2.417,
+        "consensus_nfe_A": 2.417,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.027,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.929,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": 0.512
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-5.19",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.61,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 25,
+        "aromatic_n": 1,
+        "flags": [
+          "coordinator-fragile"
+        ]
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL3707347",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "domain: coordinator-fragile"
+      ]
+    },
+    {
+      "name": "vatalanib",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 3,
+        "single_dock_nfe_A": 2.479,
+        "consensus_nfe_A": 2.479,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.086,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 4.294,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 1.816
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "hERG?",
+        "ro5_violations": "1",
+        "esol_logs": "-5.54",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.12,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 25,
+        "aromatic_n": 3,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL101253",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "ADMET: hERG?"
+      ]
+    },
+    {
+      "name": "flucloxacillin",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 4,
+        "single_dock_nfe_A": 2.558,
+        "consensus_nfe_A": 2.517,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.041,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 5.172,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 2.656
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "alert",
+        "ro5_violations": "0",
+        "esol_logs": "-4.35",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 3.67,
+        "sa_band": "moderate",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 30,
+        "aromatic_n": 1,
+        "flags": [
+          "coordinator-fragile"
+        ]
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "tested-active",
+        "chembl_id": "CHEMBL222645",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "ADMET: alert",
+        "domain: coordinator-fragile",
+        "phenotypic tested-active elsewhere (read assay)"
+      ]
+    },
+    {
+      "name": "taranabant",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 5,
+        "single_dock_nfe_A": 2.586,
+        "consensus_nfe_A": 2.564,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.032,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 4.611,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 2.047
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "Ro5x2,insoluble",
+        "ro5_violations": "2",
+        "esol_logs": "-6.86",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 3.43,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 36,
+        "aromatic_n": 1,
+        "flags": [
+          "coordinator-fragile"
+        ]
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL220360",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "ADMET: Ro5x2,insoluble",
+        "domain: coordinator-fragile"
+      ]
+    },
+    {
+      "name": "lersivirine",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 6,
+        "single_dock_nfe_A": 2.599,
+        "consensus_nfe_A": 2.572,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.055,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 4.638,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 2.066
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-3.32",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.85,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 23,
+        "aromatic_n": 2,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL571987",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": []
+    },
+    {
+      "name": "L-838417",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 10,
+        "single_dock_nfe_A": 2.667,
+        "consensus_nfe_A": 2.58,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.087,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.943,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": 0.363
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-4.5",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.9,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 29,
+        "aromatic_n": 7,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL373250",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": []
+    },
+    {
+      "name": "LDN-27219",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 7,
+        "single_dock_nfe_A": 2.603,
+        "consensus_nfe_A": 2.603,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "2/5",
+        "spread_A": 0.057,
+        "stable": false
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 3.239,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 0.636
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "alert",
+        "ro5_violations": "0",
+        "esol_logs": "-4.61",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.22,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 28,
+        "aromatic_n": 2,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL179945",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "seed-unstable (single-dock artifact)",
+        "ADMET: alert"
+      ]
+    },
+    {
+      "name": "R-1479",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 8,
+        "single_dock_nfe_A": 2.621,
+        "consensus_nfe_A": 2.621,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.225,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 3.079,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 0.458
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "Veber,PAINS,alert",
+        "ro5_violations": "0",
+        "esol_logs": "-0.41",
+        "n_pains": "1"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 4.46,
+        "sa_band": "moderate",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 20,
+        "aromatic_n": 2,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL393857",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "ADMET: Veber,PAINS,alert"
+      ]
+    },
+    {
+      "name": "ravuconazole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 9,
+        "single_dock_nfe_A": 2.653,
+        "consensus_nfe_A": 2.653,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.044,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 4.857,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 2.204
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-5.35",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 3.48,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 31,
+        "aromatic_n": 4,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "record-inconclusive",
+        "phenotypic": "tested-active",
+        "chembl_id": "CHEMBL294029",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": []
+    },
+    {
+      "name": "voriconazole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 57,
+        "single_dock_nfe_A": 2.799,
+        "consensus_nfe_A": 2.657,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.142,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 3.328,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 0.671
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-3.55",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 3.59,
+        "sa_band": "moderate",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 25,
+        "aromatic_n": 5,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "tested-active",
+        "phenotypic": "tested-active",
+        "chembl_id": "CHEMBL638",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "known CYP51 inhibitor (control)"
+      ]
+    },
+    {
+      "name": "nolatrexed",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 14,
+        "single_dock_nfe_A": 2.692,
+        "consensus_nfe_A": 2.677,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.015,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.622,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": -0.055
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-3.55",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.68,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 20,
+        "aromatic_n": 3,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL320775",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "no fungal-vs-human selectivity window"
+      ]
+    },
+    {
+      "name": "olprinone",
+      "is_control": false,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 13,
+        "single_dock_nfe_A": 2.68,
+        "consensus_nfe_A": 2.68,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "4/5",
+        "spread_A": 0.04,
+        "stable": false
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 3.996,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 1.316
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-3.09",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.72,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 19,
+        "aromatic_n": 3,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "no-precedent",
+        "phenotypic": "\u2014",
+        "chembl_id": "CHEMBL1474900",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "seed-unstable (single-dock artifact)"
+      ]
+    },
+    {
+      "name": "letrozole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 23,
+        "single_dock_nfe_A": 2.719,
+        "consensus_nfe_A": 2.705,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.026,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.555,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": -0.15
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-3.66",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.38,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 22,
+        "aromatic_n": 3,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "record-inconclusive",
+        "phenotypic": "tested-active",
+        "chembl_id": "CHEMBL1444",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "no fungal-vs-human selectivity window"
+      ]
+    },
+    {
+      "name": "fluconazole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": 31,
+        "single_dock_nfe_A": 2.74,
+        "consensus_nfe_A": 2.711,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "5/5",
+        "spread_A": 0.047,
+        "stable": true
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 2.768,
+        "reaches_human_iron": true,
+        "selectivity_margin_A": 0.057
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "clean",
+        "ro5_violations": "0",
+        "esol_logs": "-2.41",
+        "n_pains": "0"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 2.77,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 22,
+        "aromatic_n": 6,
+        "flags": []
+      },
+      "precedent": {
+        "status": "proven",
+        "enzyme_verdict": "tested-active",
+        "phenotypic": "tested-active",
+        "chembl_id": "CHEMBL106",
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "known CYP51 inhibitor (control)"
+      ]
+    },
+    {
+      "name": "ketoconazole",
+      "is_control": true,
+      "geometry": {
+        "status": "proven",
+        "single_dock_rank": null,
+        "single_dock_nfe_A": null,
+        "consensus_nfe_A": 2.921,
+        "reaches_fungal_iron": true
+      },
+      "pose_stability": {
+        "status": "proven",
+        "seeds_coordinating": "1/5",
+        "spread_A": 0.0,
+        "stable": false
+      },
+      "human_selectivity": {
+        "status": "proven",
+        "human_consensus_nfe_A": 3.675,
+        "reaches_human_iron": false,
+        "selectivity_margin_A": 0.754
+      },
+      "admet": {
+        "status": "proven",
+        "flags": "PAINS,hERG?",
+        "ro5_violations": "1",
+        "esol_logs": "-5.67",
+        "n_pains": "1"
+      },
+      "synthesizability": {
+        "status": "proven",
+        "sa_score": 3.44,
+        "sa_band": "easy",
+        "availability": "catalogued-drug"
+      },
+      "applicability_domain": {
+        "status": "proven",
+        "heavy_atoms": 36,
+        "aromatic_n": 2,
+        "flags": []
+      },
+      "precedent": {
+        "status": "not-yet-checked",
+        "enzyme_verdict": "\u2014",
+        "phenotypic": "\u2014",
+        "chembl_id": null,
+        "near_verdict": "\u2014"
+      },
+      "not_yet_checked": {
+        "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+        "auris_mutant_retention": "auris ERG11 + Y132F/K143R mutant retention (#69,#77)",
+        "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+        "stereoisomers": "all-stereoisomer docking (#85)",
+        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      },
+      "concerns": [
+        "seed-unstable (single-dock artifact)",
+        "ADMET: PAINS,hERG?"
+      ]
+    }
+  ]
+}

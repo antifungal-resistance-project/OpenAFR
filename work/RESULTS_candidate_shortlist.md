@@ -135,6 +135,15 @@ selective); stable/provisional = verinurad, L-838417, R-1479; demoted = LDN-2721
   No candidate is size-fragile; **verinurad, flucloxacillin and taranabant** are flagged
   *coordinator-fragile* (a single aromatic N — a stricter ≥2 rule would drop them).
 
+**Consolidated scorecard (2026-08-27, #88).** All axes above are now rolled onto one row
+per candidate — the artifact you actually reason over — in
+[RESULTS_scorecard.md](RESULTS_scorecard.md) (`work/candidates/shortlist_scorecard.json`,
+builder `work/candidates/build_scorecard.py`). Seen together, **lersivirine and L-838417**
+are the only two novel hits with zero open concern on any *measured* axis; every card also
+prints the axes still `not-yet-checked` (candidate-path ensemble #70, RMSD clustering #71,
+auris/mutant retention #69/#77, protomer/stereo #84/#85, broad CYP panel #74) so no molecule
+looks fully vetted.
+
 ## Reproduce
 
     conda run -n openafr python work/candidates/build_shortlist.py 100
