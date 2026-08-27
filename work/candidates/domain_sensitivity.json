@@ -1,0 +1,200 @@
+{
+  "frozen_thresholds": {
+    "max_heavy_atoms": 45,
+    "min_aromatic_n": 1
+  },
+  "n": {
+    "actives": 15,
+    "decoys": 399,
+    "shortlist": 16
+  },
+  "sweep_actives_retained": {
+    "cap=30,aromN>=0": 11,
+    "cap=30,aromN>=1": 11,
+    "cap=30,aromN>=2": 11,
+    "cap=35,aromN>=0": 12,
+    "cap=35,aromN>=1": 12,
+    "cap=35,aromN>=2": 12,
+    "cap=36,aromN>=0": 13,
+    "cap=36,aromN>=1": 13,
+    "cap=36,aromN>=2": 13,
+    "cap=40,aromN>=0": 13,
+    "cap=40,aromN>=1": 13,
+    "cap=40,aromN>=2": 13,
+    "cap=45,aromN>=0": 13,
+    "cap=45,aromN>=1": 13,
+    "cap=45,aromN>=2": 13,
+    "cap=48,aromN>=0": 13,
+    "cap=48,aromN>=1": 13,
+    "cap=48,aromN>=2": 13,
+    "cap=50,aromN>=0": 14,
+    "cap=50,aromN>=1": 14,
+    "cap=50,aromN>=2": 14,
+    "cap=55,aromN>=0": 15,
+    "cap=55,aromN>=1": 15,
+    "cap=55,aromN>=2": 15
+  },
+  "sweep_decoys_retained": {
+    "cap=30,aromN>=0": 197,
+    "cap=30,aromN>=1": 197,
+    "cap=30,aromN>=2": 114,
+    "cap=35,aromN>=0": 257,
+    "cap=35,aromN>=1": 257,
+    "cap=35,aromN>=2": 155,
+    "cap=36,aromN>=0": 268,
+    "cap=36,aromN>=1": 268,
+    "cap=36,aromN>=2": 162,
+    "cap=40,aromN>=0": 300,
+    "cap=40,aromN>=1": 300,
+    "cap=40,aromN>=2": 190,
+    "cap=45,aromN>=0": 301,
+    "cap=45,aromN>=1": 301,
+    "cap=45,aromN>=2": 191,
+    "cap=48,aromN>=0": 336,
+    "cap=48,aromN>=1": 336,
+    "cap=48,aromN>=2": 215,
+    "cap=50,aromN>=0": 370,
+    "cap=50,aromN>=1": 370,
+    "cap=50,aromN>=2": 240,
+    "cap=55,aromN>=0": 399,
+    "cap=55,aromN>=1": 399,
+    "cap=55,aromN>=2": 265
+  },
+  "sweep_shortlist_retained": {
+    "cap=30,aromN>=0": 13,
+    "cap=30,aromN>=1": 13,
+    "cap=30,aromN>=2": 11,
+    "cap=35,aromN>=0": 14,
+    "cap=35,aromN>=1": 14,
+    "cap=35,aromN>=2": 12,
+    "cap=36,aromN>=0": 16,
+    "cap=36,aromN>=1": 16,
+    "cap=36,aromN>=2": 13,
+    "cap=40,aromN>=0": 16,
+    "cap=40,aromN>=1": 16,
+    "cap=40,aromN>=2": 13,
+    "cap=45,aromN>=0": 16,
+    "cap=45,aromN>=1": 16,
+    "cap=45,aromN>=2": 13,
+    "cap=48,aromN>=0": 16,
+    "cap=48,aromN>=1": 16,
+    "cap=48,aromN>=2": 13,
+    "cap=50,aromN>=0": 16,
+    "cap=50,aromN>=1": 16,
+    "cap=50,aromN>=2": 13,
+    "cap=55,aromN>=0": 16,
+    "cap=55,aromN>=1": 16,
+    "cap=55,aromN>=2": 13
+  },
+  "candidate_fragility": [
+    {
+      "name": "flutrimazole",
+      "heavy": 26,
+      "aromatic_n": 2,
+      "flags": []
+    },
+    {
+      "name": "verinurad",
+      "heavy": 25,
+      "aromatic_n": 1,
+      "flags": [
+        "coordinator-fragile"
+      ]
+    },
+    {
+      "name": "vatalanib",
+      "heavy": 25,
+      "aromatic_n": 3,
+      "flags": []
+    },
+    {
+      "name": "flucloxacillin",
+      "heavy": 30,
+      "aromatic_n": 1,
+      "flags": [
+        "coordinator-fragile"
+      ]
+    },
+    {
+      "name": "taranabant",
+      "heavy": 36,
+      "aromatic_n": 1,
+      "flags": [
+        "coordinator-fragile"
+      ]
+    },
+    {
+      "name": "lersivirine",
+      "heavy": 23,
+      "aromatic_n": 2,
+      "flags": []
+    },
+    {
+      "name": "LDN-27219",
+      "heavy": 28,
+      "aromatic_n": 2,
+      "flags": []
+    },
+    {
+      "name": "R-1479",
+      "heavy": 20,
+      "aromatic_n": 2,
+      "flags": []
+    },
+    {
+      "name": "ravuconazole",
+      "heavy": 31,
+      "aromatic_n": 4,
+      "flags": []
+    },
+    {
+      "name": "L-838417",
+      "heavy": 29,
+      "aromatic_n": 7,
+      "flags": []
+    },
+    {
+      "name": "olprinone",
+      "heavy": 19,
+      "aromatic_n": 3,
+      "flags": []
+    },
+    {
+      "name": "nolatrexed",
+      "heavy": 20,
+      "aromatic_n": 3,
+      "flags": []
+    },
+    {
+      "name": "letrozole",
+      "heavy": 22,
+      "aromatic_n": 3,
+      "flags": []
+    },
+    {
+      "name": "fluconazole",
+      "heavy": 22,
+      "aromatic_n": 6,
+      "flags": []
+    },
+    {
+      "name": "voriconazole",
+      "heavy": 25,
+      "aromatic_n": 5,
+      "flags": []
+    },
+    {
+      "name": "ketoconazole",
+      "heavy": 36,
+      "aromatic_n": 2,
+      "flags": []
+    }
+  ],
+  "envelope_gap": {
+    "largest_in_domain_active_heavy": 36,
+    "smallest_out_of_domain_active_heavy": 49,
+    "largest_shortlist_heavy": 36,
+    "actives_min_aromatic_n": 2,
+    "decoys_with_zero_aromatic_n": 0
+  }
+}
