@@ -107,10 +107,13 @@ Two of the shortlist's biggest caveats have since been attacked directly, on the
   **LDN-27219 (#7) and olprinone (#13) are demoted as single-dock artifacts** — LDN-27219
   coordinates in only 2 of 5 searches (three seeds put it at ~5.5 Å). Its rank was search luck.
 - **Human-CYP51 selectivity** ([RESULTS_human_selectivity.md](RESULTS_human_selectivity.md),
-  #73, *provisional*): vatalanib, flucloxacillin, taranabant and lersivirine reach the fungal
-  iron but never the human iron (margins +1.8–2.7 Å) — a clean structural selectivity window;
-  nolatrexed hits human CYP51 as readily as fungal (flagged). Provisional because the
-  pre-registered ketoconazole positive control did not converge.
+  #73, **validated** 2026-08-26): vatalanib, flucloxacillin, taranabant and lersivirine reach the
+  fungal iron but never the human iron (margins +1.8–2.7 Å) — a clean structural selectivity
+  window; nolatrexed hits human CYP51 as readily as fungal (flagged). Originally provisional
+  because the pre-registered ketoconazole control did not converge; a native-pose-recovery control
+  ([RESULTS_human_control.md](RESULTS_human_control.md)) has since validated the human receptor
+  (crystal ketoconazole re-coordinates at N-Fe 2.651 Å), isolating that failure as global-search
+  power on a floppy ligand, not a receptor fault.
 
 **Refined tiering:** strongest = vatalanib, flucloxacillin, taranabant, lersivirine (stable +
 selective); stable/provisional = verinurad, L-838417, R-1479; demoted = LDN-27219, olprinone
