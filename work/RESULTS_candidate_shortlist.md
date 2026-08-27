@@ -119,6 +119,13 @@ Two of the shortlist's biggest caveats have since been attacked directly, on the
 selective); stable/provisional = verinurad, L-838417, R-1479; demoted = LDN-27219, olprinone
 (unstable), nolatrexed (hits human).
 
+- **ADMET / structural-alert profile** ([RESULTS_admet.md](RESULTS_admet.md), #75): the
+  chemistry-realism axis. Informational, never a gate. The reference azoles validate it
+  (fluconazole/voriconazole clean; ketoconazole recovers its known Ro5/solubility/hERG
+  liabilities). Among the novel hits it flags **R-1479** (azide/diazo/PAINS — chemically
+  implausible), **taranabant** (2× Ro5, insoluble), and **LDN-27219** (reactive hydrazide);
+  verinurad, lersivirine, ravuconazole, L-838417 profile clean.
+
 ## Reproduce
 
     conda run -n openafr python work/candidates/build_shortlist.py 100
