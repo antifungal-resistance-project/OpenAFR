@@ -119,6 +119,22 @@ Two of the shortlist's biggest caveats have since been attacked directly, on the
 selective); stable/provisional = verinurad, L-838417, R-1479; demoted = LDN-27219, olprinone
 (unstable), nolatrexed (hits human).
 
+- **ADMET / structural-alert profile** ([RESULTS_admet.md](RESULTS_admet.md), #75): the
+  chemistry-realism axis. Informational, never a gate. The reference azoles validate it
+  (fluconazole/voriconazole clean; ketoconazole recovers its known Ro5/solubility/hERG
+  liabilities). Among the novel hits it flags **R-1479** (azide/diazo/PAINS — chemically
+  implausible), **taranabant** (2× Ro5, insoluble), and **LDN-27219** (reactive hydrazide);
+  verinurad, lersivirine, ravuconazole, L-838417 profile clean.
+- **Synthesizability / availability** ([RESULTS_synth.md](RESULTS_synth.md), #86): every
+  candidate is buyable (`catalogued-drug`, from the Drug Repurposing Hub) and lands in the
+  same easy/moderate SAscore band as the marketed azoles — none is a synthetic outlier
+  (highest R-1479 at 4.46, still < the "hard" 6.0 line).
+- **Domain-threshold sensitivity** ([RESULTS_domain_sensitivity.md](RESULTS_domain_sensitivity.md),
+  #87): the ≤45-heavy-atom cap sits in a 12-atom gap (no active or candidate near it; largest
+  candidate 36) and the ≥1-aromatic-N floor is a mechanistic scope gate, not a discriminator.
+  No candidate is size-fragile; **verinurad, flucloxacillin and taranabant** are flagged
+  *coordinator-fragile* (a single aromatic N — a stricter ≥2 rule would drop them).
+
 ## Reproduce
 
     conda run -n openafr python work/candidates/build_shortlist.py 100
