@@ -18,6 +18,7 @@ work/candidates/dock_fungal/
 work/candidates/dock_human/
 work/candidates/focus_ligands/
 work/candidates/dock_run.log
+work/candidates/human_control/*.pdbqt
 work/screen_verified/
 work/screen_5FSA/
 work/screen_5V5Z/

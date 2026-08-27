@@ -7,12 +7,21 @@ Date: 2026-08-26. Pre-registered in
 `scripts/prep_receptor_human.py`) under the identical criterion and protocol as the fungal run,
 so the only difference between a fungal and a human score is the protein.
 
-> **Outcome: a promising selectivity signal — but PROVISIONAL, because the pre-registered
-> positive control did not converge.** Known non-selective azoles behave exactly as expected
-> (they coordinate the human iron too), and four seed-stable novel hits show a clean structural
-> selectivity window. **However**, the frozen precondition — re-docking ketoconazole must
-> reproduce its crystallographic human coordination — **was not met**, so per the
-> pre-registration these numbers are reported as provisional, not validated.
+> **Outcome: a clean selectivity signal, now VALIDATED.** Known non-selective azoles behave
+> exactly as expected (they coordinate the human iron too), and four seed-stable novel hits show a
+> clean structural selectivity window. The frozen precondition — reproducing ketoconazole's
+> crystallographic human coordination — was **not** met by the original *global* re-dock, so these
+> numbers were first reported as provisional (below, kept verbatim). A follow-up positive control
+> (pre-registered separately, [PREREGISTRATION_human_control.md](PREREGISTRATION_human_control.md),
+> [RESULTS_human_control.md](RESULTS_human_control.md), #73) has since **validated the human
+> receptor**: local-optimising the crystallographic ketoconazole pose reproduces iron coordination
+> at N-Fe 2.651 Å (crystal 2.405 Å) with a favorable −10.37 kcal/mol affinity. That isolates the
+> original failure as pure global-search power on a floppy ligand, not a receptor fault — so the
+> selectivity numbers below are **promoted from provisional to validated.**
+
+> **UPDATE 2026-08-26 — control now fires.** The section immediately below records the ORIGINAL,
+> pre-registered global control (which did not converge) verbatim, as required; it is superseded
+> in interpretation by the native-pose-recovery control ([RESULTS_human_control.md]).
 
 ## The pre-registered positive control FAILED (reported first, as required)
 
@@ -55,7 +64,7 @@ Margin = human − fungal (Å); **positive = reaches the fungal iron closer = fu
 | olprinone | novel | NO | 2.680 | 3.996 | 0/5 | — | demoted (borderline, #68) |
 | ketoconazole | control | NO | 2.921 | 3.675 | 0/5 | — | control did not converge |
 
-## What this establishes (provisional)
+## What this establishes (validated — see the control update at top)
 
 1. **The readout behaves correctly on the known-non-selective baseline.** Real clinical/agro
    azoles that are *expected* to hit human CYP51 — fluconazole, letrozole, flutrimazole — do
@@ -88,14 +97,21 @@ Reading #68 and #73 together, the shortlist tiers as:
 
 ## Follow-up (named, not hand-waved)
 
-- **Stronger positive control** for the human receptor: re-dock ketoconazole seeded from its
-  3LD6 crystal pose (or add a small, rigid, known human-CYP51 inhibitor as the control) so the
-  precondition can actually be met and these numbers promoted from provisional to validated.
+- **Stronger positive control** for the human receptor — **DONE 2026-08-26.** Ketoconazole's
+  3LD6 crystal pose was local-optimised in the prepared receptor and reproduces coordination
+  (N-Fe 2.651 Å, −10.37 kcal/mol), validating the receptor and promoting the numbers above.
+  Pre-reg [PREREGISTRATION_human_control.md](PREREGISTRATION_human_control.md); result
+  [RESULTS_human_control.md](RESULTS_human_control.md); run by
+  `scripts/human_positive_control.py`.
 - Broader human off-target panel (CYP3A4/2C9/2D6…) is issue #74; this run covers CYP51 only.
 
 ## Limitations
 
-1. **Pre-registered positive control unmet** → numbers provisional (see top).
+1. ~~Pre-registered positive control unmet → numbers provisional.~~ **Resolved 2026-08-26**: the
+   native-pose-recovery control validated the receptor ([RESULTS_human_control.md]); numbers are
+   now validated. The residual caveat is honest — the ORIGINAL *global* control still cannot
+   *find* the ketoconazole pose (1/5 seeds even from the crystal conformer), a floppy-ligand
+   search limit, not a receptor one.
 2. Rigid single-conformer human receptor (one crystal form, 3LD6); the human pocket is flexible
    too.
 3. Structural signal only — says nothing about other human CYPs, permeability, or metabolism.

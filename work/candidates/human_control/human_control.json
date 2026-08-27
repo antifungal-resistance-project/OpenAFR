@@ -1,0 +1,62 @@
+{
+  "prereg": "work/PREREGISTRATION_human_control.md",
+  "iron": [
+    36.841,
+    3.766,
+    -5.549
+  ],
+  "crystal_n_fe_by_atom": [
+    [
+      "N1",
+      4.217
+    ],
+    [
+      "N2",
+      2.405
+    ],
+    [
+      "N3",
+      14.069
+    ],
+    [
+      "N4",
+      16.647
+    ]
+  ],
+  "crystal_min_n_fe": 2.405,
+  "ligand_atoms": 36,
+  "fe_cutoff": 3.0,
+  "run1_local_only": {
+    "n_fe": 2.651,
+    "affinity": -10.369,
+    "coordinates": true
+  },
+  "run2_global": {
+    "per_seed": {
+      "42": {
+        "n_fe": 5.188,
+        "affinity": -10.106
+      },
+      "1": {
+        "n_fe": 4.289,
+        "affinity": -10.859
+      },
+      "2": {
+        "n_fe": 3.783,
+        "affinity": -10.249
+      },
+      "3": {
+        "n_fe": 3.644,
+        "affinity": -10.354
+      },
+      "4": {
+        "n_fe": 2.474,
+        "affinity": -11.005
+      }
+    },
+    "n_coord": 1,
+    "n_seeds": 5,
+    "consensus_n_fe": 2.474
+  },
+  "PASS": true
+}
