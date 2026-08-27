@@ -43,6 +43,15 @@ eval "$(python openafr/protocol.py --shell docking)"
 # Only the RNG seed changes; box, exhaustiveness and modes stay from the frozen protocol.
 SEED="${SEED_OVERRIDE:-$SEED}"
 
+# Box-center override for docking into a DIFFERENT receptor's active site (e.g. the human
+# CYP51 counter-screen, scripts/prep_receptor_human.py). Unset = the frozen fungal box, so a
+# normal screen is byte-identical to before. Only the box CENTER moves to the other pocket;
+# size, exhaustiveness, num_modes and seed stay from the frozen protocol. Mirrors SEED_OVERRIDE:
+# a different receptor needs its box centered on ITS ligand site, never the 5TZ1 centroid.
+CX="${CENTER_X_OVERRIDE:-$CX}"
+CY="${CENTER_Y_OVERRIDE:-$CY}"
+CZ="${CENTER_Z_OVERRIDE:-$CZ}"
+
 [ -s "$RECEPTOR" ] || { echo "missing receptor: $RECEPTOR — run: python scripts/prep_receptor.py" >&2; exit 2; }
 [ -d "$LIG_SDF" ] || { echo "no ligand dir: $LIG_SDF" >&2; exit 2; }
 total=$(ls "$LIG_SDF"/*.sdf 2>/dev/null | wc -l | tr -d ' ')
