@@ -15,6 +15,7 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/shortlist_synth.json        synthesizability + availability (#86)
   work/candidates/domain_sensitivity.json     applicability-domain fragility (#87)
   work/candidates/top100_precedent.tsv        assay-precedent verdicts (#65)
+  work/candidates/shortlist_resistance.json   C. auris Y132F retention (#69,#77)
 
 Usage:  conda run -n openafr python work/candidates/build_scorecard.py
 Writes: work/candidates/shortlist_scorecard.json  and prints a readable table.
@@ -66,6 +67,13 @@ def load_domain():
     return {x["name"]: x for x in data["candidate_fragility"]}, data
 
 
+def load_resistance():
+    path = os.path.join(C, "shortlist_resistance.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -73,6 +81,7 @@ def build():
     synth = load_synth()
     domain, domain_meta = load_domain()
     prec = load_tsv(os.path.join(C, "top100_precedent.tsv"))
+    resistance = load_resistance()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -84,9 +93,10 @@ def build():
         sy = synth.get(name, {})
         dm = domain.get(name, {})
         pr = prec.get(name, {})
+        rs = resistance.get(name, {})
         is_ctrl = name in CONTROLS
 
-        concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl)
+        concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -145,6 +155,14 @@ def build():
                 "chembl_id": pr.get("chembl_id"),
                 "near_verdict": pr.get("near_verdict", "—"),
             },
+            "resistance_retention": {
+                "status": "proven" if rs else "not-yet-checked",
+                "pocket": "C. auris Y132F",
+                "verdict": rs.get("verdict"),
+                "y132f_consensus_nfe_A": rs.get("y132f_consensus"),
+                "seeds_coordinating": rs.get("y132f_seeds_coordinating"),
+                "retention_shift_A": rs.get("retention_shift"),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -163,6 +181,7 @@ def build():
             "synthesizability",
             "applicability_domain",
             "assay_precedent",
+            "resistance_retention (C. auris Y132F)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -177,15 +196,20 @@ def fmt(v, nd=3):
     return str(v)
 
 
+def res_cell(c):
+    """Compact C. auris Y132F retention verdict for the table."""
+    return (c["resistance_retention"]["verdict"] or "—")[:8]
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
-            "domain", "precedent", "#concern")
-    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-16s %s"
+            "domain", "Y132F", "precedent", "#concern")
+    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-16s %s"
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
-    print("-" * 108)
+    print("-" * 118)
     for c in novel:
         print(w % (
             c["name"][:14],
@@ -195,13 +219,14 @@ def print_table(sc):
             (c["admet"]["flags"] or "—")[:14],
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
+            res_cell(c),
             (c["precedent"]["phenotypic"] if c["precedent"]["phenotypic"] != "—"
              else c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))
     print("\nCONTROLS (known azoles — validate the axes, not discoveries)")
     print(w % cols)
-    print("-" * 108)
+    print("-" * 118)
     for c in ctrl:
         print(w % (
             c["name"][:14],
@@ -211,6 +236,7 @@ def print_table(sc):
             (c["admet"]["flags"] or "—")[:14],
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
+            res_cell(c),
             (c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))
