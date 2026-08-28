@@ -90,7 +90,10 @@ in the tool's own printed header for a reason.
    **AUC ≈ 0.79** — a trustworthy top-~5% shortlist. An earlier eye-catching "12.68× enrichment
    at the top 1%" figure was a **single-run artifact**: it collapsed to 0.00× once each ligand
    was docked over 5 seeds (`work/RESULTS_reliability.md`). Do not read a single molecule's rank
-   as a razor-sharp prediction.
+   as a razor-sharp prediction. The same fragility shows up *within* a single search: clustering
+   the 20 poses one dock returns finds they **do not converge** — under the frozen 26 Å box they
+   scatter across the pocket, so the reported N–Fe is one mode among ~20, never a settled basin
+   (`work/RESULTS_pose_convergence.md`, #71).
 
 4. **It is meaningful only if the gate has passed.** The whole criterion is only trustworthy on
    a protocol where `scripts/validate_gate2.py` has PASSED under the frozen `protocol.yaml`. If
@@ -125,6 +128,7 @@ run the front door, and read the verdict with this page open.
 
 - Validation run and pre-registration: `work/RESULTS_run2_holdout.md`, `work/PREREGISTRATION_run2.md`
 - Reliability / the top-1% artifact: `work/RESULTS_reliability.md`
+- Within-search pose convergence: `work/RESULTS_pose_convergence.md` (+ `work/PREREGISTRATION_pose_convergence.md`)
 - Decoy ceiling: `work/RESULTS_axial.md`
 - Resistance-pocket negative: `work/RESULTS_auris_Y132F.md`
 - Per-candidate resistance retention: `work/RESULTS_candidate_resistance.md` (+ `work/PREREGISTRATION_candidate_resistance.md`)

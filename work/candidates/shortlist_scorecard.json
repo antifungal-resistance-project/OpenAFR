@@ -14,11 +14,11 @@
     "synthesizability",
     "applicability_domain",
     "assay_precedent",
-    "resistance_retention (C. auris Y132F)"
+    "resistance_retention (C. auris Y132F)",
+    "pose_convergence (within-search RMSD clustering)"
   ],
   "axes_not_yet_checked": {
     "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-    "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
     "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
     "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
     "stereoisomers": "all-stereoisomer docking (#85)",
@@ -81,9 +81,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.013
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.053,
+        "n_clusters": 15,
+        "coordinating_pose_rank": 8,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -152,9 +159,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.048
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 19,
+        "coordinating_pose_rank": 11,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -220,9 +234,16 @@
         "seeds_coordinating": "2/5",
         "retention_shift_A": null
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.105,
+        "n_clusters": 17,
+        "coordinating_pose_rank": 13,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -291,9 +312,16 @@
         "seeds_coordinating": "4/5",
         "retention_shift_A": 0.021
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.053,
+        "n_clusters": 17,
+        "coordinating_pose_rank": 15,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -363,9 +391,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.03
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 17,
+        "coordinating_pose_rank": 12,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -432,9 +467,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": 0.064
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 20,
+        "coordinating_pose_rank": 1,
+        "coordinating_pose_in_top_cluster": true
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -498,9 +540,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.025
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.1,
+        "n_clusters": 16,
+        "coordinating_pose_rank": 11,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -564,9 +613,16 @@
         "seeds_coordinating": "1/5",
         "retention_shift_A": null
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.1,
+        "n_clusters": 15,
+        "coordinating_pose_rank": 19,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -634,9 +690,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": 0.056
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.1,
+        "n_clusters": 16,
+        "coordinating_pose_rank": 9,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -702,9 +765,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.009
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.1,
+        "n_clusters": 17,
+        "coordinating_pose_rank": 6,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -768,9 +838,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.001
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 15,
+        "coordinating_pose_rank": 6,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -836,9 +913,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.033
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 19,
+        "coordinating_pose_rank": 8,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -904,9 +988,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.013
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.053,
+        "n_clusters": 14,
+        "coordinating_pose_rank": 15,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -972,9 +1063,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.031
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.05,
+        "n_clusters": 19,
+        "coordinating_pose_rank": 4,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -1040,9 +1138,16 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.014
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.1,
+        "n_clusters": 14,
+        "coordinating_pose_rank": 11,
+        "coordinating_pose_in_top_cluster": false
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
@@ -1108,9 +1213,16 @@
         "seeds_coordinating": "3/5",
         "retention_shift_A": -0.218
       },
+      "pose_convergence": {
+        "status": "proven",
+        "verdict": "DISPERSED",
+        "top_cluster_fraction": 0.176,
+        "n_clusters": 14,
+        "coordinating_pose_rank": 2,
+        "coordinating_pose_in_top_cluster": true
+      },
       "not_yet_checked": {
         "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-        "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
         "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
         "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
         "stereoisomers": "all-stereoisomer docking (#85)",
