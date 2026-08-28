@@ -32,7 +32,10 @@ NOT_YET_CHECKED = {
     # Y132F retention is now measured (resistance_retention axis, RESULTS_candidate_resistance.md);
     # the OTHER C. auris mutants still need a side-chain repacker not in the pinned env.
     "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-    "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
+    # protonation/tautomer (#84) is now measured (protomer axis, RESULTS_candidate_protomer.md):
+    # each candidate's pH-7.4 microstates (obabel-band protonation x RDKit tautomers) are docked;
+    # 6/16 are single-microstate (EXPLICIT), the rest ROBUST/MICROSTATE-DEPENDENT. This closes the
+    # "rank silently tied to one protomer/tautomer" hole, not the "obabel pKa is wrong" one.
     # stereochemistry (#85) is now measured (stereochemistry axis, RESULTS_candidate_stereo.md):
     # every novel candidate's supplied SMILES pins a single defined isomer (EXPLICIT); the two
     # ambiguous controls are docked per-isomer. This closes the "unspecified stereo" hole, not
@@ -41,7 +44,7 @@ NOT_YET_CHECKED = {
 }
 
 
-def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None):
+def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
@@ -59,6 +62,7 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None):
       pr   top100_precedent.tsv         (assay-precedent verdicts)
       res  shortlist_resistance.json    (C. auris Y132F retention verdict; None = not-yet-checked)
       st   shortlist_stereo.json        (stereochemistry verdict; None = not-yet-checked)
+      pt   shortlist_protomer.json      (protonation/tautomer verdict; None = not-yet-checked)
     """
     concerns = []
     if cf.get("reaches_fungal_iron") is False:
@@ -90,4 +94,11 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None):
     # axis, not discoveries to strike. An EXPLICIT candidate never triggers this.
     if st is not None and st.get("verdict") == "ISOMER-DEPENDENT" and not is_ctrl:
         concerns.append("rank depends on unspecified stereochemistry")
+    # Protonation/tautomer (#84): a candidate whose coordination collapses or shifts across the
+    # protonation/tautomer microstates populated at pH 7.4 is demoted — the shortlist docked one
+    # microstate and the rank does not survive the others. Control-exempt: the multi-state
+    # molecules include the racemic/tautomeric azole controls, docked per-microstate to exercise
+    # the axis, not discoveries to strike. A protomer-EXPLICIT candidate never triggers this.
+    if pt is not None and pt.get("verdict") == "MICROSTATE-DEPENDENT" and not is_ctrl:
+        concerns.append("rank depends on protonation/tautomer state at pH 7.4")
     return concerns
