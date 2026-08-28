@@ -27,7 +27,8 @@ CONTROLS = {
 # look complete by omission.
 NOT_YET_CHECKED = {
     "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
-    "pose_rmsd_clustering": "cluster-spread/RMSD pose convergence (#71)",
+    # pose-convergence (#71) is now measured (pose_convergence axis,
+    # RESULTS_pose_convergence.md): within-search RMSD clustering of the frozen seed-42 poses.
     # Y132F retention is now measured (resistance_retention axis, RESULTS_candidate_resistance.md);
     # the OTHER C. auris mutants still need a side-chain repacker not in the pinned env.
     "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",

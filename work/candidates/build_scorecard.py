@@ -16,6 +16,7 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/domain_sensitivity.json     applicability-domain fragility (#87)
   work/candidates/top100_precedent.tsv        assay-precedent verdicts (#65)
   work/candidates/shortlist_resistance.json   C. auris Y132F retention (#69,#77)
+  work/candidates/pose_convergence.json       within-search pose convergence (#71)
 
 Usage:  conda run -n openafr python work/candidates/build_scorecard.py
 Writes: work/candidates/shortlist_scorecard.json  and prints a readable table.
@@ -74,6 +75,13 @@ def load_resistance():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_convergence():
+    path = os.path.join(C, "pose_convergence.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -82,6 +90,7 @@ def build():
     domain, domain_meta = load_domain()
     prec = load_tsv(os.path.join(C, "top100_precedent.tsv"))
     resistance = load_resistance()
+    convergence = load_convergence()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -94,6 +103,7 @@ def build():
         dm = domain.get(name, {})
         pr = prec.get(name, {})
         rs = resistance.get(name, {})
+        pc = convergence.get(name, {})
         is_ctrl = name in CONTROLS
 
         concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None)
@@ -163,6 +173,14 @@ def build():
                 "seeds_coordinating": rs.get("y132f_seeds_coordinating"),
                 "retention_shift_A": rs.get("retention_shift"),
             },
+            "pose_convergence": {
+                "status": "proven" if pc else "not-yet-checked",
+                "verdict": pc.get("verdict"),
+                "top_cluster_fraction": pc.get("top_cluster_fraction"),
+                "n_clusters": pc.get("n_clusters"),
+                "coordinating_pose_rank": pc.get("coordinating_pose_rank"),
+                "coordinating_pose_in_top_cluster": pc.get("coordinating_pose_in_top_cluster"),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -182,6 +200,7 @@ def build():
             "applicability_domain",
             "assay_precedent",
             "resistance_retention (C. auris Y132F)",
+            "pose_convergence (within-search RMSD clustering)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -201,12 +220,27 @@ def res_cell(c):
     return (c["resistance_retention"]["verdict"] or "—")[:8]
 
 
+def conv_cell(c):
+    """Compact within-search pose-convergence cell: verdict + coordinating-pose rank.
+
+    Every candidate is DISPERSED under the frozen big-box protocol, so the discriminating
+    signal is the coordinating pose's affinity rank (rk1 = the reported geometry is also the
+    best-energy pose; ✓ = it sits in the dominant cluster)."""
+    pc = c["pose_convergence"]
+    if pc["status"] != "proven":
+        return "—"
+    v = "conv" if pc["verdict"] == "CONVERGED" else "disp"
+    rk = pc["coordinating_pose_rank"]
+    tick = "✓" if pc["coordinating_pose_in_top_cluster"] else ""
+    return f"{v}/rk{rk}{tick}" if rk is not None else v
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
-            "domain", "Y132F", "precedent", "#concern")
-    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-16s %s"
+            "domain", "Y132F", "pose-conv", "precedent", "#concern")
+    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-10s %-16s %s"
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
     print("-" * 118)
@@ -220,6 +254,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            conv_cell(c),
             (c["precedent"]["phenotypic"] if c["precedent"]["phenotypic"] != "—"
              else c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
@@ -237,6 +272,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            conv_cell(c),
             (c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))
