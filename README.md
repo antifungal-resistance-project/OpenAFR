@@ -207,6 +207,8 @@ python scripts/prep_ligands.py data/ligands/decoys_holdout.smi        work/run2_
 python scripts/validate_gate2.py work/screen2 work/receptor_A.pdb   # exit 0 = pass
 
 pytest   # known-answer tests for the gate math, parsers, and protocol
+
+python scripts/repro.py   # drift gate: re-check the whole frozen surface in one command
 ```
 
 The gate script re-checks two hashes — the pre-registration (`work/PREREGISTRATION_run2.md`)
@@ -215,6 +217,15 @@ edited after being frozen. The docking script reads its box and search parameter
 same `protocol.yaml`, so what is docked and what is graded can never silently drift apart.
 Changing the protocol is a conscious act: edit `protocol.yaml`, re-freeze with
 `python -m openafr.protocol --freeze`, update `PROTOCOL_SHA`, and record why.
+
+`scripts/repro.py` is the systematic superset of those per-gate checks: in one command it
+verifies `protocol.yaml`, **every** `work/PREREG_*.sha256` (all 18 pre-registrations plus the
+frozen datasets they pin), and that the consolidated candidate scorecard still re-derives
+byte-for-byte from its committed per-axis inputs — exiting non-zero on any drift. It runs on
+every PR (`.github/workflows/repro.yml`) and is documented in
+[`work/RESULTS_repro.md`](work/RESULTS_repro.md). Re-docking stays out of scope (the pose
+trees are gitignored and take hours); the harness guarantees nothing that does *not* require
+docking can drift unnoticed.
 
 ## Score your own molecule
 
