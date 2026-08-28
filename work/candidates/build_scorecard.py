@@ -18,6 +18,7 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/shortlist_resistance.json   C. auris Y132F retention (#69,#77)
   work/candidates/pose_convergence.json       within-search pose convergence (#71)
   work/candidates/shortlist_stereo.json       stereochemistry / isomer audit (#85)
+  work/candidates/shortlist_protomer.json     protonation/tautomer microstate audit (#84)
 
 Usage:  conda run -n openafr python work/candidates/build_scorecard.py
 Writes: work/candidates/shortlist_scorecard.json  and prints a readable table.
@@ -90,6 +91,13 @@ def load_stereo():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_protomer():
+    path = os.path.join(C, "shortlist_protomer.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -100,6 +108,7 @@ def build():
     resistance = load_resistance()
     convergence = load_convergence()
     stereo = load_stereo()
+    protomer = load_protomer()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -114,9 +123,11 @@ def build():
         rs = resistance.get(name, {})
         pc = convergence.get(name, {})
         st = stereo.get(name, {})
+        pt = protomer.get(name, {})
         is_ctrl = name in CONTROLS
 
-        concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None, st or None)
+        concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None,
+                                   st or None, pt or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -199,6 +210,14 @@ def build():
                 "n_unassigned_centers": st.get("n_unassigned"),
                 "iso_spread_A": st.get("iso_spread"),
             },
+            "protomer_tautomer": {
+                "status": "proven" if pt else "not-yet-checked",
+                "verdict": pt.get("verdict"),
+                "protomer_explicit": pt.get("protomer_explicit"),
+                "n_states": pt.get("n_states"),
+                "n_protonation_states": pt.get("n_protonation_states"),
+                "state_spread_A": pt.get("state_spread"),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -220,6 +239,7 @@ def build():
             "resistance_retention (C. auris Y132F)",
             "pose_convergence (within-search RMSD clustering)",
             "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
+            "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -265,12 +285,24 @@ def stereo_cell(c):
     return f"{'robust' if v == 'ROBUST' else 'iso-dep'}/{st.get('n_isomers')}iso"
 
 
+def protomer_cell(c):
+    """Compact protonation/tautomer cell: EXPLICIT (single microstate) or the microstate verdict."""
+    pt = c["protomer_tautomer"]
+    if pt["status"] != "proven":
+        return "—"
+    if pt.get("protomer_explicit"):
+        return "explicit"
+    v = pt.get("verdict")
+    tag = "robust" if v == "ROBUST" else "state-dep"
+    return f"{tag}/{pt.get('n_states')}st"
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
-            "domain", "Y132F", "pose-conv", "stereo", "precedent", "#concern")
-    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-10s %-11s %-16s %s"
+            "domain", "Y132F", "pose-conv", "stereo", "protomer", "precedent", "#concern")
+    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-10s %-11s %-12s %-16s %s"
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
     print("-" * 118)
@@ -286,6 +318,7 @@ def print_table(sc):
             res_cell(c),
             conv_cell(c),
             stereo_cell(c),
+            protomer_cell(c),
             (c["precedent"]["phenotypic"] if c["precedent"]["phenotypic"] != "—"
              else c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
@@ -305,6 +338,7 @@ def print_table(sc):
             res_cell(c),
             conv_cell(c),
             stereo_cell(c),
+            protomer_cell(c),
             (c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))

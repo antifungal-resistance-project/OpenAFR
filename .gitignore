@@ -21,6 +21,9 @@ work/candidates/dock_convergence/
 work/candidates/dock_stereo/
 work/candidates/dock_stereo.log
 work/candidates/stereo_ligands/
+work/candidates/dock_protomer/
+work/candidates/dock_protomer.log
+work/candidates/protomer_ligands/
 work/candidates/*_pdbqt/
 work/candidates/cand_ligands/
 work/candidates/focus_ligands/

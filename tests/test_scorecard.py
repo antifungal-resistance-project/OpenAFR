@@ -129,6 +129,35 @@ def test_stereo_unchecked_adds_no_concern():
     assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
 
 
+def test_protomer_microstate_dependent_is_flagged_for_novel_candidate():
+    # a rank that collapses/shifts across pH-7.4 protonation/tautomer states is not trustworthy
+    pt = {"verdict": "MICROSTATE-DEPENDENT"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               False, None, None, pt)
+    assert any("protonation/tautomer" in c for c in concerns)
+
+
+def test_protomer_explicit_and_robust_are_not_concerns():
+    for verdict in ("EXPLICIT", "ROBUST"):
+        pt = {"verdict": verdict}
+        concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                                   False, None, None, pt)
+        assert not any("protonation/tautomer" in c for c in concerns)
+
+
+def test_protomer_microstate_dependent_is_not_a_strike_against_a_control():
+    # the multi-state molecules include the tautomeric azole controls, docked to exercise the axis
+    pt = {"verdict": "MICROSTATE-DEPENDENT"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               True, None, None, pt)
+    assert not any("protonation/tautomer" in c for c in concerns)
+
+
+def test_protomer_unchecked_adds_no_concern():
+    # backward-compatible default: no protomer record -> no concern
+    assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
+
+
 def test_unchecked_axis_set_is_nonempty_so_every_card_carries_it():
     # the honesty guard: there is always at least one axis a card must admit it skipped
     assert len(NOT_YET_CHECKED) >= 1
