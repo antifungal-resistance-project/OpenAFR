@@ -29,29 +29,29 @@ controls that validate the axes rather than test a discovery.
 
 ### Novel candidates
 
-| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | pose-conv | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|---|---|:--:|
-| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | disp/rk11 | no-precedent | 1 |
-| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | disp/rk13 | no-precedent | 2 |
-| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | disp/rk15 | cell tested-active | 3 |
-| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | disp/rk12 | no-precedent | 2 |
-| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **disp/rk1✓** | no-precedent | **0** |
-| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | disp/rk11 | no-precedent | **0** |
-| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | disp/rk19 | no-precedent | 3 |
-| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | disp/rk9 | no-precedent | 1 |
-| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | disp/rk8 | no-precedent | 1 |
-| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | disp/rk15 | no-precedent | 1 |
+| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | pose-conv | stereo | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|---|---|:--:|
+| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | disp/rk11 | explicit | no-precedent | 1 |
+| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | disp/rk13 | explicit | no-precedent | 2 |
+| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | disp/rk15 | explicit | cell tested-active | 3 |
+| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | disp/rk12 | explicit | no-precedent | 2 |
+| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **disp/rk1✓** | explicit | no-precedent | **0** |
+| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | disp/rk11 | explicit | no-precedent | **0** |
+| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | disp/rk19 | explicit | no-precedent | 3 |
+| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | disp/rk9 | explicit | no-precedent | 1 |
+| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | disp/rk8 | explicit | no-precedent | 1 |
+| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | disp/rk15 | explicit | no-precedent | 1 |
 
 ### Controls (known azoles — should look like azoles, not like discoveries)
 
-| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | pose-conv | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|:--:|
-| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | disp/rk8 | no-precedent | 2 |
-| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | disp/rk6 | record-inconclusive | 0 |
-| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | disp/rk6 | **enzyme tested-active** | 1 |
-| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | disp/rk4 | record-inconclusive | 1 |
-| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | disp/rk11 | **enzyme tested-active** | 1 |
-| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | disp/rk2✓ | — | 2 |
+| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | pose-conv | stereo | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|:--:|
+| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | disp/rk8 | robust/2iso | no-precedent | 2 |
+| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | disp/rk6 | explicit | record-inconclusive | 0 |
+| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | disp/rk6 | explicit | **enzyme tested-active** | 1 |
+| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | disp/rk4 | explicit | record-inconclusive | 1 |
+| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | disp/rk11 | explicit | **enzyme tested-active** | 1 |
+| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | disp/rk2✓ | **iso-dep/4iso** | — | 2 |
 
 > **Every candidate is `disp` (DISPERSED) — that is a protocol-level finding, not a
 > per-candidate strike.** Under the frozen 26 Å box + 20 modes, no candidate's returned poses
@@ -104,6 +104,14 @@ controls that validate the axes rather than test a discovery.
   best-energy pose (rk1, in-basin)** — geometry and the docking score agree on the same
   pose. For most others the coordinating pose is a mid/high-energy mode, which the project's
   distrust-the-Vina-score thesis makes unsurprising and non-disqualifying (#71).
+- **The stereochemistry axis confirms every novel rank is isomer-explicit and validates
+  itself on the controls.** All 10 novel candidates' supplied SMILES pin a single defined
+  isomer (`explicit`) — seven achiral, three with every stereocenter assigned — so no rank is
+  silently averaged over, or pinned to the wrong member of, an *unspecified* stereo set (#85).
+  The only two ambiguous molecules are controls: flutrimazole is `robust` (its enantiomers
+  coordinate to within 0.022 Å) while ketoconazole is `iso-dep` (one enumerated isomer never
+  reaches the iron, 0/5 seeds) — proving the isomer-docking machinery genuinely separates an
+  isomer-robust molecule from an isomer-dependent one.
 - **The controls behave as a negative control on the scorecard itself.**
   ketoconazole surfaces its known 1/5 non-convergence (a floppy-ligand global-search
   artifact already isolated as a search-power, not receptor, fault in
@@ -122,10 +130,13 @@ Printed on every card so no molecule looks fully vetted:
   [RESULTS_candidate_resistance.md](RESULTS_candidate_resistance.md)), but the clade-I
   K143R and clade-III F126L mutants need a side-chain repacker not in the pinned
   environment and remain unchecked.
-- **Protonation / tautomer enumeration at pH 7.4** (#84) and **all-stereoisomer
-  docking** (#85) — each candidate was docked as one supplied SMILES.
+- **Protonation / tautomer enumeration at pH 7.4** (#84) — each candidate was docked
+  as one supplied protomer/tautomer.
 - **Broader human CYP off-target panel** (CYP3A4/2C9/2D6/2C19/1A2, #74) — only the
   CYP51 counter-screen exists.
+
+(Stereochemistry (#85) is now **measured** — the `stereo` column above and
+[RESULTS_candidate_stereo.md](RESULTS_candidate_stereo.md).)
 
 ## What this establishes / does not
 
@@ -148,5 +159,6 @@ Printed on every card so no molecule looks fully vetted:
 Reads only committed per-axis outputs (`shortlist_confidence.json`,
 `shortlist_admet.tsv`, `shortlist_synth.json`, `domain_sensitivity.json`,
 `top100_precedent.tsv`, `shortlist_resistance.json`, `pose_convergence.json`,
-`work/repurposing/ranked.tsv`); writes `work/candidates/shortlist_scorecard.json`.
+`shortlist_stereo.json`, `work/repurposing/ranked.tsv`); writes
+`work/candidates/shortlist_scorecard.json`.
 No network, no docking.

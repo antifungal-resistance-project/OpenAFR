@@ -33,12 +33,15 @@ NOT_YET_CHECKED = {
     # the OTHER C. auris mutants still need a side-chain repacker not in the pinned env.
     "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
     "protomer_tautomer": "protonation/tautomer enumeration at pH 7.4 (#84)",
-    "stereoisomers": "all-stereoisomer docking (#85)",
+    # stereochemistry (#85) is now measured (stereochemistry axis, RESULTS_candidate_stereo.md):
+    # every novel candidate's supplied SMILES pins a single defined isomer (EXPLICIT); the two
+    # ambiguous controls are docked per-isomer. This closes the "unspecified stereo" hole, not
+    # the "supplied the wrong configuration" one (see the prereg limitations).
     "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)",
 }
 
 
-def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None):
+def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
@@ -55,6 +58,7 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None):
       dm   domain_sensitivity.json      (candidate_fragility entry)
       pr   top100_precedent.tsv         (assay-precedent verdicts)
       res  shortlist_resistance.json    (C. auris Y132F retention verdict; None = not-yet-checked)
+      st   shortlist_stereo.json        (stereochemistry verdict; None = not-yet-checked)
     """
     concerns = []
     if cf.get("reaches_fungal_iron") is False:
@@ -80,4 +84,10 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None):
     # the target the mission actually cares about. Control-exempt (see docstring).
     if res is not None and res.get("verdict") == "LOST" and not is_ctrl:
         concerns.append("loses coordination in C. auris Y132F pocket")
+    # Stereochemistry (#85): a candidate whose rank flips with an UNSPECIFIED stereocenter is
+    # demoted — the shortlist SMILES did not pin the isomer the geometry rests on. Control-exempt:
+    # the ambiguous molecules are the racemic azole controls, docked per-isomer to exercise the
+    # axis, not discoveries to strike. An EXPLICIT candidate never triggers this.
+    if st is not None and st.get("verdict") == "ISOMER-DEPENDENT" and not is_ctrl:
+        concerns.append("rank depends on unspecified stereochemistry")
     return concerns

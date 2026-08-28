@@ -1,0 +1,254 @@
+{
+  "fe_cutoff": 3.0,
+  "iso_tol": 1.0,
+  "min_coord_seeds": 3,
+  "n_stereo_explicit": 14,
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "stereo_explicit": false,
+      "n_isomers": 2,
+      "n_unassigned": 1,
+      "n_unassigned_bonds": 0,
+      "verdict": "ROBUST",
+      "iso_spread": 0.022,
+      "isomers": [
+        {
+          "isomer": "flutrimazole__iso01",
+          "smiles": "Fc1ccc([C@@](c2ccccc2)(c2ccccc2F)n2ccnc2)cc1",
+          "consensus": 2.541,
+          "seeds_coordinating": "5/5",
+          "spread": 0.028,
+          "per_seed": {
+            "1": 2.541,
+            "2": 2.56,
+            "3": 2.564,
+            "4": 2.569,
+            "42": 2.566
+          }
+        },
+        {
+          "isomer": "flutrimazole__iso02",
+          "smiles": "Fc1ccc([C@](c2ccccc2)(c2ccccc2F)n2ccnc2)cc1",
+          "consensus": 2.563,
+          "seeds_coordinating": "3/5",
+          "spread": 0.026,
+          "per_seed": {
+            "1": 2.57,
+            "2": 2.563,
+            "3": 15.703,
+            "4": 2.589,
+            "42": 3.753
+          }
+        }
+      ]
+    },
+    {
+      "name": "verinurad",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "vatalanib",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "flucloxacillin",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "taranabant",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "lersivirine",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "LDN-27219",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "R-1479",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "ravuconazole",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "L-838417",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "olprinone",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "nolatrexed",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "letrozole",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "fluconazole",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "voriconazole",
+      "stereo_explicit": true,
+      "n_isomers": 1,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "verdict": "EXPLICIT",
+      "iso_spread": null,
+      "isomers": []
+    },
+    {
+      "name": "ketoconazole",
+      "stereo_explicit": false,
+      "n_isomers": 4,
+      "n_unassigned": 2,
+      "n_unassigned_bonds": 0,
+      "verdict": "ISOMER-DEPENDENT",
+      "iso_spread": 0.293,
+      "isomers": [
+        {
+          "isomer": "ketoconazole__iso01",
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@@H]3CO[C@@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "consensus": 2.548,
+          "seeds_coordinating": "3/5",
+          "spread": 0.239,
+          "per_seed": {
+            "1": 2.634,
+            "2": 5.22,
+            "3": 3.716,
+            "4": 2.548,
+            "42": 2.788
+          }
+        },
+        {
+          "isomer": "ketoconazole__iso02",
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "consensus": 2.72,
+          "seeds_coordinating": "2/5",
+          "spread": 0.16,
+          "per_seed": {
+            "1": 2.72,
+            "2": 2.88,
+            "3": 3.492,
+            "4": 3.284,
+            "42": 3.51
+          }
+        },
+        {
+          "isomer": "ketoconazole__iso03",
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "consensus": 3.342,
+          "seeds_coordinating": "0/5",
+          "spread": 0.0,
+          "per_seed": {
+            "1": 4.934,
+            "2": 3.546,
+            "3": 5.147,
+            "4": 5.165,
+            "42": 3.342
+          }
+        },
+        {
+          "isomer": "ketoconazole__iso04",
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "consensus": 2.841,
+          "seeds_coordinating": "4/5",
+          "spread": 0.053,
+          "per_seed": {
+            "1": 2.894,
+            "2": 2.841,
+            "3": 3.054,
+            "4": 2.874,
+            "42": 2.891
+          }
+        }
+      ]
+    }
+  ]
+}
