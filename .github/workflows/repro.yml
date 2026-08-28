@@ -1,0 +1,45 @@
+# Reproducibility / drift gate (issue #89).
+#
+# The test suite (tests.yml) proves the code behaves; this job proves the *frozen surface*
+# has not silently drifted. scripts/repro.py re-checks, in one command, that:
+#   1. protocol.yaml matches its frozen SHA-256 (the docking box + gate pass bar),
+#   2. every work/PREREG_*.sha256 verifies (the pre-registrations + their frozen inputs),
+#   3. the consolidated per-candidate scorecard re-derives byte-for-byte from its committed
+#      per-axis inputs.
+# It exits non-zero on any drift, so a PR that tunes a pass bar, edits a frozen
+# pre-registration, or ships a per-axis JSON without rebuilding the card fails loudly here.
+#
+# Re-DOCKING is deliberately not run in CI: the ~43 MB of Vina pose trees are gitignored and
+# take hours to regenerate (see each RESULTS_*.md). This job guarantees no silent drift in
+# everything that does NOT require docking; a genuine re-dock stays a documented manual step.
+#
+# Same pinned environment.yml as tests.yml — CI that verifies reproducibility under a
+# different dependency set than results were produced under would itself break the contract.
+name: repro
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: repro-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repro:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}   # login shell so the `openafr` env is active for each step
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the pinned openafr environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+
+      - name: Re-check the frozen surface for drift
+        run: python scripts/repro.py

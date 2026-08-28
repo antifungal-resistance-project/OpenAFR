@@ -348,7 +348,10 @@ def print_table(sc):
 
 if __name__ == "__main__":
     sc = build()
-    out = os.path.join(C, "shortlist_scorecard.json")
+    # --out lets the reproducibility harness (scripts/repro.py) regenerate to a scratch
+    # path and byte-compare against the committed card without clobbering it.
+    out = (sys.argv[sys.argv.index("--out") + 1] if "--out" in sys.argv
+           else os.path.join(C, "shortlist_scorecard.json"))
     json.dump(sc, open(out, "w"), indent=2)
     print(f"wrote {out}  ({sc['n_candidates']} candidates, "
           f"{sc['n_controls']} controls)")
