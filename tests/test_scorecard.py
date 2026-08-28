@@ -101,6 +101,34 @@ def test_resistance_unchecked_adds_no_concern():
     assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
 
 
+def test_stereo_isomer_dependent_is_flagged_for_novel_candidate():
+    # a rank that flips with an unspecified stereocenter is not trustworthy
+    st = {"verdict": "ISOMER-DEPENDENT"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               False, None, st)
+    assert any("stereochemistry" in c for c in concerns)
+
+
+def test_stereo_explicit_and_robust_are_not_concerns():
+    for verdict in ("EXPLICIT", "ROBUST"):
+        st = {"verdict": verdict}
+        concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                                   False, None, st)
+        assert not any("stereochemistry" in c for c in concerns)
+
+
+def test_stereo_isomer_dependent_is_not_a_strike_against_a_control():
+    # the ambiguous molecules are the racemic azole controls, docked to exercise the axis
+    st = {"verdict": "ISOMER-DEPENDENT"}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               True, None, st)
+    assert not any("stereochemistry" in c for c in concerns)
+
+
+def test_stereo_unchecked_adds_no_concern():
+    assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
+
+
 def test_unchecked_axis_set_is_nonempty_so_every_card_carries_it():
     # the honesty guard: there is always at least one axis a card must admit it skipped
     assert len(NOT_YET_CHECKED) >= 1

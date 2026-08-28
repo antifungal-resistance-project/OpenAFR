@@ -1,0 +1,312 @@
+{
+  "n_molecules": 16,
+  "max_isomers": 16,
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "smiles": "Fc1ccc(cc1)C(c1ccccc1)(c1ccccc1F)n1ccnc1 |&1:7|",
+      "n_stereocenters": 1,
+      "n_assigned": 0,
+      "n_unassigned": 1,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 2,
+      "stereo_explicit": false,
+      "isomers": [
+        {
+          "smiles": "Fc1ccc([C@@](c2ccccc2)(c2ccccc2F)n2ccnc2)cc1",
+          "cip": {
+            "a7": "S"
+          }
+        },
+        {
+          "smiles": "Fc1ccc([C@](c2ccccc2)(c2ccccc2F)n2ccnc2)cc1",
+          "cip": {
+            "a7": "R"
+          }
+        }
+      ]
+    },
+    {
+      "name": "verinurad",
+      "smiles": "CC(C)(Sc1ccncc1-c1ccc(C#N)c2ccccc12)C(O)=O",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "CC(C)(Sc1ccncc1-c1ccc(C#N)c2ccccc12)C(=O)O",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "vatalanib",
+      "smiles": "Clc1ccc(Nc2nnc(Cc3ccncc3)c3ccccc23)cc1",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "Clc1ccc(Nc2nnc(Cc3ccncc3)c3ccccc23)cc1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "flucloxacillin",
+      "smiles": "Cc1onc(c1C(=O)N[C@H]1[C@H]2SC(C)(C)[C@@H](N2C1=O)C(O)=O)-c1c(F)cccc1Cl",
+      "n_stereocenters": 3,
+      "n_assigned": 3,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "Cc1onc(-c2c(F)cccc2Cl)c1C(=O)N[C@@H]1C(=O)N2[C@@H]1SC(C)(C)[C@@H]2C(=O)O",
+          "cip": {
+            "a9": "R",
+            "a10": "R",
+            "a15": "S"
+          }
+        }
+      ]
+    },
+    {
+      "name": "taranabant",
+      "smiles": "C[C@H](NC(=O)C(C)(C)Oc1ccc(cn1)C(F)(F)F)[C@@H](Cc1ccc(Cl)cc1)c1cccc(c1)C#N",
+      "n_stereocenters": 2,
+      "n_assigned": 2,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "C[C@H](NC(=O)C(C)(C)Oc1ccc(C(F)(F)F)cn1)[C@@H](Cc1ccc(Cl)cc1)c1cccc(C#N)c1",
+          "cip": {
+            "a1": "S",
+            "a19": "S"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lersivirine",
+      "smiles": "CCc1nn(CCO)c(CC)c1Oc1cc(cc(c1)C#N)C#N",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "CCc1nn(CCO)c(CC)c1Oc1cc(C#N)cc(C#N)c1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "LDN-27219",
+      "smiles": "NNC(=O)CSc1nc2scc(-c3ccccc3)c2c(=O)n1-c1ccccc1",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "NNC(=O)CSc1nc2scc(-c3ccccc3)c2c(=O)n1-c1ccccc1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "R-1479",
+      "smiles": "Nc1ccn([C@@H]2O[C@@](CO)(N=[N+]=[N-])[C@@H](O)[C@H]2O)c(=O)n1",
+      "n_stereocenters": 4,
+      "n_assigned": 4,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "[N-]=[N+]=N[C@]1(CO)O[C@@H](n2ccc(N)nc2=O)[C@H](O)[C@@H]1O",
+          "cip": {
+            "a5": "R",
+            "a7": "R",
+            "a13": "S",
+            "a15": "R"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ravuconazole",
+      "smiles": "C[C@@H](c1nc(cs1)-c1ccc(cc1)C#N)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+      "n_stereocenters": 2,
+      "n_assigned": 2,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "C[C@@H](c1nc(-c2ccc(C#N)cc2)cs1)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+          "cip": {
+            "a1": "R",
+            "a15": "R"
+          }
+        }
+      ]
+    },
+    {
+      "name": "L-838417",
+      "smiles": "Cn1ncnc1COc1nn2c(nnc2cc1C(C)(C)C)-c1cc(F)ccc1F",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "Cn1ncnc1COc1nn2c(-c3cc(F)ccc3F)nnc2cc1C(C)(C)C",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "olprinone",
+      "smiles": "Cc1[nH]c(=O)c(cc1-c1ccc2nccn2c1)C#N",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "Cc1[nH]c(=O)c(C#N)cc1-c1ccc2nccn2c1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "nolatrexed",
+      "smiles": "Cc1ccc2[nH]c(N)nc(=O)c2c1Sc1ccncc1",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "Cc1ccc2[nH]c(N)nc(=O)c2c1Sc1ccncc1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "letrozole",
+      "smiles": "N#Cc1ccc(cc1)C(c1ccc(cc1)C#N)n1cncn1",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "N#Cc1ccc(C(c2ccc(C#N)cc2)n2cncn2)cc1",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "fluconazole",
+      "smiles": "OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F",
+      "n_stereocenters": 0,
+      "n_assigned": 0,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F",
+          "cip": {}
+        }
+      ]
+    },
+    {
+      "name": "voriconazole",
+      "smiles": "C[C@@H](c1ncncc1F)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+      "n_stereocenters": 2,
+      "n_assigned": 2,
+      "n_unassigned": 0,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 1,
+      "stereo_explicit": true,
+      "isomers": [
+        {
+          "smiles": "C[C@@H](c1ncncc1F)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+          "cip": {
+            "a1": "S",
+            "a9": "R"
+          }
+        }
+      ]
+    },
+    {
+      "name": "ketoconazole",
+      "smiles": "CC(=O)N1CCN(CC1)c1ccc(OCC2COC(Cn3ccnc3)(c3ccc(Cl)cc3Cl)O2)cc1",
+      "n_stereocenters": 2,
+      "n_assigned": 0,
+      "n_unassigned": 2,
+      "n_unassigned_bonds": 0,
+      "n_isomers": 4,
+      "stereo_explicit": false,
+      "isomers": [
+        {
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@@H]3CO[C@@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "cip": {
+            "a15": "R",
+            "a18": "S"
+          }
+        },
+        {
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "cip": {
+            "a15": "R",
+            "a18": "R"
+          }
+        },
+        {
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "cip": {
+            "a15": "S",
+            "a18": "S"
+          }
+        },
+        {
+          "smiles": "CC(=O)N1CCN(c2ccc(OC[C@H]3CO[C@](Cn4ccnc4)(c4ccc(Cl)cc4Cl)O3)cc2)CC1",
+          "cip": {
+            "a15": "S",
+            "a18": "R"
+          }
+        }
+      ]
+    }
+  ]
+}
