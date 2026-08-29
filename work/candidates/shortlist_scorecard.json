@@ -342,7 +342,7 @@
       "precedent": {
         "status": "proven",
         "enzyme_verdict": "no-precedent",
-        "phenotypic": "tested-active",
+        "phenotypic": "\u2014",
         "chembl_id": "CHEMBL222645",
         "near_verdict": "\u2014"
       },
@@ -386,7 +386,6 @@
       "concerns": [
         "ADMET: alert",
         "domain: coordinator-fragile",
-        "phenotypic tested-active elsewhere (read assay)",
         "rank depends on protonation/tautomer state at pH 7.4"
       ]
     },
@@ -1236,7 +1235,7 @@
       "precedent": {
         "status": "proven",
         "enzyme_verdict": "record-inconclusive",
-        "phenotypic": "tested-active",
+        "phenotypic": "record-inconclusive",
         "chembl_id": "CHEMBL1444",
         "near_verdict": "\u2014"
       },

@@ -38,10 +38,13 @@ their targets differently:
   on_target   the CYP51/ERG11 enzyme itself — the only direct verdict. ChEMBL: target id in
               CYP51_TARGETS. PubChem: assay name names the enzyme (cyp51/erg11/sterol
               14-demethylase), since PubChem has no single CYP51 target id to filter on.
-  phenotypic  a whole-cell MIC — ChEMBL: any non-enzyme record in µg/mL; PubChem: an assay
-              named antifungal/Candida/Aspergillus/etc. Weaker (permeability/efflux confound)
-              and, for PubChem, matched by name only — a coarse hint to go read the assays,
-              never a fungal verdict on its own.
+  phenotypic  a whole-cell MIC against a FUNGUS — ChEMBL: a non-enzyme µg/mL record whose
+              organism (target_organism/assay_organism) is a fungus; PubChem: an assay named
+              antifungal/Candida/Aspergillus/etc. Weaker (permeability/efflux confound) and a
+              coarse hint to go read the assays, never a fungal verdict on its own. It is now
+              organism-filtered on the ChEMBL side (#79): an antibacterial or mammalian-cell µg/mL
+              record is NOT antifungal evidence and drops to off_target, so a `tested-active`
+              here is a fungal cell result, not (e.g.) an antibacterial one.
   off_target  everything else — not a resistance signal, a *novelty* signal: a compound already
               characterised against other targets is a known molecule, not a fresh chemotype.
 
@@ -83,6 +86,25 @@ _ENZYME_ASSAY = re.compile(
     r"cyp51|erg11|sterol\s*14|14\W*alpha[\s\-]*demethyl|lanosterol[\s\-]*14", re.I)
 _PHENOTYPIC_ASSAY = re.compile(
     r"antifungal|candida|aspergillus|cryptococc|trichophyton|dermatophyt|\bfungal\b", re.I)
+
+# A whole-cell µg/mL MIC bears on ANTIFUNGAL activity only if it was run against a fungus. The
+# ChEMBL side of group_by_target used to route EVERY non-enzyme µg/mL record into the phenotypic
+# bucket regardless of organism, so an antibacterial MIC (flucloxacillin/tazobactam vs
+# Staphylococcus/E. coli) or a mammalian-cell-line assay counted as an antifungal signal — the
+# exact noise issue #79 removes. This matches an organism string (ChEMBL target_organism /
+# assay_organism) against the clinically-relevant fungal genera plus the generic terms, and is
+# kept aligned in spirit with _PHENOTYPIC_ASSAY (the PubChem side is already fungal-name-gated,
+# so PubChem phenotypic records were never contaminated — only the ChEMBL side needed this).
+_FUNGAL_ORGANISM = re.compile(
+    r"\bfung|\bmould\b|\bmold\b|\byeast|candida|nakaseomyces|clavispora|meyerozyma|"
+    r"pichia|debaryomyces|kluyveromyces|saccharomyces|schizosaccharomyces|zygosaccharomyces|"
+    r"aspergillus|penicillium|talaromyces|paecilomyces|purpureocillium|scopulariopsis|"
+    r"acremonium|fusarium|scedosporium|lomentospora|cryptococc|trichosporon|rhodotorula|"
+    r"malassezia|trichophyton|microsporum|nannizzia|epidermophyton|dermatophyt|"
+    r"histoplasma|blastomyces|coccidioides|paracoccidioides|sporothrix|"
+    r"rhizopus|mucor|rhizomucor|lichtheimia|cunninghamella|absidia|apophysomyces|"
+    r"exophiala|cladosporium|alternaria|curvularia|geotrichum|magnaporthe|"
+    r"pneumocystis|phialophora|fonsecaea", re.I)
 
 # PubChem's own adjudication -> our shared vocabulary. 'Unspecified' is NOT a non-inhibition
 # claim (the depositor simply did not call it), so it is ignored, never read as inactive.
@@ -214,26 +236,75 @@ def nearest_tested_neighbour(query_fp, neighbours):
 
 # --- ChEMBL adapter -------------------------------------------------------------------
 
+def record_organism(rec):
+    """The organism a ChEMBL activity record was measured against ('' if none is recorded).
+
+    target_organism is the assay's biological subject — for a whole-cell MIC, the organism whose
+    cells were dosed; assay_organism is the fallback. Either is what tells a µg/mL record apart as
+    fungal (relevant to antifungal activity) or not. Only these two structured fields are read;
+    the free-text assay_description is deliberately NOT mined, to avoid a stray "vs Candida
+    comparator" mention flipping a non-fungal assay to fungal.
+    """
+    return (rec.get("target_organism") or rec.get("assay_organism") or "").strip()
+
+
+def is_fungal_organism(name):
+    """True iff `name` denotes a fungus — so a whole-cell MIC against it is antifungal evidence.
+
+    An empty/unrecognised organism is False: a µg/mL record we cannot confirm is fungal must not
+    masquerade as an antifungal signal (it becomes an off-target novelty count instead, #79).
+    """
+    return bool(name) and _FUNGAL_ORGANISM.search(name) is not None
+
+
 def group_by_target(records):
     """Split ChEMBL activity records into (on_target, phenotypic, off_target).
 
     on_target  : records against a CYP51_TARGETS enzyme target — the direct verdict.
-    phenotypic : any non-enzyme record reported in µg/mL — a whole-cell MIC. Weaker evidence
-                 (permeability/efflux confound) and NOT organism-filtered, so this is a coarse
-                 secondary hint, reported separately, never a fungal verdict on its own.
+    phenotypic : a whole-cell µg/mL MIC run against a **fungus** — the only cell assay that bears
+                 on antifungal activity. Still weaker than the enzyme verdict (permeability/efflux
+                 confound), reported separately, never an enzyme verdict on its own — but now
+                 organism-filtered (#79), so an antibacterial or mammalian-cell MIC no longer
+                 pollutes it.
     off_target : everything else — a 'this is a known compound' novelty signal, kept as a count.
-    A record with no target id is treated as off-target; it cannot support an on-target claim.
+                 This now ALSO catches a non-enzyme µg/mL record whose organism is a non-fungus
+                 OR is unrecorded: it is still a measured record (a novelty signal) but makes no
+                 antifungal claim. A record with no target id likewise cannot support any claim.
     """
     on_target, phenotypic, off_target = [], [], []
     for r in records:
         tid = r.get("target_chembl_id")
         if tid in CYP51_TARGETS:
             on_target.append(r)
-        elif (r.get("standard_units") or "").strip() == "ug.mL-1":
+        elif (r.get("standard_units") or "").strip() == "ug.mL-1" \
+                and is_fungal_organism(record_organism(r)):
             phenotypic.append(r)
         else:
             off_target.append(r)
     return on_target, phenotypic, off_target
+
+
+def phenotypic_organism_breakdown(records):
+    """From a molecule's ChEMBL records, the organisms behind its whole-cell µg/mL MICs.
+
+    Returns {'fungal': [...], 'nonfungal': [...]} — sorted, distinct organism names — so a reader
+    can see *which* organisms a phenotypic verdict rests on, and which non-fungal MICs were
+    reclassified to off_target rather than counted as antifungal evidence (#79). An unrecorded
+    organism is listed under 'nonfungal' as '(unspecified)', since it too was excluded from the
+    fungal verdict. PubChem records carry no structured organism field and never appear here.
+    """
+    fungal, nonfungal = set(), set()
+    for r in records:
+        if r.get("target_chembl_id") in CYP51_TARGETS:
+            continue
+        if (r.get("standard_units") or "").strip() != "ug.mL-1":
+            continue
+        org = record_organism(r)
+        if is_fungal_organism(org):
+            fungal.add(org)
+        else:
+            nonfungal.add(org or "(unspecified)")
+    return {"fungal": sorted(fungal), "nonfungal": sorted(nonfungal)}
 
 
 def chembl_buckets(records):
@@ -259,8 +330,14 @@ def candidate_verdict(on_target_records):
 
 
 def summarise(records):
-    """All of a molecule's ChEMBL activity records -> the full precedent summary (ChEMBL only)."""
-    return render(chembl_buckets(records))
+    """All of a molecule's ChEMBL activity records -> the full precedent summary (ChEMBL only).
+
+    Adds `phenotypic_organisms` (the fungal/non-fungal organism breakdown, #79) to render()'s
+    keys, so the whole-cell verdict carries the organisms it rests on.
+    """
+    summary = render(chembl_buckets(records))
+    summary["phenotypic_organisms"] = phenotypic_organism_breakdown(records)
+    return summary
 
 
 # --- PubChem adapter ------------------------------------------------------------------
@@ -365,19 +442,23 @@ def lookup(smiles, sources=("chembl", "pubchem"), opener=urllib.request.urlopen)
     if ik is None:
         return {"inchikey": None, "chembl_id": None, "pubchem_cid": None,
                 "verdict": "unparseable", "tally": None, "phenotypic": None,
+                "phenotypic_organisms": {"fungal": [], "nonfungal": []},
                 "n_off_target": 0, "n_records": 0}
 
     buckets = _empty_buckets()
     chembl_id = pubchem_cid = None
-    if "chembl" in sources:
+    chembl_records = []                          # kept so the phenotypic organism breakdown (#79)
+    if "chembl" in sources:                      # can name the organisms behind the verdict
         chembl_id = chembl_id_for_inchikey(ik, opener)
         if chembl_id:
-            buckets = merge_buckets(buckets, chembl_buckets(chembl_activities(chembl_id, opener)))
+            chembl_records = chembl_activities(chembl_id, opener)
+            buckets = merge_buckets(buckets, chembl_buckets(chembl_records))
     if "pubchem" in sources:
         pubchem_cid = pubchem_cid_for_inchikey(ik, opener)
         if pubchem_cid:
             buckets = merge_buckets(buckets, pubchem_buckets(pubchem_assays(pubchem_cid, opener)))
 
     summary = render(buckets)
-    summary.update({"inchikey": ik, "chembl_id": chembl_id, "pubchem_cid": pubchem_cid})
+    summary.update({"inchikey": ik, "chembl_id": chembl_id, "pubchem_cid": pubchem_cid,
+                    "phenotypic_organisms": phenotypic_organism_breakdown(chembl_records)})
     return summary

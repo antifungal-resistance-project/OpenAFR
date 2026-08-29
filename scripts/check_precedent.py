@@ -22,12 +22,17 @@ Read the verdict honestly (openafr/precedent.py says the same, louder):
                       may simply never have been deposited. Absence is not evidence.
   unparseable         RDKit could not read the SMILES; cannot look it up.
 
-The 'phenotypic' column is a whole-cell MIC (any µg/mL record off the enzyme) and is reported
-separately and more weakly than an enzyme verdict: a cell assay folds in permeability and
-efflux, so an inactive MIC does not prove the enzyme was untouched, and it is NOT organism-
-filtered — treat it as a hint to read the underlying assays, not a fungal verdict. Off-target
-ChEMBL records are shown only as a count — a molecule already characterised against other
-targets is a known compound, a novelty caveat, not a hit here.
+The 'phenotypic' column is a whole-cell MIC against a FUNGUS and is reported separately and more
+weakly than an enzyme verdict: a cell assay folds in permeability and efflux, so an inactive MIC
+does not prove the enzyme was untouched — treat it as a hint to read the underlying assays, not a
+fungal verdict. It is now organism-filtered (#79): a µg/mL record against a bacterium or a
+mammalian cell line is NOT antifungal evidence and is counted as off-target instead, so a
+`tested-active` here means a fungal cell result, not (e.g.) an antibacterial one. The
+'phenotypic_organism' column names the fungal organisms behind that verdict (and, when the
+fungal bucket is empty, the non-fungal/unspecified organisms whose µg/mL MICs were reclassified),
+so the verdict carries the organism it rests on. Off-target ChEMBL records are shown only as a
+count — a molecule already characterised against other targets is a known compound, a novelty
+caveat, not a hit here.
 
 This makes network calls to ChEMBL (www.ebi.ac.uk) and PubChem (pubchem.ncbi.nlm.nih.gov).
 It fails per-molecule: a lookup error is recorded as 'lookup-failed' for that row and the run
@@ -82,6 +87,39 @@ def _pheno(summary):
     return p["verdict"] if p else "—"
 
 
+_ORG_CAP = 6  # keep the TSV cell legible; the full list lives in the summary dict / JSON
+
+
+def _cap(names):
+    """A short, legible join of an organism list — first _ORG_CAP names, then '+N more'."""
+    if len(names) <= _ORG_CAP:
+        return "; ".join(names)
+    return "; ".join(names[:_ORG_CAP]) + f"; +{len(names) - _ORG_CAP} more"
+
+
+def _pheno_organism(summary):
+    """The organisms behind the phenotypic verdict (#79), for the TSV.
+
+    Reports the fungal organisms the whole-cell verdict rests on (capped for legibility — the
+    full set is in the summary dict). When no fungal MIC exists but non-fungal µg/mL records were
+    reclassified out, it shows those (prefixed 'reclassified:') so a reader can see why a
+    previously-flagged molecule (e.g. an antibacterial) now reads '—'.
+    """
+    orgs = summary.get("phenotypic_organisms") or {}
+    fungal = orgs.get("fungal") or []
+    if fungal:
+        return f"{len(fungal)} fungal: " + _cap(fungal)
+    nonfungal = orgs.get("nonfungal") or []
+    if nonfungal:
+        return "reclassified: " + _cap(nonfungal)
+    # A phenotypic verdict with no ChEMBL organism breakdown came from PubChem, whose phenotypic
+    # bucket is matched by fungal assay *name* (no structured organism) and so is already
+    # fungal-gated — say so rather than print a bare '—' that reads as 'no evidence'.
+    if summary.get("phenotypic"):
+        return "PubChem (fungal name-matched)"
+    return "—"
+
+
 def _near_cols(smiles, neighbours):
     """(near_id, near_sim, near_verdict) for one candidate, or ('—','—','—') when none close."""
     if neighbours is None:
@@ -105,7 +143,8 @@ def main():
 
     neighbours = precedent.load_neighbours(args.near) if args.near else None
 
-    header = "name\tverdict\tchembl_id\tpubchem_cid\tphenotypic\tn_off_target\tn_records"
+    header = ("name\tverdict\tchembl_id\tpubchem_cid\tphenotypic\tphenotypic_organism\t"
+              "n_off_target\tn_records")
     if neighbours is not None:
         header += "\tnear_id\tnear_sim\tnear_verdict"
     rows = [header]
@@ -113,7 +152,7 @@ def main():
     for name, smi, s in check(open(args.library), _SOURCES[args.source]):
         counts[s["verdict"]] = counts.get(s["verdict"], 0) + 1
         row = (f"{name}\t{s['verdict']}\t{s.get('chembl_id') or '—'}\t"
-               f"{s.get('pubchem_cid') or '—'}\t{_pheno(s)}\t"
+               f"{s.get('pubchem_cid') or '—'}\t{_pheno(s)}\t{_pheno_organism(s)}\t"
                f"{s.get('n_off_target', 0)}\t{s.get('n_records', 0)}")
         near = _near_cols(smi, neighbours)
         if near is not None:

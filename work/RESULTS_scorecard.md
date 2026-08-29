@@ -5,6 +5,10 @@ Date: 2026-08-27 (resistance-retention axis added same day —
 pose-convergence axis added same day — [RESULTS_pose_convergence.md](RESULTS_pose_convergence.md), #71).
 Updated 2026-08-28: stereochemistry axis ([RESULTS_candidate_stereo.md](RESULTS_candidate_stereo.md),
 #85) and protonation/tautomer axis ([RESULTS_candidate_protomer.md](RESULTS_candidate_protomer.md), #84).
+Updated 2026-08-29: the phenotypic precedent column is now **organism-aware** (#79,
+[RESULTS_precedent_organism.md](RESULTS_precedent_organism.md)) — a whole-cell MIC counts as an
+antifungal signal only against a fungus, so flucloxacillin's antibacterial (*S. aureus*)
+`cell tested-active` demotion was withdrawn (concerns 4→3); the fungal-azole controls keep theirs.
 
 The capstone of the candidate-confidence batch (#65–#87): one honest, at-a-glance
 card per candidate that rolls **every axis already measured** into the single
@@ -35,7 +39,7 @@ controls that validate the axes rather than test a discovery.
 |---|---:|:--:|---:|---|---|---|---|---|---|---|---|:--:|
 | verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | disp/rk11 | explicit | explicit | no-precedent | 1 |
 | vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | disp/rk13 | explicit | robust/2st | no-precedent | 2 |
-| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | disp/rk15 | explicit | **state-dep/16st** | cell tested-active | 4 |
+| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | disp/rk15 | explicit | **state-dep/16st** | no-precedent | 3 |
 | taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | disp/rk12 | explicit | robust/2st | no-precedent | 2 |
 | lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **disp/rk1✓** | explicit | explicit | no-precedent | **0** |
 | L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | disp/rk11 | explicit | explicit | no-precedent | **0** |
@@ -88,9 +92,15 @@ controls that validate the axes rather than test a discovery.
 - **Selectivity and geometry can disagree with each other.** vatalanib,
   flucloxacillin and taranabant have the widest human-selectivity margins
   (+1.8 to +2.7 Å) yet each carries a separate liability the margin hides —
-  vatalanib a hERG risk factor, flucloxacillin a prior *cell*-active measurement
-  and a structural alert, taranabant two Ro5 violations plus predicted insolubility.
-  A shortlist ranked on selectivity alone would have promoted all three unqualified.
+  vatalanib a hERG risk factor, flucloxacillin a structural ADMET alert plus a
+  coordinator-fragile domain and a protonation/tautomer-dependent pose, taranabant
+  two Ro5 violations plus predicted insolubility. A shortlist ranked on selectivity
+  alone would have promoted all three unqualified. (flucloxacillin's earlier
+  `cell tested-active` demotion was **withdrawn** once precedent became
+  organism-aware (#79): that measurement was an antibacterial MIC against
+  *Staphylococcus aureus*, not an antifungal result —
+  [RESULTS_precedent_organism.md](RESULTS_precedent_organism.md). Its remaining
+  concerns stand.)
 - **The instability demotions survive aggregation.** LDN-27219 (2/5) and olprinone
   (4/5) remain the only sub-5/5 novel candidates — their single-dock ranks were
   search luck, consistent with the seed-stability finding (#68).
