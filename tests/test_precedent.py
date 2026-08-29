@@ -66,7 +66,7 @@ def test_grouping_separates_enzyme_phenotypic_and_offtarget():
     on, pheno, off = P.group_by_target([
         enzyme(standard_value="64", standard_relation="=", standard_units="ug.mL-1"),
         rec(target_chembl_id="CHEMBL999", standard_value="128", standard_relation="=",
-            standard_units="ug.mL-1"),                       # whole-cell MIC, not the enzyme
+            standard_units="ug.mL-1", target_organism="Candida albicans"),  # fungal whole-cell MIC
         rec(target_chembl_id="CHEMBL555", standard_value="5", standard_units="nM"),  # off-target
         rec(),                                               # no target -> off-target
     ])
@@ -76,12 +76,72 @@ def test_grouping_separates_enzyme_phenotypic_and_offtarget():
 def test_summary_reports_phenotypic_and_offtarget_separately():
     s = P.summarise([
         rec(target_chembl_id="CHEMBL999", standard_value="128", standard_relation="=",
-            standard_units="ug.mL-1"),
+            standard_units="ug.mL-1", target_organism="Candida albicans"),
         rec(target_chembl_id="CHEMBL555", standard_value="5", standard_units="nM"),
     ])
     assert s["verdict"] == "no-precedent"                    # nothing on the enzyme itself
-    assert s["phenotypic"]["verdict"] == "tested-inactive"   # the whole-cell MIC, demoted
+    assert s["phenotypic"]["verdict"] == "tested-inactive"   # the fungal whole-cell MIC, demoted
     assert s["n_off_target"] == 1 and s["n_records"] == 2
+
+
+# --- organism-aware phenotypic bucketing (#79) ----------------------------------------
+
+def test_is_fungal_organism_recognises_fungi_and_rejects_others():
+    assert P.is_fungal_organism("Candida albicans")
+    assert P.is_fungal_organism("Aspergillus fumigatus")
+    assert P.is_fungal_organism("Saccharomyces cerevisiae")
+    assert P.is_fungal_organism("Cryptococcus neoformans")
+    # a bacterium and a human cell line are NOT antifungal evidence
+    assert not P.is_fungal_organism("Staphylococcus aureus")
+    assert not P.is_fungal_organism("Escherichia coli")
+    assert not P.is_fungal_organism("Homo sapiens")
+    # an unrecorded organism cannot be confirmed fungal -> False (becomes off-target, not fungal)
+    assert not P.is_fungal_organism("")
+
+
+def test_record_organism_prefers_target_then_assay_organism():
+    assert P.record_organism(rec(target_organism="Candida glabrata")) == "Candida glabrata"
+    assert P.record_organism(rec(assay_organism="Aspergillus niger")) == "Aspergillus niger"
+    assert P.record_organism(rec()) == ""
+
+
+def test_nonfungal_and_unspecified_mic_go_to_offtarget_not_phenotypic():
+    """The #79 fix: an antibacterial or organism-less µg/mL MIC is NOT an antifungal signal."""
+    on, pheno, off = P.group_by_target([
+        rec(target_chembl_id="CHEMBL111", standard_value="4", standard_relation="=",
+            standard_units="ug.mL-1", target_organism="Staphylococcus aureus"),   # antibacterial
+        rec(target_chembl_id="CHEMBL222", standard_value="8", standard_relation="=",
+            standard_units="ug.mL-1"),                                            # no organism
+        rec(target_chembl_id="CHEMBL333", standard_value="2", standard_relation="=",
+            standard_units="ug.mL-1", target_organism="Candida krusei"),          # fungal
+    ])
+    assert len(on) == 0 and len(pheno) == 1 and len(off) == 2
+    assert pheno[0]["target_organism"] == "Candida krusei"
+
+
+def test_antibacterial_mic_no_longer_reads_as_phenotypic_active():
+    """Flucloxacillin's real bug: an 'active' µg/mL MIC vs S. aureus once flagged phenotypic."""
+    s = P.summarise([
+        rec(target_chembl_id="CHEMBL111", standard_value="1", standard_relation="=",
+            standard_units="ug.mL-1", target_organism="Staphylococcus aureus"),
+    ])
+    assert s["phenotypic"] is None                           # not an antifungal signal at all
+    assert s["n_off_target"] == 1
+    assert s["phenotypic_organisms"] == {"fungal": [], "nonfungal": ["Staphylococcus aureus"]}
+
+
+def test_summary_carries_the_fungal_organisms_behind_the_verdict():
+    s = P.summarise([
+        rec(target_chembl_id="CHEMBL1", standard_value="64", standard_relation="=",
+            standard_units="ug.mL-1", target_organism="Candida albicans"),
+        rec(target_chembl_id="CHEMBL2", standard_value="64", standard_relation="=",
+            standard_units="ug.mL-1", assay_organism="Aspergillus fumigatus"),
+        rec(target_chembl_id="CHEMBL3", standard_value="4", standard_relation="=",
+            standard_units="ug.mL-1", target_organism="Homo sapiens"),           # reclassified out
+    ])
+    assert s["phenotypic"]["verdict"] == "tested-inactive"
+    assert s["phenotypic_organisms"]["fungal"] == ["Aspergillus fumigatus", "Candida albicans"]
+    assert s["phenotypic_organisms"]["nonfungal"] == ["Homo sapiens"]
 
 
 # --- near-neighbour soft signal -------------------------------------------------------
