@@ -50,6 +50,12 @@ molecule under the hash-frozen protocol and reports the single validated criteri
 > **the closest distance any nitrogen in your molecule reaches to the heme iron (smaller = the
 > molecule coordinates the iron the way the real drugs do).**
 
+The iron this is measured against is a genuine cysteine-thiolate–ligated (CYP450) heme with an
+open distal site, and the criterion reproduces the crystallographic azole coordination distance
+(2.254 Å for VT-1161/5TZ1, inside the canonical 2.0–2.3 Å band). That foundation is audited
+head-on in [`work/RESULTS_heme_audit.md`](../work/RESULTS_heme_audit.md)
+(`python scripts/audit_heme_model.py`).
+
 The readout contextualizes that distance against the **validated actives' iron-bound band,
 2.47–2.88 Å** — the range spanned by every azole drug that produced an iron-bound pose in the
 validation run. Landing inside that band means your molecule reaches the iron like the known
