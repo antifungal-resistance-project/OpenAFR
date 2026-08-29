@@ -57,6 +57,7 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from openafr import precedent
+from openafr import filedrawer
 
 _SOURCES = {"both": ("chembl", "pubchem"), "chembl": ("chembl",), "pubchem": ("pubchem",)}
 
@@ -171,6 +172,7 @@ def main():
     print("# 'no-precedent' means no enzyme record was found in the queried source(s) — NOT that "
           "the molecule was never tested; a failing measurement may simply never have been "
           "deposited.", file=sys.stderr)
+    print("# " + filedrawer.caveat_line(), file=sys.stderr)
     print("# 'tested-inactive' is the one to heed: a wet lab already measured it inactive against "
           "the CYP51 enzyme.", file=sys.stderr)
 

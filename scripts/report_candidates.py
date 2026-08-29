@@ -34,7 +34,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from openafr import precedent, protocol
+from openafr import precedent, protocol, filedrawer
 from openafr.pdbqt import iron_position
 from scripts.analyze_poses import FE_CUTOFF, analyze
 
@@ -174,6 +174,11 @@ def render(screen_dir, receptor_pdb, fe, rows, top, prec=None):
                  "lab already measured this molecule inactive — heed it. `no-precedent` means no "
                  "record was found, which is **not** proof it was never tested: a failing "
                  "measurement is often never deposited. It does not affect the rank above.")
+        _fd_lo, _fd_hi = filedrawer.residual_hidden_band()
+        L.append(f"> Of negative CYP51 results that *do* exist, an illustrative "
+                 f"{round(_fd_lo * 100)}–{round(_fd_hi * 100)}% would evade the queried sources "
+                 f"(file-drawer leak; assumption-driven, not a probability the compound failed — "
+                 f"see [`{filedrawer.METHODS_NOTE}`]({filedrawer.METHODS_NOTE})).")
     L.append("")
 
     detail = rankable[:top]
@@ -207,9 +212,12 @@ def render(screen_dir, receptor_pdb, fe, rows, top, prec=None):
                              "measured this molecule inactive against the CYP51 enzyme. Weigh "
                              "that before proposing it for the bench.")
                 elif v == "no-precedent":
+                    _lo, _hi = filedrawer.residual_hidden_band()
                     L.append(f"- **Prior testing:** {v} — no deposited enzyme record found. This "
                              "is not proof it was never tested (failing results are often not "
-                             "deposited), only that none is on record.")
+                             f"deposited): of negatives that exist, an illustrative "
+                             f"{round(_lo * 100)}–{round(_hi * 100)}% would evade the queried "
+                             f"sources ({filedrawer.METHODS_NOTE}). Only that none is on record.")
                 else:
                     L.append(f"- **Prior testing:** {v}{extra}.")
             L.append("")
