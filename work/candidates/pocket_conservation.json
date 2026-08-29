@@ -1,0 +1,434 @@
+{
+  "meta": {
+    "contact_cutoff_A": 4.5,
+    "coord_shell_A": 8.0,
+    "ligand": "work/ref_VT1.pdb",
+    "receptor": "work/receptor_A.pdb",
+    "reference": "C. albicans ERG11 (UniProt P10613, 5TZ1 frame)",
+    "supplementary_orthologs": {
+      "aspergillus_B": "A. fumigatus CYP51B (UniProt Q96W81) -- reported, not scored"
+    },
+    "verdict_orthologs": {
+      "aspergillus_A": "A. fumigatus CYP51A (UniProt Q4WNT5)",
+      "auris": "C. auris ERG11 (NCBI XM_085597798.1, B8441; translated CDS)"
+    }
+  },
+  "pocket": [
+    {
+      "aa1": "T",
+      "coord_shell": true,
+      "dist_to_iron": 5.093,
+      "dist_to_ligand": 3.387,
+      "orthologs": {
+        "aspergillus_A": "S",
+        "auris": "T"
+      },
+      "pos": 311,
+      "ref_aa": "T",
+      "resname": "THR",
+      "supplementary": {
+        "aspergillus_B": "S"
+      },
+      "transferability_risk": false,
+      "verdict": "CONSERVATIVE"
+    },
+    {
+      "aa1": "G",
+      "coord_shell": true,
+      "dist_to_iron": 6.034,
+      "dist_to_ligand": 3.192,
+      "orthologs": {
+        "aspergillus_A": "A",
+        "auris": "G"
+      },
+      "pos": 307,
+      "ref_aa": "G",
+      "resname": "GLY",
+      "supplementary": {
+        "aspergillus_B": "A"
+      },
+      "transferability_risk": true,
+      "verdict": "DIVERGENT"
+    },
+    {
+      "aa1": "G",
+      "coord_shell": true,
+      "dist_to_iron": 6.211,
+      "dist_to_ligand": 4.16,
+      "orthologs": {
+        "aspergillus_A": "G",
+        "auris": "G"
+      },
+      "pos": 308,
+      "ref_aa": "G",
+      "resname": "GLY",
+      "supplementary": {
+        "aspergillus_B": "G"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "L",
+      "coord_shell": true,
+      "dist_to_iron": 6.927,
+      "dist_to_ligand": 3.321,
+      "orthologs": {
+        "aspergillus_A": "I",
+        "auris": "L"
+      },
+      "pos": 376,
+      "ref_aa": "L",
+      "resname": "LEU",
+      "supplementary": {
+        "aspergillus_B": "I"
+      },
+      "transferability_risk": false,
+      "verdict": "CONSERVATIVE"
+    },
+    {
+      "aa1": "I",
+      "coord_shell": true,
+      "dist_to_iron": 7.639,
+      "dist_to_ligand": 4.193,
+      "orthologs": {
+        "aspergillus_A": "L",
+        "auris": "V"
+      },
+      "pos": 304,
+      "ref_aa": "I",
+      "resname": "ILE",
+      "supplementary": {
+        "aspergillus_B": "L"
+      },
+      "transferability_risk": false,
+      "verdict": "CONSERVATIVE"
+    },
+    {
+      "aa1": "G",
+      "coord_shell": false,
+      "dist_to_iron": 8.265,
+      "dist_to_ligand": 3.468,
+      "orthologs": {
+        "aspergillus_A": "T",
+        "auris": "G"
+      },
+      "pos": 303,
+      "ref_aa": "G",
+      "resname": "GLY",
+      "supplementary": {
+        "aspergillus_B": "A"
+      },
+      "transferability_risk": true,
+      "verdict": "DIVERGENT"
+    },
+    {
+      "aa1": "Y",
+      "coord_shell": false,
+      "dist_to_iron": 8.446,
+      "dist_to_ligand": 3.576,
+      "orthologs": {
+        "aspergillus_A": "Y",
+        "auris": "Y"
+      },
+      "pos": 132,
+      "ref_aa": "Y",
+      "resname": "TYR",
+      "supplementary": {
+        "aspergillus_B": "Y"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "I",
+      "coord_shell": false,
+      "dist_to_iron": 10.089,
+      "dist_to_ligand": 3.735,
+      "orthologs": {
+        "aspergillus_A": "V",
+        "auris": "I"
+      },
+      "pos": 131,
+      "ref_aa": "I",
+      "resname": "ILE",
+      "supplementary": {
+        "aspergillus_B": "V"
+      },
+      "transferability_risk": false,
+      "verdict": "CONSERVATIVE"
+    },
+    {
+      "aa1": "F",
+      "coord_shell": false,
+      "dist_to_iron": 10.089,
+      "dist_to_ligand": 3.377,
+      "orthologs": {
+        "aspergillus_A": "F",
+        "auris": "F"
+      },
+      "pos": 228,
+      "ref_aa": "F",
+      "resname": "PHE",
+      "supplementary": {
+        "aspergillus_B": "F"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "F",
+      "coord_shell": false,
+      "dist_to_iron": 10.106,
+      "dist_to_ligand": 3.684,
+      "orthologs": {
+        "aspergillus_A": "F",
+        "auris": "F"
+      },
+      "pos": 126,
+      "ref_aa": "F",
+      "resname": "PHE",
+      "supplementary": {
+        "aspergillus_B": "F"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "Y",
+      "coord_shell": false,
+      "dist_to_iron": 10.515,
+      "dist_to_ligand": 3.742,
+      "orthologs": {
+        "aspergillus_A": "Y",
+        "auris": "Y"
+      },
+      "pos": 118,
+      "ref_aa": "Y",
+      "resname": "TYR",
+      "supplementary": {
+        "aspergillus_B": "Y"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "M",
+      "coord_shell": false,
+      "dist_to_iron": 10.704,
+      "dist_to_ligand": 3.152,
+      "orthologs": {
+        "aspergillus_A": "L",
+        "auris": "M"
+      },
+      "pos": 508,
+      "ref_aa": "M",
+      "resname": "MET",
+      "supplementary": {
+        "aspergillus_B": "L"
+      },
+      "transferability_risk": false,
+      "verdict": "CONSERVATIVE"
+    },
+    {
+      "aa1": "T",
+      "coord_shell": false,
+      "dist_to_iron": 11.233,
+      "dist_to_ligand": 3.845,
+      "orthologs": {
+        "aspergillus_A": "T",
+        "auris": "T"
+      },
+      "pos": 122,
+      "ref_aa": "T",
+      "resname": "THR",
+      "supplementary": {
+        "aspergillus_B": "T"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "S",
+      "coord_shell": false,
+      "dist_to_iron": 11.404,
+      "dist_to_ligand": 3.146,
+      "orthologs": {
+        "aspergillus_A": "S",
+        "auris": "S"
+      },
+      "pos": 378,
+      "ref_aa": "S",
+      "resname": "SER",
+      "supplementary": {
+        "aspergillus_B": "S"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "H",
+      "coord_shell": false,
+      "dist_to_iron": 11.704,
+      "dist_to_ligand": 2.786,
+      "orthologs": {
+        "aspergillus_A": "H",
+        "auris": "H"
+      },
+      "pos": 377,
+      "ref_aa": "H",
+      "resname": "HIS",
+      "supplementary": {
+        "aspergillus_B": "H"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "L",
+      "coord_shell": false,
+      "dist_to_iron": 12.418,
+      "dist_to_ligand": 4.369,
+      "orthologs": {
+        "aspergillus_A": "L",
+        "auris": "L"
+      },
+      "pos": 121,
+      "ref_aa": "L",
+      "resname": "LEU",
+      "supplementary": {
+        "aspergillus_B": "L"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "F",
+      "coord_shell": false,
+      "dist_to_iron": 12.993,
+      "dist_to_ligand": 3.404,
+      "orthologs": {
+        "aspergillus_A": "M",
+        "auris": "F"
+      },
+      "pos": 380,
+      "ref_aa": "F",
+      "resname": "PHE",
+      "supplementary": {
+        "aspergillus_B": "I"
+      },
+      "transferability_risk": true,
+      "verdict": "DIVERGENT"
+    },
+    {
+      "aa1": "S",
+      "coord_shell": false,
+      "dist_to_iron": 14.347,
+      "dist_to_ligand": 4.007,
+      "orthologs": {
+        "aspergillus_A": "S",
+        "auris": "S"
+      },
+      "pos": 507,
+      "ref_aa": "S",
+      "resname": "SER",
+      "supplementary": {
+        "aspergillus_B": "S"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "F",
+      "coord_shell": false,
+      "dist_to_iron": 14.47,
+      "dist_to_ligand": 4.281,
+      "orthologs": {
+        "aspergillus_A": "F",
+        "auris": "F"
+      },
+      "pos": 233,
+      "ref_aa": "F",
+      "resname": "PHE",
+      "supplementary": {
+        "aspergillus_B": "F"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "P",
+      "coord_shell": false,
+      "dist_to_iron": 15.735,
+      "dist_to_ligand": 4.093,
+      "orthologs": {
+        "aspergillus_A": "P",
+        "auris": "P"
+      },
+      "pos": 230,
+      "ref_aa": "P",
+      "resname": "PRO",
+      "supplementary": {
+        "aspergillus_B": "P"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "Y",
+      "coord_shell": false,
+      "dist_to_iron": 16.939,
+      "dist_to_ligand": 4.267,
+      "orthologs": {
+        "aspergillus_A": "Y",
+        "auris": "Y"
+      },
+      "pos": 505,
+      "ref_aa": "Y",
+      "resname": "TYR",
+      "supplementary": {
+        "aspergillus_B": "Y"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    },
+    {
+      "aa1": "Y",
+      "coord_shell": false,
+      "dist_to_iron": 17.157,
+      "dist_to_ligand": 3.328,
+      "orthologs": {
+        "aspergillus_A": "Y",
+        "auris": "Y"
+      },
+      "pos": 64,
+      "ref_aa": "Y",
+      "resname": "TYR",
+      "supplementary": {
+        "aspergillus_B": "Y"
+      },
+      "transferability_risk": false,
+      "verdict": "IDENTICAL"
+    }
+  ],
+  "summary": {
+    "coord_shell_divergent": [
+      307
+    ],
+    "divergent_positions": [
+      303,
+      307,
+      380
+    ],
+    "identity_to_albicans": {
+      "aspergillus_A": 46.4,
+      "aspergillus_B": 48.3,
+      "auris": 70.6
+    },
+    "n_conservative": 5,
+    "n_coord_shell": 5,
+    "n_divergent": 3,
+    "n_identical": 14,
+    "n_pocket": 22
+  }
+}

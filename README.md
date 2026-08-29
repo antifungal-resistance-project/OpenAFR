@@ -317,6 +317,17 @@ silently proposes a molecule a wet lab already found inactive. A worked run over
 repurposing screen is written up in
 [`work/RESULTS_candidate_shortlist.md`](work/RESULTS_candidate_shortlist.md).
 
+The shortlist is docked against **one** species' CYP51 — the *C. albicans* 5TZ1 stand-in —
+but the mission targets *C. auris* and, for any broad-spectrum claim, *Aspergillus fumigatus*.
+`scripts/pocket_conservation.py` maps whether that matters: it aligns the pinned CYP51
+orthologs and classifies every residue that lines the modeled pocket as conserved or
+species-specific ([`work/RESULTS_pocket_conservation.md`](work/RESULTS_pocket_conservation.md)).
+The result underwrites the core claim and bounds the caveat: the modeled pocket is
+near-invariant *C. albicans*↔*C. auris* (21/22 lining residues identical, the 22nd a
+conservative I304V), so transfer to the mission's actual target is structurally supported;
+the only divergent pocket residues (G303, G307, F380 — one, G307, in the heme-coordination
+shell) are all in the *Aspergillus* direction, which is where a mold hypothesis is flagged.
+
 The `filter/` step drops molecules the gate's evidence does not cover *before* any
 docking compute — > 45 heavy atoms (the pre-registered applicability domain, the
 posaconazole/itraconazole blind spot) and anything with no aromatic nitrogen (the
