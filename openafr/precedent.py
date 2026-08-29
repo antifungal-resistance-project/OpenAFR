@@ -10,17 +10,24 @@ proposing it for the bench re-runs an experiment someone already lost. This modu
 one question the ranker cannot: *is there a deposited assay record for this molecule against
 the target, and what did it say?*
 
-Two sources, because inactives hide in both
--------------------------------------------
-  ChEMBL   curated literature + HTS activities, quantitative (MIC/IC50). Verdict comes from
-           the measured value via openafr.inactives (CLSI-anchored bands).
-  PubChem  BioAssay — the largest store of HTS *inactives*, each assay pre-adjudicated by the
-           depositor as Active / Inactive / Inconclusive / Unspecified. Verdict comes from
-           that outcome directly; 'Unspecified' is read as no verdict (ignored), never as a
-           non-inhibition claim.
-The two are merged at the tally level, so a candidate flagged inactive in either is caught,
-and one active record in either flips the verdict — the same 'contrary evidence wins' rule
-inactives.verdict_from_tally encodes, applied once across both sources.
+Three sources, because inactives (and known actives) hide in all of them
+------------------------------------------------------------------------
+  ChEMBL    curated literature + HTS activities, quantitative (MIC/IC50). Verdict comes from
+            the measured value via openafr.inactives (CLSI-anchored bands).
+  PubChem   BioAssay — the largest store of HTS *inactives*, each assay pre-adjudicated by the
+            depositor as Active / Inactive / Inconclusive / Unspecified. Verdict comes from
+            that outcome directly; 'Unspecified' is read as no verdict (ignored), never as a
+            non-inhibition claim.
+  BindingDB curated binding affinities (IC50/Ki/Kd, nM) with a literature citation (PMID/DOI)
+            per record — a store of measured *actives* that the other two often miss, because
+            BindingDB harvests medicinal-chemistry SAR tables ChEMBL may not have curated (#78).
+            Queried target-first (every ligand ever measured against the CYP51 enzyme) and then
+            matched to a candidate locally by InChIKey, the inverse of the compound-first ChEMBL/
+            PubChem probes. Its nM affinities are read through the SAME nM rule the ChEMBL path
+            uses — only ever as *active* evidence, never as a non-inhibitory verdict.
+The sources are merged at the tally level, so a candidate flagged inactive in any is caught,
+and one active record in any flips the verdict — the same 'contrary evidence wins' rule
+inactives.verdict_from_tally encodes, applied once across all sources.
 
 What it can and cannot tell you (stated plainly)
 ------------------------------------------------
@@ -57,9 +64,11 @@ geometry rank, never overrides it.
 
 Network boundary
 ----------------
-Every ChEMBL/PubChem call lives behind an injectable `opener` (default: urllib) so the pure
-bucket/verdict logic is exercised offline with canned JSON. The network functions make no
-promises about availability and fail per-molecule, never taking down a whole run.
+Every ChEMBL/PubChem/BindingDB call lives behind an injectable `opener` (default: urllib) so the
+pure bucket/verdict logic is exercised offline with canned JSON. The network functions make no
+promises about availability and fail per-molecule, never taking down a whole run. BindingDB's
+target-first index is built once (one call per CYP51 UniProt) and injected into lookup(), so the
+per-candidate path stays a local InChIKey match with no extra network per molecule.
 """
 import json
 import re
@@ -78,6 +87,14 @@ RDLogger.DisableLog("rdApp.*")
 # enzyme-level actives. Frozen here so a precedent verdict is auditable; extend only with a
 # target that is genuinely the same enzyme (e.g. an orthologue) and say so in the run notes.
 CYP51_TARGETS = frozenset({"CHEMBL1780"})
+
+# BindingDB UniProt accession(s) that ARE the enzyme we triage against — the same target the
+# ChEMBL CYP51_TARGETS id names and the docked 5TZ1 structure is: C. albicans sterol 14-alpha
+# demethylase (ERG11 / CYP51), UniProt P10613. Frozen for auditability; extend only with a
+# genuine CYP51 orthologue and say so in the run notes. BindingDB is queried target-first, so a
+# candidate's OFF-target BindingDB records are deliberately not collected — only the direct,
+# on-target enzyme verdict this source uniquely adds beyond ChEMBL + PubChem (#78).
+CYP51_UNIPROTS = frozenset({"P10613"})
 
 # PubChem has no single CYP51 target id, so its buckets are read from the assay name. Kept
 # deliberately specific: ENZYME must name the sterol-demethylase itself (a bare "demethylase"
@@ -117,6 +134,7 @@ NEIGHBOUR_TANIMOTO = 0.85
 
 _CHEMBL_BASE = "https://www.ebi.ac.uk/chembl/api/data"
 _PUBCHEM_BASE = "https://pubchem.ncbi.nlm.nih.gov/rest/pug"
+_BINDINGDB_REST = "https://bindingdb.org/rest"
 
 # candidate-facing label <- inactives verdict label. The two are the same finding: a molecule
 # that would qualify as a verified-inactive decoy is one a wet lab measured inactive.
@@ -365,6 +383,62 @@ def pubchem_buckets(rows):
     return b
 
 
+# --- BindingDB adapter ----------------------------------------------------------------
+
+# Inequality prefixes a BindingDB affinity may carry; longest-first so '<=' is matched before '<'.
+_BDB_RELATIONS = ("<=", ">=", "<", ">", "=", "~")
+
+
+def parse_bindingdb_affinity(raw):
+    """A BindingDB affinity string ('250', '>10000', '<0.5') -> (relation, value_nM), or None.
+
+    BindingDB reports IC50/Ki/Kd in nM, optionally prefixed with an inequality. A value we cannot
+    read as a number is dropped (None), never guessed — one unreadable affinity must not fabricate
+    a verdict. A bare number carries the '=' relation.
+    """
+    s = (raw or "").strip()
+    rel = "="
+    for r in _BDB_RELATIONS:
+        if s.startswith(r):
+            rel, s = r, s[len(r):].strip()
+            break
+    try:
+        return rel, float(s)
+    except ValueError:
+        return None
+
+
+def bindingdb_record_to_activity(rec):
+    """A normalised BindingDB record -> a ChEMBL-shaped activity dict for inactives.classify_record.
+
+    The affinity is an nM enzyme potency (IC50/Ki/Kd), so it flows through the SAME nM rule the
+    ChEMBL path uses: only ever read as *active* evidence, because a large nM value on a binding
+    endpoint is not a non-inhibitory MIC (openafr.inactives). Returns None when the affinity is
+    unparseable — the record then supports no verdict rather than a guessed one.
+    """
+    parsed = parse_bindingdb_affinity(rec.get("affinity"))
+    if parsed is None:
+        return None
+    rel, val = parsed
+    return {"standard_value": val, "standard_relation": rel, "standard_units": "nM",
+            "activity_comment": None, "pchembl_value": None}
+
+
+def bindingdb_buckets(records):
+    """Normalised BindingDB records -> bucketed tallies (all on-target by construction).
+
+    Every record here was fetched target-first against a CYP51_UNIPROTS enzyme, so it lands in the
+    on_target bucket — BindingDB adds a direct enzyme verdict, never a phenotypic or off-target
+    count. An affinity that will not parse is ignored, not tallied.
+    """
+    b = _empty_buckets()
+    for r in records:
+        act = bindingdb_record_to_activity(r)
+        if act is not None:
+            _add(b["on_target"], inactives.classify_record(act))
+    return b
+
+
 # --- network layer (thin, injectable, not exercised against the real services) --------
 
 def _get_json(url, opener):
@@ -429,25 +503,72 @@ def pubchem_assays(cid, opener=urllib.request.urlopen):
             for row in table.get("Row", [])]
 
 
-def lookup(smiles, sources=("chembl", "pubchem"), opener=urllib.request.urlopen):
+def _clean_bindingdb_smiles(smile):
+    """BindingDB SMILES carry a trailing CXSMILES tail (' |r|', ' |c:..|'); the leading token
+    is the plain structure RDKit needs to derive an InChIKey."""
+    return (smile or "").split()[0] if smile else ""
+
+
+def bindingdb_target_ligands(uniprot, opener=urllib.request.urlopen, cutoff=10_000_000):
+    """Every ligand BindingDB has measured against `uniprot`, normalised with its provenance.
+
+    Returns [{'smiles','monomerid','affinity_type','affinity','pmid','doi'}, ...]. `cutoff` is
+    BindingDB's server-side affinity ceiling in nM; kept high so nothing is filtered out there —
+    our own nM rule (bindingdb_record_to_activity) decides usability. The response's top-level key
+    is BindingDB's own (mis-spelled) wrapper, so it is read by position, not by name, and the typo
+    cannot break the parse.
+    """
+    q = urllib.parse.urlencode({"uniprot": uniprot, "cutoff": cutoff,
+                                "response": "application/json"})
+    data = _get_json(f"{_BINDINGDB_REST}/getLigandsByUniprots?{q}", opener)
+    wrapper = next(iter(data.values())) if isinstance(data, dict) and data else {}
+    out = []
+    for a in (wrapper.get("affinities") or []):
+        out.append({"smiles": _clean_bindingdb_smiles(a.get("smile")),
+                    "monomerid": a.get("monomerid"), "affinity_type": a.get("affinity_type"),
+                    "affinity": a.get("affinity"), "pmid": a.get("pmid"), "doi": a.get("doi")})
+    return out
+
+
+def build_bindingdb_index(uniprots=CYP51_UNIPROTS, opener=urllib.request.urlopen):
+    """{InChIKey -> [BindingDB records]} for the CYP51 target(s) — the fetch-once join table.
+
+    BindingDB is queried target-first, so this whole index is built with one call per UniProt and
+    then matched against every candidate locally by InChIKey (the same join key the compound-first
+    probes use). A record whose SMILES RDKit cannot standardise is skipped — it cannot be matched
+    to a candidate. Returns {} when given no targets. Pass the result to lookup(bdb_index=...).
+    """
+    index = {}
+    for up in uniprots:
+        for r in bindingdb_target_ligands(up, opener):
+            ik = inchikey(r["smiles"])
+            if ik is not None:
+                index.setdefault(ik, []).append(r)
+    return index
+
+
+def lookup(smiles, sources=("chembl", "pubchem"), opener=urllib.request.urlopen, bdb_index=None):
     """Full precedent check for one SMILES across the requested sources.
 
     Canonicalises to an InChIKey, resolves it in each source, fetches records, and renders one
-    merged summary. Returns summarise()'s keys plus 'inchikey', 'chembl_id', 'pubchem_cid'.
+    merged summary. Returns summarise()'s keys plus 'inchikey', 'chembl_id', 'pubchem_cid', and
+    'bindingdb' (the matched BindingDB records, with PMID/DOI provenance — empty when none).
     Distinguishes 'unparseable' (RDKit rejected the SMILES) from 'no-precedent' (a real molecule
-    with no enzyme record found). Network errors propagate to the caller, which isolates them
-    per-molecule.
+    with no enzyme record found). BindingDB is target-first, so it is not fetched per molecule
+    here: pass a pre-built `bdb_index` (build_bindingdb_index) and this matches the InChIKey into
+    it locally. Network errors propagate to the caller, which isolates them per-molecule.
     """
     ik = inchikey(smiles)
     if ik is None:
         return {"inchikey": None, "chembl_id": None, "pubchem_cid": None,
                 "verdict": "unparseable", "tally": None, "phenotypic": None,
                 "phenotypic_organisms": {"fungal": [], "nonfungal": []},
-                "n_off_target": 0, "n_records": 0}
+                "bindingdb": [], "n_off_target": 0, "n_records": 0}
 
     buckets = _empty_buckets()
     chembl_id = pubchem_cid = None
     chembl_records = []                          # kept so the phenotypic organism breakdown (#79)
+    bindingdb_hits = []                          # matched BindingDB records (provenance for #78)
     if "chembl" in sources:                      # can name the organisms behind the verdict
         chembl_id = chembl_id_for_inchikey(ik, opener)
         if chembl_id:
@@ -457,8 +578,13 @@ def lookup(smiles, sources=("chembl", "pubchem"), opener=urllib.request.urlopen)
         pubchem_cid = pubchem_cid_for_inchikey(ik, opener)
         if pubchem_cid:
             buckets = merge_buckets(buckets, pubchem_buckets(pubchem_assays(pubchem_cid, opener)))
+    if "bindingdb" in sources and bdb_index:
+        bindingdb_hits = bdb_index.get(ik, [])
+        if bindingdb_hits:
+            buckets = merge_buckets(buckets, bindingdb_buckets(bindingdb_hits))
 
     summary = render(buckets)
     summary.update({"inchikey": ik, "chembl_id": chembl_id, "pubchem_cid": pubchem_cid,
-                    "phenotypic_organisms": phenotypic_organism_breakdown(chembl_records)})
+                    "phenotypic_organisms": phenotypic_organism_breakdown(chembl_records),
+                    "bindingdb": bindingdb_hits})
     return summary

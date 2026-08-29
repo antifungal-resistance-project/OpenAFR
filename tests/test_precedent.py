@@ -337,3 +337,74 @@ def test_activities_follow_pagination():
     })
     acts = P.chembl_activities("CHEMBL42", opener=opener)
     assert len(acts) == 2                                     # both pages collected
+
+
+# --- BindingDB adapter: nM affinities, target-first index, merge into the verdict (#78) ----
+
+def _bdb_response(recs):
+    """A BindingDB getLigandsByUniprots JSON body, including its own mis-spelled wrapper key
+    and the ' |r|' CXSMILES tail real records carry, so the parser is exercised as it ships."""
+    return {"getLindsByUniprotsResponse": {"affinities": [
+        {"query": "Lanosterol 14-alpha demethylase", "monomerid": m, "smile": s + " |r|",
+         "affinity_type": t, "affinity": a, "pmid": p, "doi": "10.0/x"}
+        for (s, m, t, a, p) in recs]}}
+
+
+def test_bindingdb_affinity_parsing_relations_and_junk():
+    assert P.parse_bindingdb_affinity("250") == ("=", 250.0)
+    assert P.parse_bindingdb_affinity(">10000") == (">", 10000.0)
+    assert P.parse_bindingdb_affinity("<=0.5") == ("<=", 0.5)
+    # unreadable affinity is dropped, never guessed
+    assert P.parse_bindingdb_affinity("n/a") is None
+    assert P.parse_bindingdb_affinity(None) is None
+
+
+def test_bindingdb_nM_is_active_only_never_inactive():
+    """An nM binding value is active evidence when potent, else ignored — never a fake inactive."""
+    potent = P.bindingdb_buckets([{"affinity": "250", "affinity_type": "IC50"}])
+    assert potent["on_target"]["active"] == 1
+    weak = P.bindingdb_buckets([{"affinity": "50000000", "affinity_type": "Kd"}])   # > 10 uM
+    assert weak["on_target"] == {"active": 0, "inactive": 0, "ambiguous": 0, "ignore": 1}
+    junk = P.bindingdb_buckets([{"affinity": "n/a", "affinity_type": "IC50"}])
+    assert sum(junk["on_target"].values()) == 0                  # unparseable is not tallied
+
+
+def test_bindingdb_target_ligands_parse_strips_cxsmiles_tail():
+    opener = _FakeOpener({"getLigandsByUniprots": _bdb_response(
+        [("c1ccccc1", "111", "IC50", "42", "999")])})
+    recs = P.bindingdb_target_ligands("P10613", opener=opener)
+    assert recs == [{"smiles": "c1ccccc1", "monomerid": "111", "affinity_type": "IC50",
+                     "affinity": "42", "pmid": "999", "doi": "10.0/x"}]
+
+
+def test_build_bindingdb_index_keys_by_inchikey():
+    opener = _FakeOpener({"getLigandsByUniprots": _bdb_response(
+        [("c1ccccc1", "111", "IC50", "42", "999")])})
+    index = P.build_bindingdb_index(uniprots=("P10613",), opener=opener)
+    ik = P.inchikey("c1ccccc1")
+    assert list(index) == [ik] and index[ik][0]["monomerid"] == "111"
+
+
+def test_lookup_bindingdb_flips_no_precedent_to_tested_active():
+    """A candidate ChEMBL/PubChem never saw, but BindingDB measured potent, becomes tested-active
+    with its PMID provenance carried through — the file-drawer catch #78 exists to add."""
+    smi = "c1ccccc1"
+    index = P.build_bindingdb_index(uniprots=("P10613",), opener=_FakeOpener(
+        {"getLigandsByUniprots": _bdb_response([(smi, "111", "IC50", "42", "999")])}))
+    opener = _FakeOpener({
+        "molecule.json": {"molecules": []},                     # ChEMBL: nothing
+        "cids/JSON": _http_404(),                               # PubChem: nothing
+    })
+    out = P.lookup(smi, sources=("chembl", "pubchem", "bindingdb"), opener=opener, bdb_index=index)
+    assert out["verdict"] == "tested-active"
+    assert [h["pmid"] for h in out["bindingdb"]] == ["999"]
+    assert out["n_records"] == 1
+
+
+def test_lookup_ignores_bindingdb_when_source_not_requested():
+    smi = "c1ccccc1"
+    index = P.build_bindingdb_index(uniprots=("P10613",), opener=_FakeOpener(
+        {"getLigandsByUniprots": _bdb_response([(smi, "111", "IC50", "42", "999")])}))
+    opener = _FakeOpener({"molecule.json": {"molecules": []}})
+    out = P.lookup(smi, sources=("chembl",), opener=opener, bdb_index=index)
+    assert out["verdict"] == "no-precedent" and out["bindingdb"] == []

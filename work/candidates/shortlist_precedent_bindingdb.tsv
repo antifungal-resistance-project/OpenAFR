@@ -1,0 +1,17 @@
+name	verdict	chembl_id	pubchem_cid	phenotypic	phenotypic_organism	n_off_target	n_records	bindingdb
+flutrimazole	no-precedent	CHEMBL2107430	3401	—	—	231	231	—
+verinurad	no-precedent	CHEMBL3707347	54767229	—	—	79	79	—
+vatalanib	no-precedent	CHEMBL101253	151194	—	—	3886	3886	—
+flucloxacillin	no-precedent	CHEMBL222645	21319	—	reclassified: Staphylococcus aureus	388	388	—
+taranabant	no-precedent	CHEMBL220360	11226090	—	—	282	282	—
+lersivirine	no-precedent	CHEMBL571987	16739244	—	—	475	475	—
+LDN-27219	no-precedent	CHEMBL179945	1150683	—	—	91	91	—
+R-1479	no-precedent	CHEMBL393857	457388	—	—	150	150	—
+ravuconazole	record-inconclusive	CHEMBL294029	467825	tested-active	38 fungal: Actinomucor; Apophysomyces; Aspergillus flavus; Aspergillus foetidus; Aspergillus fumigatus; Aspergillus fumisynnematus; +32 more	228	676	—
+L-838417	no-precedent	CHEMBL373250	9908880	—	—	1153	1153	—
+olprinone	no-precedent	CHEMBL1474900	4593	—	—	417	417	—
+nolatrexed	no-precedent	CHEMBL320775	108189	—	—	28	28	—
+letrozole	record-inconclusive	CHEMBL1444	3902	record-inconclusive	reclassified: Rattus norvegicus	3100	3103	—
+fluconazole	tested-active	CHEMBL106	3365	tested-active	99 fungal: Aspergillus brasiliensis; Aspergillus clavatus; Aspergillus flavus; Aspergillus fumigatus; Aspergillus nidulans; Aspergillus niger; +93 more	9272	21284	8 rec (PMID 33183866; 34731761; 34772530; 36074863; 36282007; 36439981; +2 more)
+voriconazole	tested-active	CHEMBL638	71616	tested-active	118 fungal: Absidia; Acremonium sp.; Actinomucor; Alternaria alternata; Alternaria infectoria; Apophysomyces; +112 more	3100	6533	2 rec (PMID 29894182; 39115219)
+ketoconazole	tested-active	CHEMBL157101	3823	tested-active	75 fungal: Alternaria alternata; Alternaria brassicae; Alternaria brassicicola; Alternaria solani; Alternaria sp. 'fragaria'; Aspergillus clavatus; +69 more	7365	10595	—

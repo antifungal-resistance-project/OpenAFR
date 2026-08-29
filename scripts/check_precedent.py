@@ -1,4 +1,4 @@
-"""Flag candidates that ChEMBL or PubChem has already measured against the target.
+"""Flag candidates that ChEMBL, PubChem, or BindingDB has already measured against the target.
 
 Pipeline stage: report/  (an annotation layer — run it on the same library you rank)
 
@@ -34,9 +34,18 @@ so the verdict carries the organism it rests on. Off-target ChEMBL records are s
 count — a molecule already characterised against other targets is a known compound, a novelty
 caveat, not a hit here.
 
-This makes network calls to ChEMBL (www.ebi.ac.uk) and PubChem (pubchem.ncbi.nlm.nih.gov).
-It fails per-molecule: a lookup error is recorded as 'lookup-failed' for that row and the run
-continues.
+A third source, BindingDB (bindingdb.org), is available with --source all (or --source bindingdb).
+BindingDB curates medicinal-chemistry binding affinities (IC50/Ki/Kd, nM) with a PMID/DOI per
+record — measured *actives* against the CYP51 enzyme that ChEMBL + PubChem often miss (#78). It is
+queried target-first (every ligand ever measured against the enzyme, one call per CYP51 UniProt),
+indexed by InChIKey once, then matched to each candidate locally. Its nM affinities are read only
+as *active* evidence (the same nM rule the ChEMBL path uses), so BindingDB can flip a molecule from
+'no-precedent' to 'tested-active' but never invents an inactive verdict. The 'bindingdb' column
+carries the hit count and the citing PMIDs so a reader can go read the measurement.
+
+This makes network calls to ChEMBL (www.ebi.ac.uk), PubChem (pubchem.ncbi.nlm.nih.gov), and —
+with --source all/bindingdb — BindingDB (bindingdb.org). It fails per-molecule: a lookup error is
+recorded as 'lookup-failed' for that row and the run continues.
 
 A candidate whose exact molecule has no record can still be the close analogue of one that was
 measured inactive — a soft negative. Pass --near TESTED.smi to add the nearest previously-tested
@@ -45,10 +54,10 @@ neighbour (Tanimoto ≥ 0.85) as three columns. The verified-inactives this repo
 tested-inactive" tells a reader an all-but-identical compound already failed. It never changes
 the verdict — it annotates it.
 
-Usage: python scripts/check_precedent.py LIBRARY.smi [-o PRECEDENT.tsv] [--source both|chembl|pubchem] [--near TESTED.smi]
+Usage: python scripts/check_precedent.py LIBRARY.smi [-o PRECEDENT.tsv] [--source all|both|chembl|pubchem|bindingdb] [--near TESTED.smi]
   LIBRARY.smi   tab-separated `SMILES<TAB>name`, one per line (filter_library.py format)
   -o / --out    write the annotated TSV here (default: stdout)
-  --source      which databases to query (default: both)
+  --source      which databases to query (default: both; 'all' adds BindingDB)
   --near        a previously-tested set (`smiles<TAB>id[<TAB>verdict]`) for the neighbour check
 """
 import argparse
@@ -59,15 +68,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from openafr import precedent
 from openafr import filedrawer
 
-_SOURCES = {"both": ("chembl", "pubchem"), "chembl": ("chembl",), "pubchem": ("pubchem",)}
+_SOURCES = {"all": ("chembl", "pubchem", "bindingdb"), "both": ("chembl", "pubchem"),
+            "chembl": ("chembl",), "pubchem": ("pubchem",), "bindingdb": ("bindingdb",)}
 
 
-def check(lines, sources=("chembl", "pubchem")):
+def check(lines, sources=("chembl", "pubchem"), bdb_index=None):
     """Yield (name, smiles, summary) for each `SMILES<TAB>name` line.
 
     summary is precedent.lookup()'s dict, or a {'verdict': 'lookup-failed', ...} stand-in when
     the network call raised — one bad lookup never aborts the batch. Malformed lines (not two
-    tab-separated fields) are skipped, matching filter_library.py.
+    tab-separated fields) are skipped, matching filter_library.py. `bdb_index` is the fetch-once
+    BindingDB target index (build_bindingdb_index); passed straight through so the per-candidate
+    path is a local InChIKey match with no extra network per row.
     """
     for line in lines:
         parts = line.rstrip("\n").split("\t")
@@ -75,10 +87,10 @@ def check(lines, sources=("chembl", "pubchem")):
             continue
         smi, name = parts
         try:
-            summary = precedent.lookup(smi, sources=sources)
+            summary = precedent.lookup(smi, sources=sources, bdb_index=bdb_index)
         except Exception as e:                       # network/parse failure for this molecule
             summary = {"verdict": "lookup-failed", "chembl_id": None, "pubchem_cid": None,
-                       "inchikey": None, "phenotypic": None, "n_off_target": 0,
+                       "inchikey": None, "phenotypic": None, "bindingdb": [], "n_off_target": 0,
                        "n_records": 0, "error": str(e)}
         yield name, smi, summary
 
@@ -121,6 +133,20 @@ def _pheno_organism(summary):
     return "—"
 
 
+def _bindingdb(summary):
+    """The BindingDB provenance cell for the TSV: hit count + the citing PMIDs (deduped, capped).
+
+    A candidate absent from ChEMBL/PubChem but present here (n>0) is the whole point of #78 — an
+    independent measurement the other two missed — so the cell names the literature (PMIDs) so a
+    reader can go read it. '—' when BindingDB had no record for this molecule.
+    """
+    hits = summary.get("bindingdb") or []
+    if not hits:
+        return "—"
+    pmids = _cap(sorted({str(h.get("pmid")) for h in hits if h.get("pmid")}))
+    return f"{len(hits)} rec" + (f" (PMID {pmids})" if pmids else "")
+
+
 def _near_cols(smiles, neighbours):
     """(near_id, near_sim, near_verdict) for one candidate, or ('—','—','—') when none close."""
     if neighbours is None:
@@ -138,23 +164,37 @@ def main():
     ap.add_argument("library", help="tab-separated SMILES<TAB>name library")
     ap.add_argument("-o", "--out", help="write the annotated TSV here (default: stdout)")
     ap.add_argument("--source", choices=sorted(_SOURCES), default="both",
-                    help="which databases to query (default: both)")
+                    help="which databases to query (default: both; 'all' adds BindingDB)")
     ap.add_argument("--near", help="previously-tested set for the nearest-neighbour column")
     args = ap.parse_args()
 
     neighbours = precedent.load_neighbours(args.near) if args.near else None
 
+    sources = _SOURCES[args.source]
+    # BindingDB is target-first: build its InChIKey index ONCE (one call per CYP51 UniProt) up
+    # front, then match every candidate locally. Do it before the per-row loop so a single
+    # BindingDB outage is reported once, not swallowed per molecule as a spurious 'no-precedent'.
+    bdb_index = None
+    if "bindingdb" in sources:
+        bdb_index = precedent.build_bindingdb_index()
+        print(f"# BindingDB index: {len(bdb_index)} distinct InChIKeys across "
+              f"{len(precedent.CYP51_UNIPROTS)} CYP51 UniProt target(s)", file=sys.stderr)
+
     header = ("name\tverdict\tchembl_id\tpubchem_cid\tphenotypic\tphenotypic_organism\t"
               "n_off_target\tn_records")
+    if "bindingdb" in sources:
+        header += "\tbindingdb"
     if neighbours is not None:
         header += "\tnear_id\tnear_sim\tnear_verdict"
     rows = [header]
     counts = {}
-    for name, smi, s in check(open(args.library), _SOURCES[args.source]):
+    for name, smi, s in check(open(args.library), sources, bdb_index=bdb_index):
         counts[s["verdict"]] = counts.get(s["verdict"], 0) + 1
         row = (f"{name}\t{s['verdict']}\t{s.get('chembl_id') or '—'}\t"
                f"{s.get('pubchem_cid') or '—'}\t{_pheno(s)}\t{_pheno_organism(s)}\t"
                f"{s.get('n_off_target', 0)}\t{s.get('n_records', 0)}")
+        if "bindingdb" in sources:
+            row += f"\t{_bindingdb(s)}"
         near = _near_cols(smi, neighbours)
         if near is not None:
             row += "\t" + "\t".join(near)
