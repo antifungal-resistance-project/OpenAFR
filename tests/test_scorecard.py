@@ -158,6 +158,35 @@ def test_protomer_unchecked_adds_no_concern():
     assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
 
 
+def test_cyp_type_ii_high_is_flagged_for_novel_candidate():
+    # L-838417 / olprinone: an azole warhead -> HIGH type-II across the human CYP panel
+    cyp = {"n_high": 5}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               False, None, None, None, None, cyp)
+    assert any("human-CYP" in c and "CYP3A4" in c for c in concerns)
+
+
+def test_cyp_moderate_only_is_not_a_concern():
+    # a weaker azine/pharmacophore profile (no HIGH isoform) is reported, not a demotion
+    cyp = {"n_high": 0, "n_moderate": 5}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               False, None, None, None, None, cyp)
+    assert not any("human-CYP" in c for c in concerns)
+
+
+def test_cyp_type_ii_is_not_a_strike_against_a_control():
+    # ketoconazole IS the textbook CYP3A4 inhibitor; its HIGH type-II validates the axis
+    cyp = {"n_high": 5}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR,
+                               True, None, None, None, None, cyp)
+    assert not any("human-CYP" in c for c in concerns)
+
+
+def test_cyp_unchecked_adds_no_concern():
+    # backward-compatible default: no cyp record -> no concern
+    assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
+
+
 def test_unchecked_axis_set_is_nonempty_so_every_card_carries_it():
     # the honesty guard: there is always at least one axis a card must admit it skipped
     assert len(NOT_YET_CHECKED) >= 1

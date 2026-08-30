@@ -18,11 +18,11 @@
     "pose_convergence (within-search RMSD clustering)",
     "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
     "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
-    "ensemble_consistency (crystallographic C. albicans ensemble dock)"
+    "ensemble_consistency (crystallographic C. albicans ensemble dock)",
+    "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)"
   ],
   "axes_not_yet_checked": {
-    "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-    "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+    "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
   },
   "candidates": [
     {
@@ -113,9 +113,24 @@
         "ensemble_mean_nfe_A": 2.636,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "imidazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(imidazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window",
@@ -212,9 +227,24 @@
         "ensemble_mean_nfe_A": 2.604,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "domain: coordinator-fragile"
@@ -308,9 +338,24 @@
         "ensemble_mean_nfe_A": 2.672,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "ADMET: hERG?",
@@ -407,9 +452,24 @@
         "ensemble_mean_nfe_A": 2.718,
         "conformers_coordinating": "2/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": false,
+        "n_high": 0,
+        "n_moderate": 2,
+        "flags": "2C9+2C19",
+        "liability": {
+          "CYP3A4": "low",
+          "CYP2C9": "moderate",
+          "CYP2D6": "low",
+          "CYP2C19": "moderate",
+          "CYP1A2": "low"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "ADMET: alert",
@@ -507,9 +567,24 @@
         "ensemble_mean_nfe_A": 2.71,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "ADMET: Ro5x2,insoluble",
@@ -604,9 +679,24 @@
         "ensemble_mean_nfe_A": 2.629,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "pyrazole",
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "pyrazole:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": []
     },
@@ -698,11 +788,28 @@
         "ensemble_mean_nfe_A": 2.773,
         "conformers_coordinating": "2/3"
       },
-      "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "1,2,4-triazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(1,2,4-triazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
       },
-      "concerns": []
+      "not_yet_checked": {
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+      },
+      "concerns": [
+        "human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)"
+      ]
     },
     {
       "name": "LDN-27219",
@@ -792,9 +899,24 @@
         "ensemble_mean_nfe_A": 2.774,
         "conformers_coordinating": "1/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
@@ -892,9 +1014,24 @@
         "ensemble_mean_nfe_A": 2.743,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "ADMET: Veber,PAINS,alert",
@@ -989,9 +1126,24 @@
         "ensemble_mean_nfe_A": 2.768,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "1,2,4-triazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(1,2,4-triazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": []
     },
@@ -1083,9 +1235,24 @@
         "ensemble_mean_nfe_A": 2.703,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "1,2,4-triazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(1,2,4-triazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "known CYP51 inhibitor (control)"
@@ -1179,9 +1346,24 @@
         "ensemble_mean_nfe_A": 2.75,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": null,
+        "type_ii_ligator": true,
+        "n_high": 0,
+        "n_moderate": 5,
+        "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+        "liability": {
+          "CYP3A4": "moderate",
+          "CYP2C9": "moderate",
+          "CYP2D6": "moderate",
+          "CYP2C19": "moderate",
+          "CYP1A2": "moderate"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window"
@@ -1275,13 +1457,29 @@
         "ensemble_mean_nfe_A": 2.68,
         "conformers_coordinating": "1/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "imidazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(imidazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
-        "coordination is conformer-fragile (single-snapshot artifact)"
+        "coordination is conformer-fragile (single-snapshot artifact)",
+        "human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)"
       ]
     },
     {
@@ -1372,9 +1570,24 @@
         "ensemble_mean_nfe_A": 2.778,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "1,2,4-triazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(1,2,4-triazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window"
@@ -1468,9 +1681,24 @@
         "ensemble_mean_nfe_A": 2.766,
         "conformers_coordinating": "3/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "1,2,4-triazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(1,2,4-triazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "known CYP51 inhibitor (control)"
@@ -1564,9 +1792,24 @@
         "ensemble_mean_nfe_A": 2.801,
         "conformers_coordinating": "2/3"
       },
+      "cyp_offtarget": {
+        "status": "proven",
+        "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+        "azole_warhead": "imidazole",
+        "type_ii_ligator": true,
+        "n_high": 5,
+        "n_moderate": 0,
+        "flags": "type-II(imidazole):HIGHx5",
+        "liability": {
+          "CYP3A4": "high",
+          "CYP2C9": "high",
+          "CYP2D6": "high",
+          "CYP2C19": "high",
+          "CYP1A2": "high"
+        }
+      },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
-        "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)"
+        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",

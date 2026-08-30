@@ -45,20 +45,27 @@ NOT_YET_CHECKED = {
     # every novel candidate's supplied SMILES pins a single defined isomer (EXPLICIT); the two
     # ambiguous controls are docked per-isomer. This closes the "unspecified stereo" hole, not
     # the "supplied the wrong configuration" one (see the prereg limitations).
-    "broad_cyp_panel": "human CYP3A4/2C9/2D6/2C19/1A2 off-target panel (#74)",
+    # broad human-CYP off-target panel (#74) is now measured (cyp_offtarget axis,
+    # RESULTS_cyp_offtarget.md): each candidate carries a per-isoform inhibition-liability
+    # profile for CYP3A4/2C9/2D6/2C19/1A2 from local mechanistic (type-II heme ligation) +
+    # substrate-pharmacophore reasoning. This closes the "silent on the human-CYP DDI liability
+    # the azole warhead carries" hole, not the "measured IC50" one (it is a flag, not a docking
+    # or QSAR result — see RESULTS_cyp_offtarget.md).
 }
 
 
-def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=None):
+def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=None,
+                    cyp=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
     scorecard never blends axes into a single number. A control is exempt only from
     the "known CYP51 inhibitor", "phenotypic active elsewhere", "loses coordination
-    in the resistant pocket" and "conformer-fragile" demotions, which are the point of a
-    control, not a strike against it (controls are the Y132F-defeated azoles; how they
-    behave on the mutant / across conformers is a robustness check, not a mark against a
-    discovery).
+    in the resistant pocket", "conformer-fragile" and "human-CYP type-II" demotions, which
+    are the point of a control, not a strike against it (controls are the Y132F-defeated
+    azoles; how they behave on the mutant / across conformers, and that they carry the
+    azole warhead that inhibits human CYPs, is a robustness check, not a mark against a
+    discovery — ketoconazole IS the textbook CYP3A4 inhibitor).
 
     Args mirror the per-axis file rows, keyed by candidate name:
       cf   shortlist_confidence.json    (seed stability + human selectivity)
@@ -70,6 +77,7 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=
       st   shortlist_stereo.json        (stereochemistry verdict; None = not-yet-checked)
       pt   shortlist_protomer.json      (protonation/tautomer verdict; None = not-yet-checked)
       en   shortlist_ensemble.json      (ensemble-consistency verdict; None = not-yet-checked)
+      cyp  shortlist_cyp.json           (human-CYP off-target liability; None = not-yet-checked)
     """
     concerns = []
     if cf.get("reaches_fungal_iron") is False:
@@ -117,4 +125,14 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=
     if en is not None and en.get("verdict") in ("CONFORMER-FRAGILE", "NON-COORDINATING") \
             and not is_ctrl:
         concerns.append("coordination is conformer-fragile (single-snapshot artifact)")
+    # Human-CYP off-target (#74): a candidate carrying an azole warhead (imidazole/triazole/
+    # tetrazole) is flagged HIGH type-II across the human CYP panel — it inhibits the human
+    # drug-metabolizing CYPs by the SAME heme-ligation the geometry criterion selected for,
+    # inheriting the azole class's CYP3A4 drug-interaction / hepatotoxicity liability. This is
+    # the concern the whole panel exists to surface. Control-exempt (see docstring): the
+    # controls ARE the azole CYP3A4 inhibitors — ketoconazole firing HIGH validates the axis,
+    # it is not a strike. Weaker (MODERATE) azine/pharmacophore hits are reported on the card
+    # but do not demote (nearly every heme-seeking scaffold carries one — too broad to strike).
+    if cyp is not None and cyp.get("n_high", 0) > 0 and not is_ctrl:
+        concerns.append("human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)")
     return concerns

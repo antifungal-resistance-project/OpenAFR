@@ -1,0 +1,850 @@
+{
+  "panel": [
+    "CYP3A4",
+    "CYP2C9",
+    "CYP2D6",
+    "CYP2C19",
+    "CYP1A2"
+  ],
+  "candidates": [
+    {
+      "smiles": "Fc1ccc(cc1)C(c1ccccc1)(c1ccccc1F)n1ccnc1 |&1:7|",
+      "mw": 346.4,
+      "clogp": 5.0,
+      "azole_warhead": "imidazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "flutrimazole",
+      "flags": "type-II(imidazole):HIGHx5"
+    },
+    {
+      "smiles": "CC(C)(Sc1ccncc1-c1ccc(C#N)c2ccccc12)C(O)=O",
+      "mw": 348.4,
+      "clogp": 4.73,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "acidic group + lipophilic (2C9-preferred)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "verinurad",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "Clc1ccc(Nc2nnc(Cc3ccncc3)c3ccccc23)cc1",
+      "mw": 346.8,
+      "clogp": 5.01,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "basic N + aromatic (2D6 pharmacophore)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "vatalanib",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "Cc1onc(c1C(=O)N[C@H]1[C@H]2SC(C)(C)[C@@H](N2C1=O)C(O)=O)-c1c(F)cccc1Cl",
+      "mw": 453.9,
+      "clogp": 2.69,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": false,
+      "type_ii_ligator": false,
+      "panel": {
+        "CYP3A4": {
+          "liability": "low",
+          "basis": []
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "acidic group + lipophilic (2C9-preferred)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "low",
+          "basis": []
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "moderately lipophilic aromatic amide/basic (2C19 hint)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "low",
+          "basis": []
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 2,
+      "flagged_isoforms": [
+        "CYP2C9",
+        "CYP2C19"
+      ],
+      "name": "flucloxacillin",
+      "flags": "2C9+2C19"
+    },
+    {
+      "smiles": "C[C@H](NC(=O)C(C)(C)Oc1ccc(cn1)C(F)(F)F)[C@@H](Cc1ccc(Cl)cc1)c1cccc(c1)C#N",
+      "mw": 516.0,
+      "clogp": 6.31,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "large + lipophilic (MW>=400, cLogP>=3)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "taranabant",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "CCc1nn(CCO)c(CC)c1Oc1cc(cc(c1)C#N)C#N",
+      "mw": 310.4,
+      "clogp": 2.54,
+      "azole_warhead": "pyrazole",
+      "warhead_strength": "weak",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (pyrazole, weaker)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (pyrazole, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (pyrazole, weaker)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (pyrazole, weaker)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (pyrazole, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "lersivirine",
+      "flags": "pyrazole:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "NNC(=O)CSc1nc2scc(-c3ccccc3)c2c(=O)n1-c1ccccc1",
+      "mw": 408.5,
+      "clogp": 3.2,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "large + lipophilic (MW>=400, cLogP>=3)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "basic N + aromatic (2D6 pharmacophore)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "moderately lipophilic aromatic amide/basic (2C19 hint)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "LDN-27219",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "Nc1ccn([C@@H]2O[C@@](CO)(N=[N+]=[N-])[C@@H](O)[C@H]2O)c(=O)n1",
+      "mw": 284.2,
+      "clogp": -1.93,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "basic N + aromatic (2D6 pharmacophore)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "R-1479",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "C[C@@H](c1nc(cs1)-c1ccc(cc1)C#N)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+      "mw": 437.5,
+      "clogp": 4.24,
+      "azole_warhead": "1,2,4-triazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)",
+            "large + lipophilic (MW>=400, cLogP>=3)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "ravuconazole",
+      "flags": "type-II(1,2,4-triazole):HIGHx5"
+    },
+    {
+      "smiles": "Cn1ncnc1COc1nn2c(nnc2cc1C(C)(C)C)-c1cc(F)ccc1F",
+      "mw": 399.4,
+      "clogp": 3.07,
+      "azole_warhead": "1,2,4-triazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "L-838417",
+      "flags": "type-II(1,2,4-triazole):HIGHx5"
+    },
+    {
+      "smiles": "Cc1[nH]c(=O)c(cc1-c1ccc2nccn2c1)C#N",
+      "mw": 250.3,
+      "clogp": 1.87,
+      "azole_warhead": "imidazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)",
+            "small planar poly-aromatic (1A2-preferred)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "olprinone",
+      "flags": "type-II(imidazole):HIGHx5"
+    },
+    {
+      "smiles": "Cc1ccc2[nH]c(N)nc(=O)c2c1Sc1ccncc1",
+      "mw": 284.3,
+      "clogp": 2.36,
+      "azole_warhead": null,
+      "warhead_strength": null,
+      "azine_nitrogen": true,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "basic N + aromatic (2D6 pharmacophore)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "moderately lipophilic aromatic amide/basic (2C19 hint)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "moderate",
+          "basis": [
+            "type-II heme ligation (azine N, weaker)",
+            "small planar poly-aromatic (1A2-preferred)"
+          ]
+        }
+      },
+      "n_high": 0,
+      "n_moderate": 5,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "nolatrexed",
+      "flags": "azine:3A4+2C9+2D6+2C19+1A2"
+    },
+    {
+      "smiles": "N#Cc1ccc(cc1)C(c1ccc(cc1)C#N)n1cncn1",
+      "mw": 285.3,
+      "clogp": 2.66,
+      "azole_warhead": "1,2,4-triazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)",
+            "small planar poly-aromatic (1A2-preferred)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "letrozole",
+      "flags": "type-II(1,2,4-triazole):HIGHx5"
+    },
+    {
+      "smiles": "OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F",
+      "mw": 306.3,
+      "clogp": 0.74,
+      "azole_warhead": "1,2,4-triazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "fluconazole",
+      "flags": "type-II(1,2,4-triazole):HIGHx5"
+    },
+    {
+      "smiles": "C[C@@H](c1ncncc1F)[C@](O)(Cn1cncn1)c1ccc(F)cc1F",
+      "mw": 349.3,
+      "clogp": 2.18,
+      "azole_warhead": "1,2,4-triazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (1,2,4-triazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "voriconazole",
+      "flags": "type-II(1,2,4-triazole):HIGHx5"
+    },
+    {
+      "smiles": "CC(=O)N1CCN(CC1)c1ccc(OCC2COC(Cn3ccnc3)(c3ccc(Cl)cc3Cl)O2)cc1",
+      "mw": 531.4,
+      "clogp": 4.21,
+      "azole_warhead": "imidazole",
+      "warhead_strength": "strong",
+      "azine_nitrogen": false,
+      "type_ii_ligator": true,
+      "panel": {
+        "CYP3A4": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)",
+            "large + lipophilic (MW>=400, cLogP>=3)"
+          ]
+        },
+        "CYP2C9": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        },
+        "CYP2D6": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)",
+            "basic N + aromatic (2D6 pharmacophore)"
+          ]
+        },
+        "CYP2C19": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)",
+            "moderately lipophilic aromatic amide/basic (2C19 hint)"
+          ]
+        },
+        "CYP1A2": {
+          "liability": "high",
+          "basis": [
+            "type-II heme ligation (imidazole warhead)"
+          ]
+        }
+      },
+      "n_high": 5,
+      "n_moderate": 0,
+      "flagged_isoforms": [
+        "CYP3A4",
+        "CYP2C9",
+        "CYP2D6",
+        "CYP2C19",
+        "CYP1A2"
+      ],
+      "name": "ketoconazole",
+      "flags": "type-II(imidazole):HIGHx5"
+    }
+  ]
+}
