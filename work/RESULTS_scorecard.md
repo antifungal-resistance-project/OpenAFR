@@ -15,6 +15,13 @@ across the exhaustive crystallographic *C. albicans* CYP51 ensemble {5TZ1, 5FSA,
 demotes **olprinone** (new: coordinates in only 1/3 conformers → concerns 1→2) and piles onto
 **LDN-27219** (concerns 4→5), and it separates the two clean front-runners — lersivirine is
 ROBUST (3/3) while L-838417 is CONSISTENT (2/3), both still zero-concern.
+Updated 2026-08-29: the **human-CYP off-target panel** axis is now measured (#74,
+[RESULTS_cyp_offtarget.md](RESULTS_cyp_offtarget.md)) — each candidate carries a per-isoform
+inhibition-liability profile for CYP3A4/2C9/2D6/2C19/1A2 (`hCYP` column). It **breaks the
+lersivirine/L-838417 tie**: L-838417 carries a 1,2,4-triazole warhead → **HIGH type-II across
+all five human CYPs** (the same CYP3A4 drug-interaction liability as the marketed azoles;
+concerns 0→1), and **olprinone**'s imidazole does likewise (concerns 2→3). **lersivirine is now
+the single novel candidate with zero open concerns.**
 
 The capstone of the candidate-confidence batch (#65–#87): one honest, at-a-glance
 card per candidate that rolls **every axis already measured** into the single
@@ -41,29 +48,29 @@ controls that validate the axes rather than test a discovery.
 
 ### Novel candidates
 
-| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | ensemble | pose-conv | stereo | protomer | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|---|---|---|---|---|:--:|
-| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | no-precedent | 1 |
-| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | robust/3/3 | disp/rk13 | explicit | robust/2st | no-precedent | 2 |
-| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | consist/2/3 | disp/rk15 | explicit | **state-dep/16st** | no-precedent | 3 |
-| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk12 | explicit | robust/2st | no-precedent | 2 |
-| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **robust/3/3** | **disp/rk1✓** | explicit | explicit | no-precedent | **0** |
-| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | consist/2/3 | disp/rk11 | explicit | explicit | no-precedent | **0** |
-| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | **FRAGILE/1/3** | disp/rk19 | explicit | **state-dep/3st** | no-precedent | 5 |
-| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | robust/3/3 | disp/rk9 | explicit | **state-dep/3st** | no-precedent | 2 |
-| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | robust/3/3 | disp/rk8 | explicit | robust/6st | no-precedent | 1 |
-| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | **FRAGILE/1/3** | disp/rk15 | explicit | robust/6st | no-precedent | 2 |
+| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|---|---|---|---|---|:--:|
+| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | modx5 | no-precedent | 1 |
+| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | robust/3/3 | disp/rk13 | explicit | robust/2st | modx5 | no-precedent | 2 |
+| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | consist/2/3 | disp/rk15 | explicit | **state-dep/16st** | modx2 | no-precedent | 3 |
+| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk12 | explicit | robust/2st | modx5 | no-precedent | 2 |
+| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **robust/3/3** | **disp/rk1✓** | explicit | explicit | modx5 | no-precedent | **0** |
+| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | consist/2/3 | disp/rk11 | explicit | explicit | **II:HIGHx5** | no-precedent | **1** |
+| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | **FRAGILE/1/3** | disp/rk19 | explicit | **state-dep/3st** | modx5 | no-precedent | 5 |
+| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | robust/3/3 | disp/rk9 | explicit | **state-dep/3st** | modx5 | no-precedent | 2 |
+| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | robust/3/3 | disp/rk8 | explicit | robust/6st | modx5 | no-precedent | 1 |
+| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | **FRAGILE/1/3** | disp/rk15 | explicit | robust/6st | **II:HIGHx5** | no-precedent | **3** |
 
 ### Controls (known azoles — should look like azoles, not like discoveries)
 
-| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | ensemble | pose-conv | stereo | protomer | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|---|---|---|:--:|
-| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | robust/3/3 | disp/rk8 | robust/2iso | explicit | no-precedent | 2 |
-| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | robust/3st | record-inconclusive | 0 |
-| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | state-dep/4st | **enzyme tested-active** | 1 |
-| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | robust/3/3 | disp/rk4 | explicit | explicit | record-inconclusive | 1 |
-| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | **enzyme tested-active** | 1 |
-| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | consist/2/3 | disp/rk2✓ | **iso-dep/4iso** | state-dep/2st | — | 2 |
+| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|---|---|---|:--:|
+| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | robust/3/3 | disp/rk8 | robust/2iso | explicit | II:HIGHx5 | no-precedent | 2 |
+| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | robust/3st | II:HIGHx5 | record-inconclusive | 0 |
+| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | state-dep/4st | II:HIGHx5 | **enzyme tested-active** | 1 |
+| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | robust/3/3 | disp/rk4 | explicit | explicit | II:HIGHx5 | record-inconclusive | 1 |
+| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | II:HIGHx5 | **enzyme tested-active** | 1 |
+| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | consist/2/3 | disp/rk2✓ | **iso-dep/4iso** | state-dep/2st | II:HIGHx5 | — | 2 |
 
 > **Every candidate is `disp` (DISPERSED) — that is a protocol-level finding, not a
 > per-candidate strike.** Under the frozen 26 Å box + 20 modes, no candidate's returned poses
@@ -80,14 +87,21 @@ controls that validate the axes rather than test a discovery.
 
 ## What the aggregated view shows that no single axis did
 
-- **Two candidates are clean on every axis we have measured: lersivirine and
-  L-838417** — they coordinate the fungal iron reproducibly (5/5 seeds), open a
-  positive human-selectivity window, carry no ADMET alert, sit in the easy SA band,
-  are neither size- nor coordinator-fragile in the domain, **both RETAIN
-  coordination in the *C. auris* Y132F resistance pocket** (5/5 seeds there too), and are
-  **both protonation/tautomer-explicit** — a single relevant microstate at pH 7.4, so no
-  silently-fixed protomer or tautomer underlies the rank. They are the two the scorecard puts
-  forward with zero open concerns — *within the measured axes*.
+- **One candidate is now clean on every axis we have measured: lersivirine.** It
+  coordinates the fungal iron reproducibly (5/5 seeds), opens a positive human-selectivity
+  window, carries no ADMET alert, sits in the easy SA band, is neither size- nor
+  coordinator-fragile in the domain, RETAINS coordination in the *C. auris* Y132F resistance
+  pocket (5/5 seeds there too), is protonation/tautomer-explicit, is ROBUST across the
+  crystallographic ensemble (3/3), and carries **no strong human-CYP warhead** (its pyrazole
+  is only a MODERATE hint, not a demotion). It is the one candidate the scorecard puts forward
+  with zero open concerns — *within the measured axes*.
+- **The human-CYP axis broke the former tie by demoting L-838417.** L-838417 was the second
+  zero-concern hit through the ensemble axis, but its **1,2,4-triazole warhead is the azole
+  antifungal pharmacophore** — flagged HIGH type-II across all five human drug-metabolizing
+  CYPs (#74), inheriting the CYP3A4 drug-interaction / hepatotoxicity liability the marketed
+  triazoles carry, by the *same* heme ligation that shortlisted it. It picks up one concern
+  (0→1). The lesson is uncomfortable and honest: a novel candidate that reaches the iron *with
+  an azole warhead* has not escaped the azole liability profile — it has reproduced it.
 - **The resistance axis surfaced a demotion no other axis caught: vatalanib.** It is
   5/5 seed-stable, one of the tightest coordinators (2.479 Å) and has the second-widest
   selectivity window (+1.82 Å) on the *C. albicans* stand-in — yet it collapses to
@@ -172,11 +186,11 @@ Printed on every card so no molecule looks fully vetted:
   now measured (the `Y132F` column above;
   [RESULTS_candidate_resistance.md](RESULTS_candidate_resistance.md)), but the clade-I
   K143R and clade-III F126L mutants need a side-chain repacker not in the pinned
-  environment and remain unchecked.
-- **Broader human CYP off-target panel** (CYP3A4/2C9/2D6/2C19/1A2, #74) — only the
-  CYP51 counter-screen exists.
+  environment and remain unchecked. This is the **only** axis still `not-yet-checked`.
 
-(Stereochemistry (#85) is now **measured** — the `stereo` column above and
+(The broader human CYP off-target panel (CYP3A4/2C9/2D6/2C19/1A2, #74) is now **measured** —
+the `hCYP` column above and [RESULTS_cyp_offtarget.md](RESULTS_cyp_offtarget.md).
+Stereochemistry (#85) is now **measured** — the `stereo` column above and
 [RESULTS_candidate_stereo.md](RESULTS_candidate_stereo.md). Protonation/tautomer (#84) is now
 **measured** — the `protomer` column above and
 [RESULTS_candidate_protomer.md](RESULTS_candidate_protomer.md). Ensemble/flexible-receptor
@@ -188,13 +202,15 @@ ensemble is covered, MD/induced-fit flexibility is not.)
 
 - **Does:** produce the decision artifact — every measured confidence axis on one
   row per candidate, with honest `not-yet-checked` states — and confirm that when
-  all axes are seen together, **lersivirine and L-838417** are the two novel hits
-  with no open concern on any measured axis, while the geometry order alone would
-  have mixed them in with seed-unstable (LDN-27219, olprinone), non-selective
-  (nolatrexed), ADMET-flagged (R-1479, taranabant), resistance-fragile (vatalanib),
-  conformer-fragile (olprinone, LDN-27219) and tautomer-dependent (LDN-27219, R-1479,
-  flucloxacillin) molecules. Among the two clean hits, the ensemble now further favors
-  **lersivirine** (ROBUST 3/3) over **L-838417** (CONSISTENT 2/3).
+  all axes are seen together, **lersivirine** is the single novel hit with no open
+  concern on any measured axis, while the geometry order alone would have mixed it in
+  with seed-unstable (LDN-27219, olprinone), non-selective (nolatrexed), ADMET-flagged
+  (R-1479, taranabant), resistance-fragile (vatalanib), conformer-fragile (olprinone,
+  LDN-27219), tautomer-dependent (LDN-27219, R-1479, flucloxacillin) and human-CYP
+  type-II (L-838417, olprinone) molecules. The human-CYP axis (#74) was decisive: it
+  demoted **L-838417**, the former co-front-runner, for carrying the azole warhead's
+  CYP3A4 liability — leaving **lersivirine** (a non-azole pyrazole, ROBUST 3/3 across
+  the ensemble) as the lone clean hit.
 - **Does not:** call any molecule a hit, collapse the axes into a rank, or imply the
   `not-yet-checked` axes would pass. Every caveat of the underlying screen still
   binds (single rigid *C. albicans* conformer; coordination necessary, not

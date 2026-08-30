@@ -20,6 +20,7 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/shortlist_stereo.json       stereochemistry / isomer audit (#85)
   work/candidates/shortlist_protomer.json     protonation/tautomer microstate audit (#84)
   work/candidates/shortlist_ensemble.json     crystallographic ensemble consistency (#70)
+  work/candidates/shortlist_cyp.json          human-CYP off-target liability panel (#74)
 
 Usage:  conda run -n openafr python work/candidates/build_scorecard.py
 Writes: work/candidates/shortlist_scorecard.json  and prints a readable table.
@@ -106,6 +107,13 @@ def load_ensemble():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_cyp():
+    path = os.path.join(C, "shortlist_cyp.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -118,6 +126,7 @@ def build():
     stereo = load_stereo()
     protomer = load_protomer()
     ensemble = load_ensemble()
+    cyp = load_cyp()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -134,10 +143,11 @@ def build():
         st = stereo.get(name, {})
         pt = protomer.get(name, {})
         en = ensemble.get(name, {})
+        cy = cyp.get(name, {})
         is_ctrl = name in CONTROLS
 
         concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None,
-                                   st or None, pt or None, en or None)
+                                   st or None, pt or None, en or None, cy or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -236,6 +246,17 @@ def build():
                 "ensemble_mean_nfe_A": en.get("ensemble_mean"),
                 "conformers_coordinating": en.get("n_conf_coord"),
             },
+            "cyp_offtarget": {
+                "status": "proven" if cy else "not-yet-checked",
+                "panel": "human CYP3A4/2C9/2D6/2C19/1A2",
+                "azole_warhead": cy.get("azole_warhead"),
+                "type_ii_ligator": cy.get("type_ii_ligator"),
+                "n_high": cy.get("n_high"),
+                "n_moderate": cy.get("n_moderate"),
+                "flags": cy.get("flags"),
+                "liability": ({k: v["liability"] for k, v in cy.get("panel", {}).items()}
+                              or None),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -259,6 +280,7 @@ def build():
             "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
             "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
             "ensemble_consistency (crystallographic C. albicans ensemble dock)",
+            "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -329,14 +351,30 @@ def ens_cell(c):
     return f"{tag}/{en['conformers_coordinating']}"
 
 
+def cyp_cell(c):
+    """Compact human-CYP off-target cell: type-II HIGH pan-panel, or the moderate profile.
+
+    'II:HIGHx5' == an azole warhead flags all five human CYPs HIGH (the same heme ligation
+    the on-target criterion selected for). 'modx5' == a weaker azine/pharmacophore profile.
+    The per-isoform liability + basis live in the full JSON card."""
+    cy = c["cyp_offtarget"]
+    if cy["status"] != "proven":
+        return "—"
+    if cy.get("n_high"):
+        return "II:HIGHx%d" % cy["n_high"]
+    if cy.get("n_moderate"):
+        return "modx%d" % cy["n_moderate"]
+    return "clean"
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
             "domain", "Y132F", "ensemble", "pose-conv", "stereo", "protomer",
-            "precedent", "#concern")
+            "hCYP", "precedent", "#concern")
     w = ("%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-11s %-10s %-11s %-12s "
-         "%-16s %s")
+         "%-10s %-16s %s")
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
     print("-" * 130)
@@ -354,6 +392,7 @@ def print_table(sc):
             conv_cell(c),
             stereo_cell(c),
             protomer_cell(c),
+            cyp_cell(c),
             (c["precedent"]["phenotypic"] if c["precedent"]["phenotypic"] != "—"
              else c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
@@ -375,6 +414,7 @@ def print_table(sc):
             conv_cell(c),
             stereo_cell(c),
             protomer_cell(c),
+            cyp_cell(c),
             (c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))

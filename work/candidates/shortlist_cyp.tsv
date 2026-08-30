@@ -1,0 +1,17 @@
+name	mw	clogp	azole_warhead	type_ii_ligator	n_high	n_moderate	CYP3A4	CYP2C9	CYP2D6	CYP2C19	CYP1A2	flags
+flutrimazole	346.4	5.0	imidazole	True	5	0	high	high	high	high	high	type-II(imidazole):HIGHx5
+verinurad	348.4	4.73	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+vatalanib	346.8	5.01	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+flucloxacillin	453.9	2.69	-	False	0	2	low	moderate	low	moderate	low	2C9+2C19
+taranabant	516.0	6.31	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+lersivirine	310.4	2.54	pyrazole	True	0	5	moderate	moderate	moderate	moderate	moderate	pyrazole:3A4+2C9+2D6+2C19+1A2
+LDN-27219	408.5	3.2	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+R-1479	284.2	-1.93	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+ravuconazole	437.5	4.24	1,2,4-triazole	True	5	0	high	high	high	high	high	type-II(1,2,4-triazole):HIGHx5
+L-838417	399.4	3.07	1,2,4-triazole	True	5	0	high	high	high	high	high	type-II(1,2,4-triazole):HIGHx5
+olprinone	250.3	1.87	imidazole	True	5	0	high	high	high	high	high	type-II(imidazole):HIGHx5
+nolatrexed	284.3	2.36	-	True	0	5	moderate	moderate	moderate	moderate	moderate	azine:3A4+2C9+2D6+2C19+1A2
+letrozole	285.3	2.66	1,2,4-triazole	True	5	0	high	high	high	high	high	type-II(1,2,4-triazole):HIGHx5
+fluconazole	306.3	0.74	1,2,4-triazole	True	5	0	high	high	high	high	high	type-II(1,2,4-triazole):HIGHx5
+voriconazole	349.3	2.18	1,2,4-triazole	True	5	0	high	high	high	high	high	type-II(1,2,4-triazole):HIGHx5
+ketoconazole	531.4	4.21	imidazole	True	5	0	high	high	high	high	high	type-II(imidazole):HIGHx5
