@@ -36,6 +36,12 @@ work/screen_verified/
 work/screen_5FSA/
 work/screen_5V5Z/
 work/verified_ligands/
+work/potency_screen_enzyme/
+work/potency_screen_wholecell/
+work/potency_enzyme_ligands/
+work/potency_wholecell_ligands/
+work/chembl_potency/
+work/chembl/
 work/views/
 work/*_pdbqt/
 work/*.pdbqt
