@@ -23,6 +23,20 @@ all five human CYPs** (the same CYP3A4 drug-interaction liability as the markete
 concerns 0→1), and **olprinone**'s imidazole does likewise (concerns 2→3). **lersivirine is now
 the single novel candidate with zero open concerns.**
 
+Updated 2026-08-30: the resistance panel is completed with the **add-atom K143R/F126L** axis
+(#77, [RESULTS_candidate_resistance_addatom.md](RESULTS_candidate_resistance_addatom.md)) — the
+clade-I and clade-III substitutions that *add* side-chain atoms and so need the newly-pinned
+side-chain repacker (`scripts/repack_mutant.py`, `pymol-open-source`; minimum-strain rotamer, a
+**MODELED-ROTAMER** pocket labeled as such — a weaker structural claim than the Y132F deletion).
+It adds the `K143R/F126L` column and surfaces one demotion **no other axis, including Y132F,
+caught: flucloxacillin collapses to 0/5 coordinating in the clade-III F126L pocket (LOST)** while
+RETAINED on both WT-stand-in Y132F and K143R — concerns 3→4. It confirms resistance-robustness is
+mutation-specific (vatalanib is the mirror image: LOST on Y132F, RETAINED on K143R/F126L), and
+both front-runners **lersivirine and L-838417 RETAIN across all three point mutants**, so
+lersivirine stays the single zero-concern novel candidate. All three dominant *C. auris* ERG11
+point substitutions are now covered; only TR-type copy-number/promoter resistance (not a CDS
+pocket point mutation) remains structurally out of scope.
+
 The capstone of the candidate-confidence batch (#65–#87): one honest, at-a-glance
 card per candidate that rolls **every axis already measured** into the single
 artifact you actually reason over before choosing what to send to a wet lab.
@@ -48,29 +62,29 @@ controls that validate the axes rather than test a discovery.
 
 ### Novel candidates
 
-| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|---|---|---|---|---|---|:--:|
-| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | modx5 | no-precedent | 1 |
-| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | robust/3/3 | disp/rk13 | explicit | robust/2st | modx5 | no-precedent | 2 |
-| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | consist/2/3 | disp/rk15 | explicit | **state-dep/16st** | modx2 | no-precedent | 3 |
-| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | robust/3/3 | disp/rk12 | explicit | robust/2st | modx5 | no-precedent | 2 |
-| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **robust/3/3** | **disp/rk1✓** | explicit | explicit | modx5 | no-precedent | **0** |
-| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | consist/2/3 | disp/rk11 | explicit | explicit | **II:HIGHx5** | no-precedent | **1** |
-| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | **FRAGILE/1/3** | disp/rk19 | explicit | **state-dep/3st** | modx5 | no-precedent | 5 |
-| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | robust/3/3 | disp/rk9 | explicit | **state-dep/3st** | modx5 | no-precedent | 2 |
-| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | robust/3/3 | disp/rk8 | explicit | robust/6st | modx5 | no-precedent | 1 |
-| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | **FRAGILE/1/3** | disp/rk15 | explicit | robust/6st | **II:HIGHx5** | no-precedent | **3** |
+| candidate | N–Fe (Å, 5-seed) | seeds | sel-margin (Å) | ADMET | SA band | domain | Y132F | K143R/F126L | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|---|---|---|---|---|---|:--:|
+| verinurad | 2.417 | 5/5 | +0.51 | clean | easy | coordinator-fragile | RETAINED | RET / RET | robust/3/3 | disp/rk11 | explicit | explicit | modx5 | no-precedent | 1 |
+| vatalanib | 2.479 | 5/5 | +1.82 | hERG? | easy | clean | **LOST** | RET / RET | robust/3/3 | disp/rk13 | explicit | robust/2st | modx5 | no-precedent | 2 |
+| flucloxacillin | 2.517 | 5/5 | +2.66 | alert | moderate | coordinator-fragile | RETAINED | RET / **LOST** | consist/2/3 | disp/rk15 | explicit | **state-dep/16st** | modx2 | no-precedent | **4** |
+| taranabant | 2.564 | 5/5 | +2.05 | Ro5×2, insoluble | easy | coordinator-fragile | RETAINED | RET / RET | robust/3/3 | disp/rk12 | explicit | robust/2st | modx5 | no-precedent | 2 |
+| lersivirine | 2.572 | 5/5 | +2.07 | clean | easy | clean | RETAINED | **RET / RET** | **robust/3/3** | **disp/rk1✓** | explicit | explicit | modx5 | no-precedent | **0** |
+| L-838417 | 2.580 | 5/5 | +0.36 | clean | easy | clean | RETAINED | RET / RET | consist/2/3 | disp/rk11 | explicit | explicit | **II:HIGHx5** | no-precedent | **1** |
+| LDN-27219 | 2.603 | **2/5** | +0.64 | alert | easy | clean | **LOST** | RET / **LOST** | **FRAGILE/1/3** | disp/rk19 | explicit | **state-dep/3st** | modx5 | no-precedent | 6 |
+| R-1479 | 2.621 | 5/5 | +0.46 | Veber, PAINS, alert | moderate | clean | RETAINED | RET / RET | robust/3/3 | disp/rk9 | explicit | **state-dep/3st** | modx5 | no-precedent | 2 |
+| nolatrexed | 2.677 | 5/5 | **−0.06** | clean | easy | clean | RETAINED | RET / RET | robust/3/3 | disp/rk8 | explicit | robust/6st | modx5 | no-precedent | 1 |
+| olprinone | 2.680 | **4/5** | +1.32 | clean | easy | clean | RETAINED | RET / RET | **FRAGILE/1/3** | disp/rk15 | explicit | robust/6st | **II:HIGHx5** | no-precedent | **3** |
 
 ### Controls (known azoles — should look like azoles, not like discoveries)
 
-| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
-|---|---:|:--:|---:|---|---|---|---|---|---|---|---|:--:|
-| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | robust/3/3 | disp/rk8 | robust/2iso | explicit | II:HIGHx5 | no-precedent | 2 |
-| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | robust/3st | II:HIGHx5 | record-inconclusive | 0 |
-| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | robust/3/3 | disp/rk6 | explicit | state-dep/4st | II:HIGHx5 | **enzyme tested-active** | 1 |
-| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | robust/3/3 | disp/rk4 | explicit | explicit | II:HIGHx5 | record-inconclusive | 1 |
-| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | robust/3/3 | disp/rk11 | explicit | explicit | II:HIGHx5 | **enzyme tested-active** | 1 |
-| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | consist/2/3 | disp/rk2✓ | **iso-dep/4iso** | state-dep/2st | II:HIGHx5 | — | 2 |
+| control | N–Fe (Å) | seeds | sel-margin | ADMET | Y132F | K143R/F126L | ensemble | pose-conv | stereo | protomer | hCYP | precedent | concerns |
+|---|---:|:--:|---:|---|---|---|---|---|---|---|---|---|:--:|
+| flutrimazole | 2.371 | 5/5 | −0.06 | alert | RETAINED | RET / RET | robust/3/3 | disp/rk8 | robust/2iso | explicit | II:HIGHx5 | no-precedent | 2 |
+| ravuconazole | 2.653 | 5/5 | +2.20 | clean | RETAINED | RET / LOST | robust/3/3 | disp/rk6 | explicit | robust/3st | II:HIGHx5 | record-inconclusive | 0 |
+| voriconazole | 2.657 | 5/5 | +0.67 | clean | RETAINED | RET / RET | robust/3/3 | disp/rk6 | explicit | state-dep/4st | II:HIGHx5 | **enzyme tested-active** | 1 |
+| letrozole | 2.705 | 5/5 | −0.15 | clean | RETAINED | RET / RET | robust/3/3 | disp/rk4 | explicit | explicit | II:HIGHx5 | record-inconclusive | 1 |
+| fluconazole | 2.711 | 5/5 | +0.06 | clean | RETAINED | RET / RET | robust/3/3 | disp/rk11 | explicit | explicit | II:HIGHx5 | **enzyme tested-active** | 1 |
+| ketoconazole | 2.921 | **1/5** | +0.75 | PAINS, hERG? | RETAINED | **LOST** / RET | consist/2/3 | disp/rk2✓ | **iso-dep/4iso** | state-dep/2st | II:HIGHx5 | — | 2 |
 
 > **Every candidate is `disp` (DISPERSED) — that is a protocol-level finding, not a
 > per-candidate strike.** Under the frozen 26 Å box + 20 modes, no candidate's returned poses
@@ -80,10 +94,14 @@ controls that validate the axes rather than test a discovery.
 > score by design. See the pose-convergence results doc for the full caveat.
 
 > **Controls RETAINING is the honesty check, not a resistance claim.** These azoles are
-> clinically defeated by Y132F, yet they still coordinate the mutant iron — because the
-> criterion is nearly insensitive to Y132F ([RESULTS_auris_Y132F.md](RESULTS_auris_Y132F.md)).
-> So RETAINED means "geometry not destroyed," never "beats resistance." See the resistance
-> results doc for the full caveat.
+> clinically defeated by these substitutions, yet they still coordinate the mutant iron — because
+> the criterion is nearly insensitive to them ([RESULTS_auris_Y132F.md](RESULTS_auris_Y132F.md)).
+> So RETAINED means "geometry not destroyed," never "beats resistance." A control that reads LOST
+> (ketoconazole on K143R, ravuconazole on F126L) is likewise not a strike — the two are the
+> known floppy-ligand / borderline coordinators, exempt by construction. The `K143R/F126L` column
+> is `K-verdict / F-verdict`; both are **MODELED-ROTAMER** pockets (repacked side chain, not
+> observed geometry — a weaker structural claim than the Y132F deletion). See the resistance
+> results docs for the full caveats.
 
 ## What the aggregated view shows that no single axis did
 
@@ -182,11 +200,14 @@ controls that validate the axes rather than test a discovery.
 
 Printed on every card so no molecule looks fully vetted:
 
-- **auris K143R / F126L mutant retention** (#77) — the dominant Y132F substitution is
-  now measured (the `Y132F` column above;
-  [RESULTS_candidate_resistance.md](RESULTS_candidate_resistance.md)), but the clade-I
-  K143R and clade-III F126L mutants need a side-chain repacker not in the pinned
-  environment and remain unchecked. This is the **only** axis still `not-yet-checked`.
+- **auris TR-type tandem-duplication / promoter (copy-number) resistance** (#77) — an
+  expression/copy-number event, not a CDS pocket point mutation, so this structural geometry
+  axis cannot model it. This is the **only** axis still `not-yet-checked`: all three dominant
+  *C. auris* ERG11 point substitutions are now measured — Y132F (the `Y132F` column;
+  [RESULTS_candidate_resistance.md](RESULTS_candidate_resistance.md)) plus the clade-I **K143R**
+  and clade-III **F126L** (the `K143R/F126L` column;
+  [RESULTS_candidate_resistance_addatom.md](RESULTS_candidate_resistance_addatom.md)), the last
+  two built with the now-pinned side-chain repacker as MODELED-ROTAMER pockets.
 
 (The broader human CYP off-target panel (CYP3A4/2C9/2D6/2C19/1A2, #74) is now **measured** —
 the `hCYP` column above and [RESULTS_cyp_offtarget.md](RESULTS_cyp_offtarget.md).

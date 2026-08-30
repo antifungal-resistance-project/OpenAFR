@@ -15,6 +15,7 @@
     "applicability_domain",
     "assay_precedent",
     "resistance_retention (C. auris Y132F)",
+    "resistance_retention_addatom (C. auris K143R/F126L, modeled-rotamer repack)",
     "pose_convergence (within-search RMSD clustering)",
     "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
     "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
@@ -22,7 +23,7 @@
     "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)"
   ],
   "axes_not_yet_checked": {
-    "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+    "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
   },
   "candidates": [
     {
@@ -81,6 +82,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.013
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.362,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.009
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.498,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.127
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -130,7 +151,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window",
@@ -195,6 +216,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.048
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.425,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.008
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.833,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.416
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -244,7 +285,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "domain: coordinator-fragile"
@@ -306,6 +347,26 @@
         "seeds_coordinating": "2/5",
         "retention_shift_A": null
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.436,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.043
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.508,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.029
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -355,7 +416,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: hERG?",
@@ -420,6 +481,26 @@
         "seeds_coordinating": "4/5",
         "retention_shift_A": 0.021
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.54,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.023
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "LOST",
+            "consensus_nfe_A": 4.077,
+            "seeds_coordinating": "0/5",
+            "retention_shift_A": null
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -469,11 +550,12 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: alert",
         "domain: coordinator-fragile",
+        "loses coordination in C. auris F126L pocket (modeled-rotamer)",
         "rank depends on protonation/tautomer state at pH 7.4"
       ]
     },
@@ -535,6 +617,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.03
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.526,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.038
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.616,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.052
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -584,7 +686,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: Ro5x2,insoluble",
@@ -647,6 +749,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": 0.064
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.562,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.01
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.558,
+            "seeds_coordinating": "4/5",
+            "retention_shift_A": -0.014
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -696,7 +818,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": []
     },
@@ -756,6 +878,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.025
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.558,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.022
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.609,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.029
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -805,7 +947,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)"
@@ -867,6 +1009,26 @@
         "seeds_coordinating": "1/5",
         "retention_shift_A": null
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.61,
+            "seeds_coordinating": "3/5",
+            "retention_shift_A": 0.007
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "LOST",
+            "consensus_nfe_A": 2.592,
+            "seeds_coordinating": "1/5",
+            "retention_shift_A": null
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -916,12 +1078,13 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
         "ADMET: alert",
         "loses coordination in C. auris Y132F pocket",
+        "loses coordination in C. auris F126L pocket (modeled-rotamer)",
         "rank depends on protonation/tautomer state at pH 7.4",
         "coordination is conformer-fragile (single-snapshot artifact)"
       ]
@@ -982,6 +1145,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": 0.056
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.61,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.011
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.696,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.075
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1031,7 +1214,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: Veber,PAINS,alert",
@@ -1094,6 +1277,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.009
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.786,
+            "seeds_coordinating": "3/5",
+            "retention_shift_A": 0.133
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "LOST",
+            "consensus_nfe_A": 2.864,
+            "seeds_coordinating": "2/5",
+            "retention_shift_A": null
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1143,7 +1346,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": []
     },
@@ -1203,6 +1406,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.001
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.689,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.032
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.645,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.012
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1252,7 +1475,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "known CYP51 inhibitor (control)"
@@ -1314,6 +1537,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.033
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.691,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.014
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.689,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.012
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1363,7 +1606,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window"
@@ -1425,6 +1668,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.013
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.687,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.007
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.593,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.087
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1474,7 +1737,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
@@ -1538,6 +1801,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.031
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.719,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": 0.014
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.652,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.053
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1587,7 +1870,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "no fungal-vs-human selectivity window"
@@ -1649,6 +1932,26 @@
         "seeds_coordinating": "5/5",
         "retention_shift_A": -0.014
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.688,
+            "seeds_coordinating": "3/5",
+            "retention_shift_A": -0.023
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.686,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.025
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1698,7 +2001,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "known CYP51 inhibitor (control)"
@@ -1760,6 +2063,26 @@
         "seeds_coordinating": "3/5",
         "retention_shift_A": -0.218
       },
+      "resistance_retention_addatom": {
+        "status": "proven",
+        "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain rotamer) \u2014 a weaker structural claim than the Y132F deletion",
+        "mutants": {
+          "K143R": {
+            "clade": "I",
+            "verdict": "LOST",
+            "consensus_nfe_A": 2.815,
+            "seeds_coordinating": "1/5",
+            "retention_shift_A": null
+          },
+          "F126L": {
+            "clade": "III",
+            "verdict": "RETAINED",
+            "consensus_nfe_A": 2.824,
+            "seeds_coordinating": "5/5",
+            "retention_shift_A": -0.097
+          }
+        }
+      },
       "pose_convergence": {
         "status": "proven",
         "verdict": "DISPERSED",
@@ -1809,7 +2132,7 @@
         }
       },
       "not_yet_checked": {
-        "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)"
+        "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",

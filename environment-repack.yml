@@ -1,0 +1,29 @@
+# Side-chain repacker environment — BUILD-TIME ONLY, deliberately SEPARATE from environment.yml.
+#
+# Recreate with:
+#   conda env create -f environment-repack.yml    # or: mamba env create -f environment-repack.yml
+#   conda activate openafr-repack
+#
+# What it is for: scripts/repack_mutant.py, the pinned side-chain repacker that builds the
+# ADD-atom C. auris resistance mutants K143R (Lys->Arg, clade I) and F126L (Phe->Leu, clade III)
+# — the ones scripts/mutate_receptor.py refuses because they cannot be built by pure atom
+# deletion. PyMOL's mutagenesis wizard places the new side chain at the deterministic
+# minimum-strain rotamer.
+#
+# Why SEPARATE from the main pinned env (this is the honest reason, not an oversight):
+# pymol-open-source=3.1.0 does NOT co-solve with the main env's pinned rdkit=2025.09.5 +
+# vina=1.2.7 stack (shared-library conflict) — adding it to environment.yml would make the
+# reproducibility-critical env un-createable. But the repacker is build-time only: its output
+# is a COMMITTED heavy-atom receptor PDB (work/receptor_auris_{K143R,F126L}.pdb, sha-frozen in
+# work/PREREG_candidate_resistance_addatom.sha256). Nothing downstream — docking, grading, the
+# scorecard, the tests — imports pymol. So the main env stays clean and solvable, and ONLY
+# *reproducing the two mutant receptors from the anchor* needs this small extra env.
+#
+# The exact-geometry deletion mutants (Y132F, V125A) need NO repacker at all — they are built
+# by scripts/mutate_receptor.py in the main openafr env.
+name: openafr-repack
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pymol-open-source=3.1.0
