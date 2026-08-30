@@ -47,6 +47,28 @@ this set is **failed azole analogues** — same warhead as the drugs, measured n
 makes it a harder benchmark, not a like-for-like one. Frozen with
 `work/PREREGISTRATION_verified_inactives.md`; sha256 in `work/PREREG_verified_inactives.sha256`.
 
+### Continuous-potency sets — `potency_enzyme.{tsv,smi}`, `potency_wholecell.{tsv,smi}` (added 2026-08-29)
+
+For the continuous-potency validation (issue #81, `work/PREREGISTRATION_potency.md`): do the
+N–Fe geometry scores track *how potent* a molecule is, not just active/inactive? Built by
+`scripts/make_potency_set.py` from a ChEMBL pull of every bioactivity record **carrying a
+`pchembl_value`** (−log10 molar potency) for two targets, each compound collapsed to one median
+pChEMBL by `openafr.potency.median_pchembl` (exact-relation IC50/Ki/Kd/EC50/Potency only; MIC
+carries no pchembl and never enters). Only compounds inside the validated applicability envelope
+(≥1 aromatic N, ≤45 heavy atoms — same triage as the front door) are written to `.smi` for
+docking, because the method makes no claim outside it.
+
+- `potency_enzyme` — target **CHEMBL1780** (*C. albicans* CYP51 enzyme), the direct on-target
+  binding potency: **32 in-domain** compounds (28 novel, 4 near-known azoles), pChEMBL 5.94–8.00.
+  The PRIMARY test — no whole-cell confound, but a narrow ~2-log range at small n.
+- `potency_wholecell` — target_organism *Candida albicans*, whole-cell growth-inhibition
+  potency: **441 in-domain** compounds, pChEMBL 4.00–10.97. The SECONDARY — well-powered but
+  confounded by uptake/efflux/target abundance, so context rather than proof.
+
+The `.tsv` carries every compound's median pChEMBL, record count, standard_types, heavy-atom
+count, triage verdict and nearest active; the `.smi` is the in-domain dockable subset. Frozen
+with `work/PREREGISTRATION_potency.md`; sha256 in `work/PREREG_potency.sha256`.
+
 ## The problem T1 fixes
 
 Two independent findings converged on the active set:
