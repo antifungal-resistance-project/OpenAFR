@@ -26,7 +26,12 @@ CONTROLS = {
 # Axes NOT yet measured per candidate (open issues) — named so a card can never
 # look complete by omission.
 NOT_YET_CHECKED = {
-    "ensemble_consistency": "candidate-path ensemble/flexible docking (#70)",
+    # ensemble/flexible docking (#70) is now measured (ensemble_consistency axis,
+    # RESULTS_candidate_ensemble.md): each candidate is scored across the exhaustive
+    # crystallographic C. albicans ensemble {5TZ1, 5FSA, 5V5Z} and its coordination is
+    # ROBUST / CONSISTENT / CONFORMER-FRAGILE / NON-COORDINATING. This closes the
+    # "single-snapshot artifact" hole for the RIGID crystal ensemble, not the induced-fit /
+    # MD-flexibility one (no MD stack in the pinned env — see the prereg limitations).
     # pose-convergence (#71) is now measured (pose_convergence axis,
     # RESULTS_pose_convergence.md): within-search RMSD clustering of the frozen seed-42 poses.
     # Y132F retention is now measured (resistance_retention axis, RESULTS_candidate_resistance.md);
@@ -44,15 +49,16 @@ NOT_YET_CHECKED = {
 }
 
 
-def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None):
+def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
     scorecard never blends axes into a single number. A control is exempt only from
-    the "known CYP51 inhibitor", "phenotypic active elsewhere" and "loses coordination
-    in the resistant pocket" demotions, which are the point of a control, not a strike
-    against it (controls are the Y132F-defeated azoles; how they behave on the mutant is
-    a robustness check, not a mark against a discovery).
+    the "known CYP51 inhibitor", "phenotypic active elsewhere", "loses coordination
+    in the resistant pocket" and "conformer-fragile" demotions, which are the point of a
+    control, not a strike against it (controls are the Y132F-defeated azoles; how they
+    behave on the mutant / across conformers is a robustness check, not a mark against a
+    discovery).
 
     Args mirror the per-axis file rows, keyed by candidate name:
       cf   shortlist_confidence.json    (seed stability + human selectivity)
@@ -63,6 +69,7 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None):
       res  shortlist_resistance.json    (C. auris Y132F retention verdict; None = not-yet-checked)
       st   shortlist_stereo.json        (stereochemistry verdict; None = not-yet-checked)
       pt   shortlist_protomer.json      (protonation/tautomer verdict; None = not-yet-checked)
+      en   shortlist_ensemble.json      (ensemble-consistency verdict; None = not-yet-checked)
     """
     concerns = []
     if cf.get("reaches_fungal_iron") is False:
@@ -101,4 +108,13 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None):
     # the axis, not discoveries to strike. A protomer-EXPLICIT candidate never triggers this.
     if pt is not None and pt.get("verdict") == "MICROSTATE-DEPENDENT" and not is_ctrl:
         concerns.append("rank depends on protonation/tautomer state at pH 7.4")
+    # Ensemble consistency (#70): a candidate whose coordination appears in only one crystal
+    # conformer (CONFORMER-FRAGILE) or in none (NON-COORDINATING) across the exhaustive
+    # {5TZ1,5FSA,5V5Z} ensemble is demoted — the geometry that shortlisted it is a
+    # single-snapshot artifact, not a robust binding hypothesis. Control-exempt (see docstring):
+    # a control's conformer behavior validates the axis, it is not a strike. A ROBUST or
+    # CONSISTENT candidate never triggers this.
+    if en is not None and en.get("verdict") in ("CONFORMER-FRAGILE", "NON-COORDINATING") \
+            and not is_ctrl:
+        concerns.append("coordination is conformer-fragile (single-snapshot artifact)")
     return concerns
