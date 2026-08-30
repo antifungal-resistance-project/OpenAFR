@@ -16,6 +16,8 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/domain_sensitivity.json     applicability-domain fragility (#87)
   work/candidates/top100_precedent.tsv        assay-precedent verdicts (#65)
   work/candidates/shortlist_resistance.json   C. auris Y132F retention (#69,#77)
+  work/candidates/shortlist_resistance_K143R.json  C. auris K143R retention, modeled rotamer (#77)
+  work/candidates/shortlist_resistance_F126L.json  C. auris F126L retention, modeled rotamer (#77)
   work/candidates/pose_convergence.json       within-search pose convergence (#71)
   work/candidates/shortlist_stereo.json       stereochemistry / isomer audit (#85)
   work/candidates/shortlist_protomer.json     protonation/tautomer microstate audit (#84)
@@ -79,6 +81,21 @@ def load_resistance():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_resistance_addatom():
+    """{name: {mutant: verdict-row}} for the add-atom C. auris mutants K143R/F126L (#77).
+
+    Each mutant is a separate frozen per-axis file; a missing file just leaves that pocket
+    not-yet-checked, so the scorecard degrades honestly rather than erroring."""
+    out = {}
+    for mutant in ("K143R", "F126L"):
+        path = os.path.join(C, f"shortlist_resistance_{mutant}.json")
+        if not os.path.exists(path):
+            continue
+        for x in json.load(open(path))["candidates"]:
+            out.setdefault(x["name"], {})[mutant] = x
+    return out
+
+
 def load_convergence():
     path = os.path.join(C, "pose_convergence.json")
     if not os.path.exists(path):
@@ -122,6 +139,7 @@ def build():
     domain, domain_meta = load_domain()
     prec = load_tsv(os.path.join(C, "top100_precedent.tsv"))
     resistance = load_resistance()
+    resistance_addatom = load_resistance_addatom()
     convergence = load_convergence()
     stereo = load_stereo()
     protomer = load_protomer()
@@ -139,6 +157,7 @@ def build():
         dm = domain.get(name, {})
         pr = prec.get(name, {})
         rs = resistance.get(name, {})
+        rsa = resistance_addatom.get(name, {})
         pc = convergence.get(name, {})
         st = stereo.get(name, {})
         pt = protomer.get(name, {})
@@ -147,7 +166,8 @@ def build():
         is_ctrl = name in CONTROLS
 
         concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None,
-                                   st or None, pt or None, en or None, cy or None)
+                                   st or None, pt or None, en or None, cy or None,
+                                   rsa or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -214,6 +234,21 @@ def build():
                 "seeds_coordinating": rs.get("y132f_seeds_coordinating"),
                 "retention_shift_A": rs.get("retention_shift"),
             },
+            "resistance_retention_addatom": {
+                "status": "proven" if rsa else "not-yet-checked",
+                "note": "MODELED-ROTAMER pockets (side-chain repacker; minimum-strain "
+                        "rotamer) — a weaker structural claim than the Y132F deletion",
+                "mutants": {
+                    m: {
+                        "clade": {"K143R": "I", "F126L": "III"}[m],
+                        "verdict": rsa[m].get("verdict"),
+                        "consensus_nfe_A": rsa[m].get("mutant_consensus"),
+                        "seeds_coordinating": rsa[m].get("mutant_seeds_coordinating"),
+                        "retention_shift_A": rsa[m].get("retention_shift"),
+                    }
+                    for m in ("K143R", "F126L") if m in rsa
+                },
+            },
             "pose_convergence": {
                 "status": "proven" if pc else "not-yet-checked",
                 "verdict": pc.get("verdict"),
@@ -276,6 +311,7 @@ def build():
             "applicability_domain",
             "assay_precedent",
             "resistance_retention (C. auris Y132F)",
+            "resistance_retention_addatom (C. auris K143R/F126L, modeled-rotamer repack)",
             "pose_convergence (within-search RMSD clustering)",
             "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
             "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
@@ -298,6 +334,21 @@ def fmt(v, nd=3):
 def res_cell(c):
     """Compact C. auris Y132F retention verdict for the table."""
     return (c["resistance_retention"]["verdict"] or "—")[:8]
+
+
+def res_addatom_cell(c):
+    """Compact K143R/F126L (modeled-rotamer) retention: one initial + verdict per mutant.
+
+    e.g. 'K:RET F:LOST'. RET/SHF/LOST keep the column narrow; the full verdict + numbers live
+    in resistance_retention_addatom. '—' until measured."""
+    ra = c["resistance_retention_addatom"]
+    if ra["status"] != "proven":
+        return "—"
+    short = {"RETAINED": "RET", "LOST": "LOST", "SHIFTED-away": "SHFa",
+             "SHIFTED-closer": "SHFc", "UNRANKABLE": "?"}
+    return " ".join("%s:%s" % (m[0], short.get(ra["mutants"][m]["verdict"],
+                                              (ra["mutants"][m]["verdict"] or "—")[:4]))
+                    for m in ("K143R", "F126L") if m in ra["mutants"])
 
 
 def conv_cell(c):
@@ -371,9 +422,9 @@ def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
-            "domain", "Y132F", "ensemble", "pose-conv", "stereo", "protomer",
+            "domain", "Y132F", "K143R/F126L", "ensemble", "pose-conv", "stereo", "protomer",
             "hCYP", "precedent", "#concern")
-    w = ("%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-11s %-10s %-11s %-12s "
+    w = ("%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-13s %-11s %-10s %-11s %-12s "
          "%-10s %-16s %s")
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
@@ -388,6 +439,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            res_addatom_cell(c),
             ens_cell(c),
             conv_cell(c),
             stereo_cell(c),
@@ -410,6 +462,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            res_addatom_cell(c),
             ens_cell(c),
             conv_cell(c),
             stereo_cell(c),

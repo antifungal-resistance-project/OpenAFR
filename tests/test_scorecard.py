@@ -101,6 +101,36 @@ def test_resistance_unchecked_adds_no_concern():
     assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False) == []
 
 
+def test_addatom_resistance_lost_is_flagged_per_pocket_for_novel_candidate():
+    # a novel candidate that loses coordination in a modeled-rotamer K143R/F126L pocket is
+    # demoted, and the concern names which pocket(s) collapsed
+    rsa = {"K143R": {"verdict": "LOST"}, "F126L": {"verdict": "RETAINED"}}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False,
+                               res_addatom=rsa)
+    hit = [c for c in concerns if "K143R" in c]
+    assert hit and "modeled-rotamer" in hit[0]
+    assert not any("F126L" in c for c in concerns)   # RETAINED pocket is not a concern
+
+
+def test_addatom_resistance_both_lost_names_both_pockets():
+    rsa = {"K143R": {"verdict": "LOST"}, "F126L": {"verdict": "LOST"}}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False,
+                               res_addatom=rsa)
+    assert any("K143R/F126L" in c for c in concerns)
+
+
+def test_addatom_resistance_lost_is_not_a_strike_against_a_control():
+    rsa = {"K143R": {"verdict": "LOST"}, "F126L": {"verdict": "LOST"}}
+    concerns = derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, True,
+                               res_addatom=rsa)
+    assert not any("K143R" in c or "F126L" in c for c in concerns)
+
+
+def test_addatom_resistance_unchecked_adds_no_concern():
+    assert derive_concerns(CLEAN_CF, CLEAN_AM, CLEAN_SY, CLEAN_DM, CLEAN_PR, False,
+                           res_addatom=None) == []
+
+
 def test_stereo_isomer_dependent_is_flagged_for_novel_candidate():
     # a rank that flips with an unspecified stereocenter is not trustworthy
     st = {"verdict": "ISOMER-DEPENDENT"}

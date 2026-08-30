@@ -90,8 +90,13 @@ collapses in the pocket the mission targets — and vatalanib is one.
 
 1. Rigid single-atom deletion under-models real Y132F resistance (no conformational repacking,
    no efflux/expression changes).
-2. **Y132F only.** K143R (clade I) and F126L (clade III) need a side-chain repacker not in the
-   pinned environment — still `not-yet-checked`.
+2. **Y132F only** *(resolved 2026-08-30)*. K143R (clade I) and F126L (clade III) *add* side-chain
+   atoms, so they needed a side-chain repacker that was not in the pinned environment when this
+   run was written. That repacker is now pinned (`scripts/repack_mutant.py`, `pymol-open-source`
+   in the separate build-time env `environment-repack.yml`)
+   and both are measured as MODELED-ROTAMER pockets in the sibling run
+   [RESULTS_candidate_resistance_addatom.md](RESULTS_candidate_resistance_addatom.md) — which
+   surfaced flucloxacillin LOST on F126L, a demotion this Y132F-only run could not.
 3. Single rigid conformer; coordination necessary-not-sufficient.
 
 ## Reproduce

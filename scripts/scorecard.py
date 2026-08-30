@@ -34,9 +34,16 @@ NOT_YET_CHECKED = {
     # MD-flexibility one (no MD stack in the pinned env — see the prereg limitations).
     # pose-convergence (#71) is now measured (pose_convergence axis,
     # RESULTS_pose_convergence.md): within-search RMSD clustering of the frozen seed-42 poses.
-    # Y132F retention is now measured (resistance_retention axis, RESULTS_candidate_resistance.md);
-    # the OTHER C. auris mutants still need a side-chain repacker not in the pinned env.
-    "auris_other_mutants": "auris K143R/F126L mutant retention (#77; Y132F now measured)",
+    # Y132F retention is now measured (resistance_retention axis, RESULTS_candidate_resistance.md).
+    # K143R (clade I) and F126L (clade III) are now measured too (resistance_retention_addatom
+    # axis, RESULTS_candidate_resistance_addatom.md): both ADD side-chain atoms, so they are built
+    # with the pinned side-chain repacker (scripts/repack_mutant.py, minimum-strain rotamer) — a
+    # MODELED, not observed, geometry, labeled as such. All three dominant C. auris ERG11 point
+    # substitutions are now covered; what remains structurally unmodellable is:
+    "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance "
+                         "(#77) — an expression/copy-number event, not a CDS pocket point mutation, "
+                         "so this structural geometry axis cannot model it (all three point "
+                         "mutants Y132F/K143R/F126L now measured)",
     # protonation/tautomer (#84) is now measured (protomer axis, RESULTS_candidate_protomer.md):
     # each candidate's pH-7.4 microstates (obabel-band protonation x RDKit tautomers) are docked;
     # 6/16 are single-microstate (EXPLICIT), the rest ROBUST/MICROSTATE-DEPENDENT. This closes the
@@ -55,7 +62,7 @@ NOT_YET_CHECKED = {
 
 
 def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=None,
-                    cyp=None):
+                    cyp=None, res_addatom=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
@@ -78,6 +85,8 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=
       pt   shortlist_protomer.json      (protonation/tautomer verdict; None = not-yet-checked)
       en   shortlist_ensemble.json      (ensemble-consistency verdict; None = not-yet-checked)
       cyp  shortlist_cyp.json           (human-CYP off-target liability; None = not-yet-checked)
+      res_addatom  {mutant: verdict-row} for the add-atom C. auris mutants K143R/F126L
+                   (shortlist_resistance_{K143R,F126L}.json; None/empty = not-yet-checked)
     """
     concerns = []
     if cf.get("reaches_fungal_iron") is False:
@@ -103,6 +112,18 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=
     # the target the mission actually cares about. Control-exempt (see docstring).
     if res is not None and res.get("verdict") == "LOST" and not is_ctrl:
         concerns.append("loses coordination in C. auris Y132F pocket")
+    # Add-atom resistance mutants (#77): the same demotion for the clade-I K143R / clade-III F126L
+    # pockets. These receptors carry a MODELED (minimum-strain repacked) rotamer, not an observed
+    # geometry, so a LOST here is a weaker-structural-claim demotion than Y132F — but a candidate
+    # whose coordination collapses in a resistant pocket the mission targets is still flagged, per
+    # pocket. Control-exempt (see docstring). RETAINED (geometry not destroyed) never demotes.
+    if res_addatom and not is_ctrl:
+        # fixed clade order (K143R clade I, then F126L clade III), not alphabetical
+        lost = [m for m in ("K143R", "F126L")
+                if res_addatom.get(m) and res_addatom[m].get("verdict") == "LOST"]
+        if lost:
+            concerns.append("loses coordination in C. auris %s pocket (modeled-rotamer)"
+                            % "/".join(lost))
     # Stereochemistry (#85): a candidate whose rank flips with an UNSPECIFIED stereocenter is
     # demoted — the shortlist SMILES did not pin the isomer the geometry rests on. Control-exempt:
     # the ambiguous molecules are the racemic azole controls, docked per-isomer to exercise the
