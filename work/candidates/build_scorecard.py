@@ -19,6 +19,7 @@ Inputs (all produced by earlier, separately-validated runs):
   work/candidates/pose_convergence.json       within-search pose convergence (#71)
   work/candidates/shortlist_stereo.json       stereochemistry / isomer audit (#85)
   work/candidates/shortlist_protomer.json     protonation/tautomer microstate audit (#84)
+  work/candidates/shortlist_ensemble.json     crystallographic ensemble consistency (#70)
 
 Usage:  conda run -n openafr python work/candidates/build_scorecard.py
 Writes: work/candidates/shortlist_scorecard.json  and prints a readable table.
@@ -98,6 +99,13 @@ def load_protomer():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_ensemble():
+    path = os.path.join(C, "shortlist_ensemble.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -109,6 +117,7 @@ def build():
     convergence = load_convergence()
     stereo = load_stereo()
     protomer = load_protomer()
+    ensemble = load_ensemble()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -124,10 +133,11 @@ def build():
         pc = convergence.get(name, {})
         st = stereo.get(name, {})
         pt = protomer.get(name, {})
+        en = ensemble.get(name, {})
         is_ctrl = name in CONTROLS
 
         concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None,
-                                   st or None, pt or None)
+                                   st or None, pt or None, en or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -218,6 +228,14 @@ def build():
                 "n_protonation_states": pt.get("n_protonation_states"),
                 "state_spread_A": pt.get("state_spread"),
             },
+            "ensemble_consistency": {
+                "status": "proven" if en else "not-yet-checked",
+                "ensemble": "C. albicans CYP51 {5TZ1, 5FSA, 5V5Z}",
+                "verdict": en.get("verdict"),
+                "ensemble_min_nfe_A": en.get("ensemble_min"),
+                "ensemble_mean_nfe_A": en.get("ensemble_mean"),
+                "conformers_coordinating": en.get("n_conf_coord"),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -240,6 +258,7 @@ def build():
             "pose_convergence (within-search RMSD clustering)",
             "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
             "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
+            "ensemble_consistency (crystallographic C. albicans ensemble dock)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -297,15 +316,30 @@ def protomer_cell(c):
     return f"{tag}/{pt.get('n_states')}st"
 
 
+def ens_cell(c):
+    """Compact ensemble-consistency cell: verdict + conformers coordinating.
+
+    ROBUST = coordinates the iron in all 3 crystallographic conformers; frag = only 1
+    (single-snapshot artifact). ens-min in Angstrom is in the full JSON card."""
+    en = c["ensemble_consistency"]
+    if en["status"] != "proven":
+        return "—"
+    tag = {"ROBUST": "robust", "CONSISTENT": "consist", "CONFORMER-FRAGILE": "FRAGILE",
+           "NON-COORDINATING": "NONE", "UNRANKABLE": "unrank"}.get(en["verdict"], en["verdict"])
+    return f"{tag}/{en['conformers_coordinating']}"
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
-            "domain", "Y132F", "pose-conv", "stereo", "protomer", "precedent", "#concern")
-    w = "%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-10s %-11s %-12s %-16s %s"
+            "domain", "Y132F", "ensemble", "pose-conv", "stereo", "protomer",
+            "precedent", "#concern")
+    w = ("%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-11s %-10s %-11s %-12s "
+         "%-16s %s")
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
-    print("-" * 118)
+    print("-" * 130)
     for c in novel:
         print(w % (
             c["name"][:14],
@@ -316,6 +350,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            ens_cell(c),
             conv_cell(c),
             stereo_cell(c),
             protomer_cell(c),
@@ -325,7 +360,7 @@ def print_table(sc):
         ))
     print("\nCONTROLS (known azoles — validate the axes, not discoveries)")
     print(w % cols)
-    print("-" * 118)
+    print("-" * 130)
     for c in ctrl:
         print(w % (
             c["name"][:14],
@@ -336,6 +371,7 @@ def print_table(sc):
             f"{c['synthesizability']['sa_band']}",
             (",".join(c["applicability_domain"]["flags"]) or "clean")[:18],
             res_cell(c),
+            ens_cell(c),
             conv_cell(c),
             stereo_cell(c),
             protomer_cell(c),

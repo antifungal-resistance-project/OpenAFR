@@ -1,0 +1,379 @@
+{
+  "fe_cutoff": 3.0,
+  "min_coord_seeds": 3,
+  "conformers": [
+    "5TZ1",
+    "5FSA",
+    "5V5Z"
+  ],
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "wt_consensus": 2.371,
+      "ensemble_min": 2.371,
+      "ensemble_mean": 2.636,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.371,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.778,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.759,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "verinurad",
+      "wt_consensus": 2.417,
+      "ensemble_min": 2.417,
+      "ensemble_mean": 2.604,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.417,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.727,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.667,
+          "seeds_coordinating": "4/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "vatalanib",
+      "wt_consensus": 2.479,
+      "ensemble_min": 2.479,
+      "ensemble_mean": 2.672,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.479,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.725,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.811,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "flucloxacillin",
+      "wt_consensus": 2.517,
+      "ensemble_min": 2.517,
+      "ensemble_mean": 2.718,
+      "n_conf_coord": "2/3",
+      "verdict": "CONSISTENT",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.517,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.92,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": null,
+          "seeds_coordinating": "0/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "taranabant",
+      "wt_consensus": 2.564,
+      "ensemble_min": 2.564,
+      "ensemble_mean": 2.71,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.564,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.717,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.848,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "lersivirine",
+      "wt_consensus": 2.572,
+      "ensemble_min": 2.572,
+      "ensemble_mean": 2.629,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.572,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.72,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.596,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "L-838417",
+      "wt_consensus": 2.58,
+      "ensemble_min": 2.58,
+      "ensemble_mean": 2.773,
+      "n_conf_coord": "2/3",
+      "verdict": "CONSISTENT",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.58,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": null,
+          "seeds_coordinating": "0/5"
+        },
+        "5V5Z": {
+          "consensus": 2.965,
+          "seeds_coordinating": "3/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "LDN-27219",
+      "wt_consensus": 2.603,
+      "ensemble_min": 2.603,
+      "ensemble_mean": 2.774,
+      "n_conf_coord": "1/3",
+      "verdict": "CONFORMER-FRAGILE",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.603,
+          "seeds_coordinating": "2/5"
+        },
+        "5FSA": {
+          "consensus": null,
+          "seeds_coordinating": "0/5"
+        },
+        "5V5Z": {
+          "consensus": 2.944,
+          "seeds_coordinating": "4/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "R-1479",
+      "wt_consensus": 2.621,
+      "ensemble_min": 2.621,
+      "ensemble_mean": 2.743,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.621,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.794,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.814,
+          "seeds_coordinating": "3/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "ravuconazole",
+      "wt_consensus": 2.653,
+      "ensemble_min": 2.653,
+      "ensemble_mean": 2.768,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.653,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.697,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.953,
+          "seeds_coordinating": "3/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "voriconazole",
+      "wt_consensus": 2.657,
+      "ensemble_min": 2.657,
+      "ensemble_mean": 2.703,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.657,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.722,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.731,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "nolatrexed",
+      "wt_consensus": 2.677,
+      "ensemble_min": 2.677,
+      "ensemble_mean": 2.75,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.677,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.741,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.833,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "olprinone",
+      "wt_consensus": 2.68,
+      "ensemble_min": 2.68,
+      "ensemble_mean": 2.68,
+      "n_conf_coord": "1/3",
+      "verdict": "CONFORMER-FRAGILE",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.68,
+          "seeds_coordinating": "4/5"
+        },
+        "5FSA": {
+          "consensus": null,
+          "seeds_coordinating": "0/5"
+        },
+        "5V5Z": {
+          "consensus": null,
+          "seeds_coordinating": "0/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "letrozole",
+      "wt_consensus": 2.705,
+      "ensemble_min": 2.705,
+      "ensemble_mean": 2.778,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.705,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.809,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.82,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "fluconazole",
+      "wt_consensus": 2.711,
+      "ensemble_min": 2.711,
+      "ensemble_mean": 2.766,
+      "n_conf_coord": "3/3",
+      "verdict": "ROBUST",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.711,
+          "seeds_coordinating": "5/5"
+        },
+        "5FSA": {
+          "consensus": 2.785,
+          "seeds_coordinating": "5/5"
+        },
+        "5V5Z": {
+          "consensus": 2.802,
+          "seeds_coordinating": "5/5"
+        }
+      },
+      "excluded_conformers": []
+    },
+    {
+      "name": "ketoconazole",
+      "wt_consensus": 2.921,
+      "ensemble_min": 2.686,
+      "ensemble_mean": 2.801,
+      "n_conf_coord": "2/3",
+      "verdict": "CONSISTENT",
+      "per_conformer": {
+        "5TZ1": {
+          "consensus": 2.921,
+          "seeds_coordinating": "1/5"
+        },
+        "5FSA": {
+          "consensus": 2.686,
+          "seeds_coordinating": "4/5"
+        },
+        "5V5Z": {
+          "consensus": 2.797,
+          "seeds_coordinating": "4/5"
+        }
+      },
+      "excluded_conformers": []
+    }
+  ]
+}
