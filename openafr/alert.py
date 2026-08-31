@@ -55,6 +55,17 @@ Three tiers, derived from the two upstream verdicts, never invented:
 Priority is a *triage aid*, not a clinical claim; every alert still carries the raw
 emergence numbers and the structural caveats so the reader can overrule it.
 
+Two genes, one loop
+-------------------
+`compose_alerts` is the ERG11/azole path described above -- emergence joined to the #24
+structural fit verdict. `compose_fks1_alerts` is its FKS1/echinocandin (v2) sibling and
+is DETECTION-ONLY: it runs the identical detector over the `fks1_call` column but claims
+NO structural verdict, because echinocandins coordinate no metal, so the CYP51/heme-iron
+geometry the ERG11 so-what rests on does not transfer to a glucan synthase (see
+`openafr/fks1_caller.py`). It therefore never reaches ACT-NOW (that tier requires a
+weaker-fit verdict) -- only WATCH/CONTEXT -- and states the detection-only caveat on
+every alert. The two share the gene-agnostic half (`_base_alert_fields`, `_rank`).
+
 Stdlib only. Consumes openafr.emergence signals + openafr.structural verdicts; runs
 fully offline against the checked-in receptor/ligand.
 """
@@ -177,50 +188,148 @@ def compose_alerts(records, as_of, window_days=180, min_count=3, min_delta=0.05,
 
     alerts = []
     for signal, verdict in zip(result["signals"], verdicts):
-        recent_carriers = [by_key[k] for k in signal["carrier_keys"] if k in by_key]
-        regions = _regions(recent_carriers)
-        mut_carriers = all_carriers.get(signal["mutation"], [])
-        first_seen = _first_seen(mut_carriers)
-        priority = _priority(signal, verdict)
-        alerts.append({
-            "mutation": signal["mutation"],
-            "canonical": signal["canonical"],
-            "priority": priority,
-            "headline": _headline(signal, verdict, regions, first_seen),
-            "emergence": {
-                "first_appearance": signal["first_appearance"],
-                "rising": signal["rising"],
-                "possible_backlog": signal["possible_backlog"],
-                "backlog_reason": signal["backlog_reason"],
-                "recent_count": signal["recent_count"],
-                "recent_called": signal["recent_called"],
-                "baseline_count": signal["baseline_count"],
-                "baseline_called": signal["baseline_called"],
-                "recent_prop": signal["recent_prop"],
-                "baseline_prop": signal["baseline_prop"],
-                "delta": signal["delta"],
-            },
-            "regions": regions,
-            "n_regions": len(regions),
-            "first_seen": first_seen,
-            "n_carriers_total": len(mut_carriers),
-            "structural": {
-                "evidence_class": verdict["evidence_class"],
-                "confidence": verdict["confidence"],
-                "direction": verdict["direction"],
-                "fluconazole_fit_verdict": verdict["fluconazole_fit_verdict"],
-                "lost_contacts": verdict["lost_contacts"],
-                "empirical": verdict["empirical"],
-                "caveats": verdict["caveats"],
-            },
-            "carrier_keys": signal["carrier_keys"],
-        })
+        base = _base_alert_fields(signal, by_key, all_carriers)
+        base["priority"] = _priority(signal, verdict)
+        base["headline"] = _headline(signal, verdict, base["regions"], base["first_seen"])
+        base["structural"] = {
+            "evidence_class": verdict["evidence_class"],
+            "confidence": verdict["confidence"],
+            "direction": verdict["direction"],
+            "fluconazole_fit_verdict": verdict["fluconazole_fit_verdict"],
+            "lost_contacts": verdict["lost_contacts"],
+            "empirical": verdict["empirical"],
+            "caveats": verdict["caveats"],
+        }
+        alerts.append(base)
 
-    # Rank by so-what tier, then loudest emergence within a tier (keeps the
-    # detector's genuine-before-backlog, biggest-share-first ordering).
+    out["alerts"] = _rank(alerts)
+    return out
+
+
+def _base_alert_fields(signal, by_key, all_carriers):
+    """The gene-agnostic half of an alert: identity, the emergence block, and the
+    epidemiology (regions / first-seen / total carriers) the detector dropped.
+
+    Shared by the ERG11 (compose_alerts) and FKS1 (compose_fks1_alerts) composers;
+    each then adds its own so-what layer -- a structural fit verdict for ERG11, none
+    for the detection-only FKS1 track.
+    """
+    recent_carriers = [by_key[k] for k in signal["carrier_keys"] if k in by_key]
+    regions = _regions(recent_carriers)
+    mut_carriers = all_carriers.get(signal["mutation"], [])
+    first_seen = _first_seen(mut_carriers)
+    return {
+        "mutation": signal["mutation"],
+        "canonical": signal["canonical"],
+        "emergence": {
+            "first_appearance": signal["first_appearance"],
+            "rising": signal["rising"],
+            "possible_backlog": signal["possible_backlog"],
+            "backlog_reason": signal["backlog_reason"],
+            "recent_count": signal["recent_count"],
+            "recent_called": signal["recent_called"],
+            "baseline_count": signal["baseline_count"],
+            "baseline_called": signal["baseline_called"],
+            "recent_prop": signal["recent_prop"],
+            "baseline_prop": signal["baseline_prop"],
+            "delta": signal["delta"],
+        },
+        "regions": regions,
+        "n_regions": len(regions),
+        "first_seen": first_seen,
+        "n_carriers_total": len(mut_carriers),
+        "carrier_keys": signal["carrier_keys"],
+    }
+
+
+def _rank(alerts):
+    """Rank by so-what tier, then loudest emergence within a tier (keeps the
+    detector's genuine-before-backlog, biggest-share-first ordering)."""
     alerts.sort(key=lambda a: (PRIORITY[a["priority"]], -a["emergence"]["delta"],
                                -a["emergence"]["recent_count"], a["mutation"]))
-    out["alerts"] = alerts
+    return alerts
+
+
+# -------------------------- FKS1 (echinocandin) -------------------------------
+#
+# The FKS1/echinocandin early-warning track (v2) is DETECTION-ONLY by design:
+# echinocandins do not coordinate a metal, so the CYP51/heme-iron geometry that
+# powers the ERG11 structural so-what does not transfer to a glucan synthase (see
+# openafr/fks1_caller.py, data/earlywarning/fks1_reference/PROVENANCE.md). So an FKS1
+# alert reports the *emergence* signal honestly and stops there -- no structural fit
+# verdict is invented. That also means no "act-now" tier: act-now is reserved for a
+# genuine spike with a measured weaker-fit structural verdict, which FKS1 never has.
+
+# Stated on every FKS1 alert so a reader never mistakes the absence of a fit call for
+# an all-clear.
+FKS1_DETECTION_ONLY_CAVEAT = (
+    "detection only -- no structural verdict; echinocandins do not coordinate a "
+    "metal, so the CYP51/heme-iron geometry does not transfer to FKS1.")
+
+
+def _fks1_priority(signal):
+    """Detection-only so-what tier: backlog -> context, otherwise watch. There is no
+    act-now for FKS1 because that tier requires a structural weaker-fit verdict the
+    detection-only track deliberately does not claim."""
+    return "context" if signal["possible_backlog"] else "watch"
+
+
+def _fks1_headline(signal, regions, first_seen):
+    """One plain sentence for an FKS1 signal -- mutation, spread, geography, first-seen
+    -- ending in the detection-only caveat instead of a fit so-what."""
+    mut = signal["mutation"]
+    n = signal["recent_count"]
+    isolate = "isolate" if n == 1 else "isolates"
+    geo = (f"across {len(regions)} region(s) ({', '.join(regions)})" if regions
+           else "of undisclosed geography")
+    seen = first_seen["collected"] or first_seen["visible"] or "an unknown date"
+    tag = " (possible archival backlog)" if signal["possible_backlog"] else ""
+    return (f"{mut} is {_emergence_kind(signal)} on {n} {isolate} {geo}, first seen "
+            f"{seen}{tag}; {FKS1_DETECTION_ONLY_CAVEAT}")
+
+
+def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=0.05,
+                        backlog_frac=0.5):
+    """The FKS1/echinocandin analog of compose_alerts -- DETECTION-ONLY.
+
+    Runs the same emergence detector over the `fks1_call` column instead of
+    `erg11_call`, enriches each flagged signal with regions / first-seen / carriers,
+    and composes alerts WITHOUT a structural fit verdict (by design; see the section
+    banner above). The result dict mirrors compose_alerts' shape -- as_of, window_days,
+    thresholds, coverage, optional note, ranked alerts -- with two extra markers:
+
+      gene            -- "FKS1"
+      detection_only  -- True
+
+    and each alert carries the standard identity/emergence/epidemiology fields but no
+    `structural` block; render_fks1_markdown consumes exactly this dict.
+    """
+    result = emergence.detect_emergence(
+        records, as_of, window_days=window_days, min_count=min_count,
+        min_delta=min_delta, backlog_frac=backlog_frac, call_field="fks1_call")
+
+    out = {
+        "as_of": result["as_of"], "window_days": result["window_days"],
+        "thresholds": result["thresholds"], "coverage": result["coverage"],
+        "gene": "FKS1", "detection_only": True, "alerts": [],
+    }
+    if "note" in result:
+        out["note"] = result["note"]
+    if not result["signals"]:
+        return out
+
+    by_key = {r["isolate_key"]: r for r in records}
+    all_carriers = emergence.mutation_carriers(records, call_field="fks1_call")
+
+    alerts = []
+    for signal in result["signals"]:
+        base = _base_alert_fields(signal, by_key, all_carriers)
+        base["priority"] = _fks1_priority(signal)
+        base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"])
+        base["detection_only"] = True
+        alerts.append(base)
+
+    out["alerts"] = _rank(alerts)
     return out
 
 
@@ -303,6 +412,65 @@ def render_markdown(alert_result):
             lines.append(f"- **Lost drug contacts (geometry):** {lc}")
         for cav in s["caveats"]:
             lines.append(f"  - _caveat:_ {cav}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def render_fks1_markdown(alert_result):
+    """The human form for a DETECTION-ONLY FKS1/echinocandin alert.
+
+    Same 'so-what in one screen' shape as render_markdown -- header, priority
+    roll-call, one compact block per alert -- but titled for echinocandins, with no
+    structural-fit line (FKS1 claims none) and a standing banner that the absence of a
+    fit verdict is by design, not an all-clear.
+    """
+    r = alert_result
+    c = r["coverage"]
+    lines = ["# C. auris echinocandin (FKS1) early-warning alert",
+             "",
+             f"> **Detection only.** {FKS1_DETECTION_ONLY_CAVEAT}",
+             "",
+             f"- **As of** {r['as_of']}  (recent window {r['window_days']}d)",
+             f"- **Coverage** baseline {c['baseline_called']}/{c['baseline_total']} "
+             f"called, recent {c['recent_called']}/{c['recent_total']} called, "
+             f"{c['undated']} undated",
+             f"- **Thresholds** {r['thresholds']}"]
+
+    if "note" in r:
+        lines += ["", f"> **No calls to assess.** {r['note']}"]
+    if not r["alerts"]:
+        lines += ["", "_No emergence alerts over the configured thresholds._"]
+        return "\n".join(lines) + "\n"
+
+    counts = {t: sum(1 for a in r["alerts"] if a["priority"] == t) for t in PRIORITY}
+    lines += ["",
+              f"**{len(r['alerts'])} alert(s):** "
+              f"{counts['watch']} watch, {counts['context']} context.",
+              ""]
+
+    for a in r["alerts"]:
+        e = a["emergence"]
+        lines.append(f"## `{a['mutation']}` — {_BADGE[a['priority']]}")
+        lines.append("")
+        lines.append(a["headline"])
+        lines.append("")
+        kind = _emergence_kind({"first_appearance": e["first_appearance"],
+                                "rising": e["rising"]})
+        lines.append(
+            f"- **Emergence:** {kind} — baseline {e['baseline_count']}/"
+            f"{e['baseline_called']} ({e['baseline_prop']:.1%}) → recent "
+            f"{e['recent_count']}/{e['recent_called']} ({e['recent_prop']:.1%}), "
+            f"Δ {e['delta']:+.1%}")
+        if e["possible_backlog"]:
+            lines.append(f"- **Backlog check:** ⚠ {e['backlog_reason']}")
+        else:
+            lines.append(f"- **Backlog check:** genuine — {e['backlog_reason']}")
+        geo = ", ".join(a["regions"]) if a["regions"] else "undisclosed"
+        lines.append(f"- **Geography:** {a['n_regions']} region(s): {geo} "
+                     f"({a['n_carriers_total']} carrier(s) total in store)")
+        lines.append(f"- **First seen:** {_fmt_first_seen(a['first_seen'])}")
+        lines.append(f"- **Structural fit:** none claimed — {FKS1_DETECTION_ONLY_CAVEAT}")
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
