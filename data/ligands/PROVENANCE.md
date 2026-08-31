@@ -93,6 +93,27 @@ Result (`work/RESULTS_external.md`): mode-C **AUC 0.715** (permutation p < 0.000
 estimate clears the 0.70 bar; CI dips below at n=50). Frozen with
 `work/PREREGISTRATION_external.md`; sha256s in `work/PREREG_external.sha256`.
 
+### Temporal (prospective) holdout — `temporal_actives.smi` / `temporal_decoys.smi` (scaffold, release-gated, added 2026-08-31)
+
+The **stronger follow-up** the external holdout's own comment named (issue #82,
+`work/PREREGISTRATION_temporal.md`). #108 above answered the overfitting objection with a
+never-*scored* subset of the *same* curated population; its one honest residual was "a clean
+never-touched holdout, but **not a later time slice**." This closes that: the split is
+**temporal**, not just never-scored — every molecule's earliest antifungal / CYP51 activity is
+reported in a ChEMBL document dated strictly after the tuning corpus (document year > `2026`),
+so it could not have informed the criterion or its 3.0 Å cutoff even in principle. Built by
+`scripts/make_temporal_holdout.py` (`is_temporal` predicate), same frozen decoy discipline as
+every set, disjoint by ChEMBL id from every used set **including the #108 external sets**.
+
+**Release-gated (scaffold only today).** The set materializes only once a ChEMBL release newer
+than the 2026-08 tuning release accrues post-cutoff (> 2026) antifungal / CYP51 documents — the
+"needs a newer ChEMBL release" wall #82's #108 comment named. The current CYP51/azole universe
+is exhausted, so the builder writes nothing (NOT-YET-AVAILABLE) and `validate_gate_temporal.py`
+reports `not-yet-run (release-gated)`, mirroring the metal-aware baseline harness (#83). The
+rule, cutoff, disjointness, domain and three-outcome interpretation (reused verbatim from #108)
+are all **frozen now** (`work/PREREG_temporal.sha256`) and unit-tested offline
+(`tests/test_temporal_gate.py`); only the fetch + dock + grade wait on the newer release.
+
 ## The problem T1 fixes
 
 Two independent findings converged on the active set:
