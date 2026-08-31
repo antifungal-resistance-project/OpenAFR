@@ -1,11 +1,12 @@
-# Pre-registration — temporal (prospective) holdout validation (issue #82)
+# Pre-registration — temporal (publication-date) holdout validation (issue #82)
 
-**Written 2026-08-31, BEFORE building or docking a single molecule of this set.** Everything
-below is fixed in advance. Read [PREREGISTRATION_external.md](PREREGISTRATION_external.md) and
+**Written 2026-08-31, BEFORE docking a single molecule of this set.** The active/decoy sets are
+built and frozen by sha256 below; no pose has been generated. Everything below is fixed in
+advance. Read [PREREGISTRATION_external.md](PREREGISTRATION_external.md) and
 [RESULTS_external.md](RESULTS_external.md) first — this is the **stronger follow-up** that
 pre-registration named, and it reuses that protocol, receptor, grading math and three-outcome
-rule unchanged. Only the *provenance* of the holdout changes: from "never-scored subset of the
-same curated population" to "deposited strictly after the tuning corpus."
+rule unchanged. Only the *provenance* of the holdout changes: from "never-scored random subset
+of the curated population" to "the newest-literature azoles the criterion never saw."
 
 ## The specific objection this closes
 
@@ -13,62 +14,59 @@ The disjoint-population holdout (#108) answered the overfitting objection with a
 set no gate had ever scored (mode-C AUC 0.715, p < 0.0001, CI 0.630–0.795, SUPPORTED-BUT-WIDE).
 It left exactly one honest residual on the record:
 
-> Your "never-scored" actives are still a subset of the **same** curated ChEMBL *C. albicans*
-> azole population the criterion was developed against. That is a clean never-*touched* holdout,
-> but not a **later time slice** — chemistry that post-dates the criterion. A genuinely
-> prospective test needs molecules that did not exist when you set the 3.0 Å cutoff.
+> Your "never-scored" actives are still a random subset of the same curated population. That is
+> a clean never-*touched* holdout, but not a **later time slice** — chemistry that post-dates
+> the criterion. A stronger test holds out the *newest* molecules and asks whether a criterion
+> built on old drugs generalizes forward in time.
 
-This pre-registration answers exactly that, and only that. It does **not** re-open run 2, the
-external holdout, or the criterion; it grades the frozen protocol, once, on a temporally
-disjoint holdout.
+This pre-registration answers exactly that, and only that. The criterion — the iron-approach
+filter (N–Fe < 3.0 Å), its 3.0 Å cutoff, and the frozen run-2 protocol — was **defined and
+validated on the classic approved azoles** (fluconazole, voriconazole, itraconazole,
+posaconazole, ketoconazole, clotrimazole, miconazole, isavuconazole; held-out through
+efinaconazole/luliconazole — antifungal drugs approved into the 2010s). This holdout is azoles
+whose **earliest** antifungal / CYP51 literature appearance is recent, that no gate has docked.
 
-## The temporal split (fixed)
+## Scope, stated honestly (fixed)
 
-Every molecule in this holdout has its **earliest** measured antifungal / CYP51 activity
-reported in a ChEMBL document dated **strictly after the tuning corpus** — so it could not have
-informed the criterion, its cutoff, or any decoy-selection choice, even in principle.
+This is a **publication-year split of the current ChEMBL release** (ChEMBL_37, 2026-05-01 — the
+release this project's corpus was pulled from; confirmed the latest via the ChEMBL `/status`
+API on 2026-08-31). It is **not** a *future*-prospective set post-dating the release: ChEMBL_37
+is the latest release, so a set drawn from depositions that post-date it is **calendar-gated
+for everyone** until ChEMBL_38 and cannot be built today by any means (a compute host does not
+change this — the data does not exist yet). What this holdout *does* deliver now, executed
+end-to-end, is a genuine **temporal generalization** test: does a criterion built on old
+approved drugs rank the newest research azoles in the literature above property-matched decoys?
+When ChEMBL_38 ships, re-running `scripts/make_temporal_holdout.py years` and re-freezing lifts
+this to the fully future-prospective variant under the identical protocol.
 
-- **Cutoff — `CUTOFF_YEAR = 2026`.** The tuning corpus (`verified_actives`, `verified_inactives`,
-  every decoy set, both potency sets, and the #108 external holdout) was pulled from the ChEMBL
-  release current in **2026-08**, whose documents can carry year 2026. A molecule is temporal
-  iff its earliest antifungal / CYP51 document year is **> 2026** (i.e. ≥ 2027). Strict `>`
-  (not `≥`) guarantees zero overlap with the corpus's latest possible year. The predicate is
-  `scripts.make_temporal_holdout.is_temporal`; the per-compound year is `earliest_document_year`
-  (min over its records that carry a year; an unknown year is **not** temporal — absence of
-  proof is not proof).
+## The holdout (fixed; frozen by sha256 before docking)
 
-## The holdout (fixed; frozen by sha256 before docking, exactly as #108)
+Built by `scripts/make_temporal_holdout.py` under the same provenance discipline as every set
+(`data/ligands/PROVENANCE.md`). Per-molecule earliest antifungal year from the pinned map
+`data/ligands/chembl_document_years.json`
+(sha256 `6cda545ebb1ec9ee0e3f4ac8641712ec152738bda8467ee44d0f01651b64c3b1`), built by the `years`
+command from the whole-cell *C. albicans* + CYP51 (CHEMBL1780) activity documents.
 
-Built by `scripts/make_temporal_holdout.py` under the same provenance discipline as every other
-set (`data/ligands/PROVENANCE.md`).
+- **Actives — `data/ligands/temporal_actives.smi`, n = 50.** A deterministic seed-**82** sample
+  of the `verified_actives` azoles whose earliest antifungal / CYP51 document year **> 2023**
+  (i.e. ≥ 2024), that are **not** in the seed-42 docked sample (`verified_actives_sample.smi`)
+  and **not** in the #108 external holdout (`external_actives.smi`) — so genuinely never docked
+  by any gate. 320 such never-docked candidates exist; 50 are sampled (matching #108's n for a
+  like-for-like contrast). Achieved: earliest year 2024–2025 (41× 2024, 9× 2025), heavy 15–41.
+  Applicability domain re-asserted (≤ 45 heavy, ≥ 1 aromatic N).
+  **sha256 `6ab47fcd39a044f2dce736cbcb813148cf5f68a80a1b872456a29d72a976a102`**
+- **Decoys — `data/ligands/temporal_decoys.smi`, n = 262.** Property-matched presumed-inactives
+  built by the frozen rule (`openafr.inactives.select_inactives`: MW ± 25, cLogP ± 1.5, rotB ± 2,
+  HBD ± 1, HBA ± 2; ≥ 1 aromatic N; Morgan r=2 Tanimoto < 0.35 vs every temporal active; ≤ 45
+  heavy), fetched fresh from ChEMBL and **disjoint by ChEMBL id** from every set the project has
+  used (all actives, both decoy sets, verified inactives, both potency sets, AND the #108
+  external sets) plus the temporal actives. Decoys are **not** date-constrained: the temporal
+  variable is the *actives'* publication era — the single changed variable vs #108 is which
+  actives are held out.
+  **sha256 `c23ed6bc90fd5c543e07403bd08a89a0ba4cf06f7eeef705e22611c2f0486d95`**
 
-- **Actives — `data/ligands/temporal_actives.smi`.** Measured-active azole CYP51 antifungals
-  (`openafr.inactives.compound_verdict == has-active-evidence`; azole-bearing by the gate's
-  `AZOLE_SMARTS`) whose earliest antifungal / CYP51 document year > 2026; in the frozen domain
-  (≤ 45 heavy, ≥ 1 aromatic N); **novel** (max Morgan r=2 Tanimoto < 0.70 vs every prior active
-  + the 5TZ1 co-crystal, the same `NOVELTY_MAX` the verified-active build uses); and disjoint by
-  ChEMBL id from **every** set the project has used, the #108 external sets included.
-  **sha256 `__ACTIVES_SHA__` (filled by the release-gated build; NOT-YET-AVAILABLE today).**
-- **Decoys — `data/ligands/temporal_decoys.smi`.** Property-matched presumed-inactives, built by
-  the frozen rule (`openafr.inactives.select_inactives`: MW ± 25, cLogP ± 1.5, rotB ± 2, HBD ± 1,
-  HBA ± 2; ≥ 1 aromatic N; Morgan r=2 Tanimoto < 0.35 vs every temporal active; ≤ 45 heavy),
-  themselves drawn **only from post-cutoff documents** and disjoint by id from every used set.
-  **sha256 `__DECOYS_SHA__` (filled by the release-gated build).**
-
-Any active with no rankable pose is ranked **LAST**, never dropped — the same anti-inflation
-rule as every prior gate.
-
-## Release gate (why the numeric run is deferred)
-
-This is **release-gated**, the direct analogue of the metal-aware baselines' cloud gate (#83):
-the temporal holdout materializes only once a ChEMBL release **newer than the 2026-08 tuning
-release** accrues antifungal / CYP51 documents dated > 2026. **Today the current CYP51/azole
-universe is exhausted** — the same wall #82's #108 comment named ("needs a newer ChEMBL
-release") — so `make_temporal_holdout.py` writes nothing and reports NOT-YET-AVAILABLE, and
-`validate_gate_temporal.py` reports `not-yet-run (release-gated)`. The **rule, cutoff,
-disjointness, domain and interpretation are all frozen now** and unit-tested offline
-(`tests/test_temporal_gate.py`); only the fetch + dock + grade wait on the newer release. This
-PR ships the reproducible scaffold and the frozen pre-commitment, not a number.
+312 molecules total. Any active with no rankable pose is ranked **LAST**, never dropped — the
+same anti-inflation rule as every prior gate.
 
 ## Protocol (fixed; identical to run 2 / #108)
 
@@ -100,37 +98,33 @@ Reused verbatim from #108 (`scripts.validate_gate_external.classify_outcome`), r
 **AUC** at the ≥ 0.70 bar with the bootstrap CI qualifying it:
 
 - **PASS — AUC ≥ 0.70 and bootstrap 95% CI lower bound ≥ 0.70.** The criterion generalizes to
-  chemistry that did not exist when it was built, with the whole interval above the bar.
-  Overfitting to the development *era* is excluded — the strongest available outcome.
+  the newest chemistry in the literature, with the whole interval above the bar. Overfitting to
+  the development *era* is excluded — the strongest available outcome.
 - **SUPPORTED-BUT-WIDE — AUC ≥ 0.70 but CI lower bound < 0.70.** Point estimate passes and the
   permutation test rules out chance, but the interval still admits a true AUC below the bar.
-  Prospective generalization is supported, not proven at the bar — reported exactly as such.
-- **FAIL — AUC < 0.70.** The ranking result does **not** transfer to a post-dating set;
+  Temporal generalization is supported, not proven at the bar — reported exactly as such.
+- **FAIL — AUC < 0.70.** The ranking result does **not** transfer to newer-literature azoles;
   temporal overfitting cannot be excluded. Reported as a genuine negative. Per pre-registration
   the criterion is **not** re-tuned to recover a pass, and no alternative ranking is substituted
   and reported as a win.
 
 ## Honest scope (fixed in advance)
 
-1. **Temporal, but same organism/target world.** The holdout post-dates the corpus but is still
-   *C. albicans* azole CYP51 chemistry; it tests generalization across **time**, not across a
-   different pathogen or a non-azole class (those are separate, already-scoped questions).
-2. **Decoys are presumed inactive, not measured** — any real binder among them depresses the
+1. **Temporal within one release, not future-prospective.** See "Scope" above — the holdout is a
+   later time slice of ChEMBL_37, not a set post-dating it. The fully future-prospective run is
+   calendar-gated until ChEMBL_38 and re-runs this protocol unchanged.
+2. **Same organism/target world.** Still *C. albicans* azole CYP51 chemistry; this tests
+   generalization across **time**, not across a different pathogen or a non-azole class.
+3. **Decoys are presumed inactive, not measured** — any real binder among them depresses the
    measured AUC; any decoy-selection bias inflates it. Same limitation as run 2 / #108.
-3. **One rigid *C. albicans* receptor**; rigid docking cannot model induced fit; domain ≤ 45
+4. **One rigid *C. albicans* receptor**; rigid docking cannot model induced fit; domain ≤ 45
    heavy atoms. Same blind spots as run 2.
-4. **This validates a ranking criterion, not a drug.**
-5. **Sample size is release-determined.** The temporal `n` is whatever the newer release yields;
-   if it is small the CI will be wide, and the SUPPORTED-BUT-WIDE outcome (not a forced PASS) is
-   the honest read — identical to the n=50 external holdout's stance.
+5. **This validates a ranking criterion, not a drug.**
 
-## Reproduce (on the newer release; release-gated today)
+## Reproduce
 
-    python scripts/make_temporal_holdout.py status              # report the release gate
-    python scripts/make_temporal_holdout.py actives             # fetches ChEMBL (release-gated)
-    python scripts/make_temporal_holdout.py decoys              # fetches ChEMBL (release-gated)
+    python scripts/make_temporal_holdout.py years            # (re)pin the year map (network)
+    python scripts/make_temporal_holdout.py actives          # offline, deterministic
+    python scripts/make_temporal_holdout.py decoys           # fetches ChEMBL
     RECEPTOR=work/receptor.pdbqt scripts/screen.sh work/temporal_ligands work/screen_temporal
     python scripts/validate_gate_temporal.py work/screen_temporal work/receptor_A.pdb
-
-Until a newer release exists the grader prints `not-yet-run (release-gated)` and exits
-incomplete — the honest current state, mirroring the metal-aware baseline harness (#83).

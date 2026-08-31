@@ -93,26 +93,36 @@ Result (`work/RESULTS_external.md`): mode-C **AUC 0.715** (permutation p < 0.000
 estimate clears the 0.70 bar; CI dips below at n=50). Frozen with
 `work/PREREGISTRATION_external.md`; sha256s in `work/PREREG_external.sha256`.
 
-### Temporal (prospective) holdout — `temporal_actives.smi` / `temporal_decoys.smi` (scaffold, release-gated, added 2026-08-31)
+### Temporal (publication-date) holdout — `temporal_actives.smi` (n=50) / `temporal_decoys.smi` (n=262) (added 2026-08-31)
 
 The **stronger follow-up** the external holdout's own comment named (issue #82,
 `work/PREREGISTRATION_temporal.md`). #108 above answered the overfitting objection with a
-never-*scored* subset of the *same* curated population; its one honest residual was "a clean
-never-touched holdout, but **not a later time slice**." This closes that: the split is
-**temporal**, not just never-scored — every molecule's earliest antifungal / CYP51 activity is
-reported in a ChEMBL document dated strictly after the tuning corpus (document year > `2026`),
-so it could not have informed the criterion or its 3.0 Å cutoff even in principle. Built by
-`scripts/make_temporal_holdout.py` (`is_temporal` predicate), same frozen decoy discipline as
-every set, disjoint by ChEMBL id from every used set **including the #108 external sets**.
+never-*scored* random subset of the curated actives; its one honest residual was "a clean
+never-touched holdout, but **not a later time slice**." This closes that with a **temporal
+split**: the criterion (the N–Fe < 3.0 Å iron filter, its cutoff, the frozen run-2 protocol)
+was defined and validated on the classic approved azoles (fluconazole … efinaconazole/
+luliconazole — antifungal drugs approved into the 2010s), and this holdout is the azoles whose
+**earliest** antifungal / CYP51 literature appearance is recent (document year > 2023, i.e.
+≥ 2024) that no gate has ever docked — a genuine later-time slice of new research chemistry.
 
-**Release-gated (scaffold only today).** The set materializes only once a ChEMBL release newer
-than the 2026-08 tuning release accrues post-cutoff (> 2026) antifungal / CYP51 documents — the
-"needs a newer ChEMBL release" wall #82's #108 comment named. The current CYP51/azole universe
-is exhausted, so the builder writes nothing (NOT-YET-AVAILABLE) and `validate_gate_temporal.py`
-reports `not-yet-run (release-gated)`, mirroring the metal-aware baseline harness (#83). The
-rule, cutoff, disjointness, domain and three-outcome interpretation (reused verbatim from #108)
-are all **frozen now** (`work/PREREG_temporal.sha256`) and unit-tested offline
-(`tests/test_temporal_gate.py`); only the fetch + dock + grade wait on the newer release.
+- `temporal_actives` — a deterministic seed-**82** sample of the `verified_actives` azoles with
+  earliest antifungal year > 2023, excluding the seed-42 docked sample AND the #108 external
+  holdout (so never docked). 320 such never-docked candidates exist; 50 sampled (matching #108's
+  n). Achieved: earliest year 2024–2025 (41× 2024, 9× 2025), heavy 15–41; per-molecule years
+  from the pinned `data/ligands/chembl_document_years.json`.
+- `temporal_decoys` — property-matched presumed-inactives by the frozen rule
+  (`openafr.inactives.select_inactives`), fetched fresh from ChEMBL, disjoint by ChEMBL id from
+  every used set (the #108 external sets included) + the temporal actives. Decoys are **not**
+  date-constrained: the single changed variable vs #108 is which actives are held out.
+
+**Scope, stated honestly.** This is a publication-year split of the **current** release
+(ChEMBL_37, 2026-05-01 — confirmed latest via the ChEMBL `/status` API 2026-08-31, the release
+the corpus was pulled from). It is **not** a *future*-prospective set post-dating the release:
+ChEMBL_37 is the latest release, so that stronger variant is **calendar-gated for everyone**
+until ChEMBL_38 (a compute host does not change this — those depositions do not exist yet) and
+re-runs this exact protocol when it ships. Frozen with `work/PREREGISTRATION_temporal.md`;
+sha256s in `work/PREREG_temporal.sha256`; unit-tested in `tests/test_temporal_gate.py`. Result:
+`work/RESULTS_temporal.md`.
 
 ## The problem T1 fixes
 

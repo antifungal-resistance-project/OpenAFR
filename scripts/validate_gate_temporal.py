@@ -1,18 +1,14 @@
 """Temporal-holdout gate — implements work/PREREGISTRATION_temporal.md (issue #82, stronger
 follow-up to the disjoint-population holdout #108).
 
-Grades the FROZEN run-2 protocol, unchanged, on a genuinely PROSPECTIVE active/decoy holdout
-(data/ligands/temporal_actives.smi + temporal_decoys.smi) — molecules whose earliest measured
-antifungal / CYP51 activity was reported in ChEMBL documents dated strictly after the tuning
-corpus. This closes the one honest residual the #108 holdout left on the record ("a clean
-never-touched holdout, but not a later time slice").
-
-RELEASE-GATED: the temporal set materializes only once a newer ChEMBL release accrues
-post-cutoff depositions (scripts/make_temporal_holdout.py). Until the set files AND their docked
-poses exist, this grader reports `not-yet-run (release-gated)` and exits incomplete — the same
-"scaffold now, numeric run on the gated host" honesty as the multi-baseline gate (#83). The
-grading math, the pass bar and the pre-registered three-outcome interpretation are reused
-verbatim from the external gate (#108), so only the set changes.
+Grades the FROZEN run-2 protocol, unchanged, on a publication-date holdout
+(data/ligands/temporal_actives.smi + temporal_decoys.smi): the newest-literature azoles
+(earliest antifungal / CYP51 document year >= 2024) that no gate has ever docked, versus
+property-matched decoys. This closes the one honest residual the #108 holdout left on the
+record ("a clean never-touched holdout, but not a later time slice") — the criterion was
+defined on the classic approved azoles, and this tests whether it ranks recent research
+chemistry it never saw. The grading math, the pass bar and the three-outcome interpretation
+are reused verbatim from the external gate (#108); only the held-out set changes.
 
 Primary (gates): mode C — rank by minimum azole-nitrogen-to-heme-iron distance.
 Secondary (report only): mode A — best Vina affinity (the run-2 worse-than-random baseline).
@@ -35,39 +31,26 @@ from scripts.validate_gate2 import check_prereg
 from scripts.validate_gate_external import _names, _ordered_flags, classify_outcome
 
 PREREG = "work/PREREGISTRATION_temporal.md"
-PREREG_SHA = "e9f0d74dcd7550a70f2b8cedd1c7d1428254018e0169f0562e7c557b8e19fd2a"
-
-
-def _gate_message():
-    print("=" * 70)
-    print("TEMPORAL HOLDOUT — PRE-REGISTERED PROSPECTIVE TEST (issue #82)")
-    print("=" * 70)
-    check_prereg(PREREG, PREREG_SHA)
-
-
-def _release_gated():
-    """The set/poses do not exist yet — report the honest current state and exit incomplete."""
-    print(f"\nnot-yet-run (release-gated): the temporal holdout requires a ChEMBL release with")
-    print(f"antifungal / CYP51 documents dated > {CUTOFF_YEAR}. The current CYP51/azole universe")
-    print("is exhausted, so the set is not built yet. Fill it on a newer release, then dock:")
-    print("  python scripts/make_temporal_holdout.py actives   # release-gated")
-    print("  python scripts/make_temporal_holdout.py decoys    # release-gated")
-    print("  RECEPTOR=work/receptor.pdbqt scripts/screen.sh work/temporal_ligands work/screen_temporal")
-    print("  python scripts/validate_gate_temporal.py work/screen_temporal work/receptor_A.pdb")
-    print("The gate is incomplete until then (no headline).")
-    return 2
+PREREG_SHA = "33ff95584aac263bc498eb9f5cda8707ca0dbd42e14b460f7d42288f3363c558"
 
 
 def main():
     screen = sys.argv[1] if len(sys.argv) > 1 else "work/screen_temporal"
     receptor = sys.argv[2] if len(sys.argv) > 2 else "work/receptor_A.pdb"
 
-    _gate_message()
+    print("=" * 70)
+    print("TEMPORAL HOLDOUT — PRE-REGISTERED PUBLICATION-DATE TEST (issue #82)")
+    print("=" * 70)
+    print(f"receptor         : {receptor}")
+    check_prereg(PREREG, PREREG_SHA)
+
     if not (os.path.exists(ACTIVES_OUT) and os.path.exists(DECOYS_OUT)):
-        return _release_gated()
+        sys.exit(f"no temporal set — build it first:\n"
+                 f"  python scripts/make_temporal_holdout.py actives\n"
+                 f"  python scripts/make_temporal_holdout.py decoys")
     if not os.path.isdir(screen) or not any(f.endswith(".pdbqt") for f in os.listdir(screen)):
-        print(f"set built ({ACTIVES_OUT}) but no docked poses in {screen}.")
-        return _release_gated()
+        sys.exit(f"no docked poses in {screen} — dock the set:\n"
+                 f"  RECEPTOR=work/receptor.pdbqt scripts/screen.sh work/temporal_ligands {screen}")
 
     fe = iron_position(receptor)
     actives = _names(ACTIVES_OUT)
@@ -76,11 +59,12 @@ def main():
     min_auc = gate["min_auc"]
     ef_fractions, bedroc_alpha = gate["ef_fractions"], gate["bedroc_alpha"]
 
-    print(f"receptor         : {receptor}")
     protocol.verify()
-    print(f"held-out actives : {len(actives)}   (document year > {CUTOFF_YEAR})")
+    print(f"held-out actives : {len(actives)}   (earliest antifungal year > {CUTOFF_YEAR})")
     print(f"pass bar         : mode-C AUC >= {min_auc}")
 
+    # Seed rows from the frozen .smi lists, not just the poses on disk: a molecule that failed
+    # to dock (no .pdbqt) is ranked LAST as unrankable, never dropped — the anti-inflation rule.
     dist_rows, score_rows, unranked = [], [], []
     for name in sorted(expected):
         is_act = name in actives
@@ -122,11 +106,11 @@ def main():
     print("\n" + "=" * 70)
     print(f"MODE C: AUC {auc:.3f} (need >= {min_auc})   EF@5% {ef5:.2f}x   CI [{lo:.3f}, {hi:.3f}]")
     if outcome == "FAIL":
-        print("OUTCOME: FAIL — the criterion does NOT generalize to a prospective, post-dating set.")
+        print("OUTCOME: FAIL — the criterion does NOT generalize to newer-literature azoles.")
         print("Per pre-registration: do NOT re-tune the criterion to recover a pass.")
         return 1
     if outcome == "PASS":
-        print("OUTCOME: PASS — generalizes prospectively; the whole 95% CI clears the bar.")
+        print("OUTCOME: PASS — generalizes across time; the whole 95% CI clears the bar.")
     else:
         print("OUTCOME: SUPPORTED-BUT-WIDE — point estimate passes, CI lower bound below the bar.")
     return 0

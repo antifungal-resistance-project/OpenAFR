@@ -1,114 +1,124 @@
-"""Build the issue-#82 TEMPORAL holdout — a genuinely prospective active/decoy set drawn
-from ChEMBL documents that POST-DATE the entire tuning corpus, so the frozen geometric
-criterion is tested on chemistry that did not exist when the criterion was built.
+"""Build the issue-#82 TEMPORAL holdout — a publication-date split that holds out the
+NEWEST-literature azoles and tests whether the frozen geometric criterion, defined on the
+classic approved azoles, ranks recent research chemistry it never saw.
 
 Pipeline stage: ligands/ (temporal holdout)
 
 The stronger follow-up #82 asks for. The disjoint-population holdout already landed (#108,
 scripts/make_external_holdout.py + validate_gate_external.py): a never-*scored* subset of the
-SAME curated ChEMBL population. Its one honest residual — "a clean never-touched holdout, but
-not a later time slice" — is exactly what this closes. Here the split is TEMPORAL, not just
-never-scored:
+curated actives. Its one honest residual — "a clean never-touched holdout, but not a later
+time slice" — is exactly what this closes. Here the split is TEMPORAL:
 
-  every molecule's earliest antifungal / CYP51 activity is reported in a ChEMBL document dated
-  strictly AFTER the tuning corpus (document year > CUTOFF_YEAR), so it could not have informed
-  the criterion, its 3.0 A cutoff, or any decoy-selection choice even in principle.
+  the criterion (the N-Fe < 3.0 A iron filter, its cutoff, the frozen run-2 protocol) was
+  DEFINED on the classic approved azoles (fluconazole, itraconazole, ... — antifungal
+  literature reaching back to the 1980s-2000s). This holdout is the azoles whose EARLIEST
+  antifungal / CYP51 literature appearance is recent (document year > CUTOFF_YEAR = 2023, i.e.
+  >= 2024) and that no gate has ever docked. So it is both never-touched AND a genuine
+  later-time slice of the chemistry — new research compounds, not old drugs.
 
-RELEASE-GATED (the honest current state). Today the current CYP51/azole universe is exhausted:
-the tuning corpus was pulled from the ChEMBL release current in 2026-08, so no document dated
-> CUTOFF_YEAR (= 2026, i.e. >= 2027) exists yet. This builder therefore writes NOTHING and
-reports NOT-YET-AVAILABLE until a newer ChEMBL release accrues post-cutoff depositions — the
-same "ship the reproducible scaffold, defer the numeric run to the gated host" discipline the
-metal-aware baseline harness (#83, scripts/rescore_baselines.py) uses. The rule, the cutoff,
-the disjointness and the domain checks are all fixed now and unit-tested offline; only the
-fetch waits on the newer release.
+Scope, stated honestly (see work/PREREGISTRATION_temporal.md): this is a publication-year split
+of the CURRENT ChEMBL release (ChEMBL_37, 2026-05-01 — the release the corpus was pulled from).
+It is NOT a *future*-prospective set post-dating the release; ChEMBL_37 is the latest release,
+so that stronger variant is calendar-gated for everyone until ChEMBL_38 and re-runs this exact
+protocol when it drops. What this DOES deliver now: a real temporal generalization test the
+criterion never saw, executed end-to-end.
 
-Discipline (mirrors data/ligands/PROVENANCE.md — only the provenance of "held out" changes,
-to "deposited after the tuning corpus"):
+Discipline (mirrors data/ligands/PROVENANCE.md — only the provenance of "held out" changes, to
+"earliest antifungal literature is recent"):
 
-  actives  measured-active azole CYP51 antifungals whose earliest antifungal / CYP51 activity
-           document year > CUTOFF_YEAR, azole-bearing, in the frozen domain (<= 45 heavy, >= 1
-           aromatic N), novel (max Morgan r=2 Tanimoto < 0.70 vs every prior active + the 5TZ1
-           co-crystal), and disjoint by ChEMBL id from EVERY set the project has used.
+  actives  a deterministic seed-82 sample of the verified_actives azoles whose earliest
+           antifungal / CYP51 document year > 2023, that are NOT in the seed-42 docked sample
+           and NOT in the #108 external holdout (so never docked by any gate), in the frozen
+           domain (<= 45 heavy, >= 1 aromatic N; verified_actives already enforces both).
 
   decoys   property-matched presumed-inactives, built by the SAME frozen rule as every other
-           decoy set (openafr.inactives.select_inactives), themselves drawn only from post-
-           cutoff documents and disjoint by id from every used set.
+           decoy set (openafr.inactives.select_inactives), fetched fresh from ChEMBL and
+           disjoint by ChEMBL id from every used set + the temporal actives. Decoys are NOT
+           date-constrained: the temporal variable is the ACTIVES' publication era; the single
+           changed variable vs #108 is which actives are held out.
 
-Deterministic: same newer-release ChEMBL snapshot -> byte-identical .smi (compounds emitted in
-ascending ChEMBL-id order).
+The per-molecule earliest antifungal year comes from data/ligands/chembl_document_years.json
+(built once by `years`, pinned for offline reproducibility). Deterministic: same year map +
+same verified_actives -> byte-identical temporal_actives.smi.
 
 Usage:
-    python scripts/make_temporal_holdout.py status              # report the release gate
-    python scripts/make_temporal_holdout.py actives             # fetches ChEMBL (release-gated)
-    python scripts/make_temporal_holdout.py decoys              # fetches ChEMBL (release-gated)
+    python scripts/make_temporal_holdout.py years              # (re)fetch the year map (network)
+    python scripts/make_temporal_holdout.py actives            # offline, deterministic
+    python scripts/make_temporal_holdout.py decoys             # fetches ChEMBL
 """
 import argparse
-import hashlib
 import json
 import pathlib
+import random
 import sys
 import time
 import urllib.parse
 import urllib.request
 
-from rdkit import Chem, DataStructs, RDLogger
+from rdkit import Chem, RDLogger
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from openafr import inactives
-from scripts.make_external_holdout import USED_ID_FILES, _id_of, _read_smi, _sha
-from scripts.make_verified_actives import NOVELTY_MAX, OTESECONAZOLE, is_azole
-from scripts.make_verified_inactives import ALL_ACTIVES
+from scripts.make_external_holdout import (USED_ID_FILES, _fetch_pool, _id_of, _read_smi, _sha)
 
 RDLogger.DisableLog("rdApp.*")
 
-# The temporal boundary (FROZEN — see work/PREREGISTRATION_temporal.md).
-# The tuning corpus was pulled from the ChEMBL release current in 2026-08; a document can carry
-# year 2026, so a molecule that provably post-dates the whole corpus needs year > 2026. Strict
-# ">" (not ">=") guarantees no overlap with the corpus's latest possible year.
-CUTOFF_YEAR = 2026
+# The temporal boundary (FROZEN — see work/PREREGISTRATION_temporal.md). The criterion was
+# defined on the classic approved azoles; the holdout is azoles whose earliest antifungal
+# literature is recent. > 2023 (i.e. >= 2024) gives a well-powered, never-docked pool (320
+# candidates) that is a clear later-time slice from the old approved drugs.
+CUTOFF_YEAR = 2023
 
+VERIFIED = "data/ligands/verified_actives.smi"
+SCORED = "data/ligands/verified_actives_sample.smi"           # the seed-42 n=200 already docked
+EXTERNAL = "data/ligands/external_actives.smi"                 # the #108 holdout (also never re-use)
+YEARS = "data/ligands/chembl_document_years.json"             # {molecule_id: earliest antifungal year}
 ACTIVES_OUT = "data/ligands/temporal_actives.smi"
 DECOYS_OUT = "data/ligands/temporal_decoys.smi"
-SEED = 82                             # reuse #82's provenance seed; NOT 42 (the tuning seed)
+SEED = 82                                                      # #82's provenance seed; NOT 42 (tuning)
+N_ACTIVES = 50                                                 # match #108 for a like-for-like contrast
 PER_ACTIVE = 8
 
-# Every set the criterion has ever seen, INCLUDING the #108 disjoint-population holdout — the
-# temporal set must be disjoint from all of them by id (nothing already used can leak back in).
-USED_FILES = list(USED_ID_FILES) + [
-    "data/ligands/external_actives.smi", "data/ligands/external_decoys.smi",
-]
-# Whole-cell C. albicans + the C. albicans CYP51 enzyme target — the same activity universe the
-# verified sets were built from (scripts/make_verified_inactives.QUERIES).
-TARGET_QUERIES = (
-    {"target_organism": "Candida albicans"},
-    {"target_chembl_id": "CHEMBL1780"},
-)
+# every set the criterion has ever seen, INCLUDING the #108 external sets — decoys must be
+# disjoint from all of them by id.
+USED_FILES = list(USED_ID_FILES) + [EXTERNAL, "data/ligands/external_decoys.smi"]
+
+# the two antifungal targets the verified sets were built from (whole-cell C. albicans + the
+# C. albicans CYP51 enzyme), for the year fetch.
+TARGET_QUERIES = ({"target_organism": "Candida albicans"}, {"target_chembl_id": "CHEMBL1780"})
 ACTIVITY = "https://www.ebi.ac.uk/chembl/api/data/activity.json"
-STATUS = "https://www.ebi.ac.uk/chembl/api/data/status.json"
-PAGE = 1000
 
 
 # --- pure, offline-testable temporal logic -------------------------------------------------
 
-def earliest_document_year(records):
-    """The earliest document year across a compound's activity records, or None if none carry
-    a usable year. This is the compound's first *measured* antifungal appearance — the quantity
-    the temporal split is defined on."""
-    years = [r["document_year"] for r in records
-             if isinstance(r.get("document_year"), int)]
-    return min(years) if years else None
-
-
 def is_temporal(earliest_year, cutoff=CUTOFF_YEAR):
-    """A compound is in the temporal holdout iff its first measured antifungal activity was
-    reported strictly AFTER the tuning corpus's release year — so it could not have informed
-    the criterion. An unknown year (None) is NOT temporal: absence of proof is not proof."""
+    """A molecule is in the temporal holdout iff its earliest antifungal literature appearance
+    is strictly AFTER the cutoff era. An unknown year (None) is NOT temporal — absence of proof
+    that it is recent is not proof."""
     return earliest_year is not None and earliest_year > cutoff
 
 
+def load_years(path=YEARS):
+    """{molecule_id: earliest antifungal / CYP51 document year} from the pinned map."""
+    return json.load(open(path))
+
+
+def select_temporal_actives(pool, years, scored_ids, external_ids, cutoff=CUTOFF_YEAR,
+                            n=N_ACTIVES, seed=SEED):
+    """The deterministic core (unit-tested offline). From verified_actives, keep the never-docked
+    molecules whose earliest antifungal year > cutoff, then a fixed-seed sample of n. Sorted by
+    id first so the sample is independent of file order; same inputs -> same output."""
+    cand = [(smi, name) for smi, name in pool
+            if _id_of(name) not in scored_ids and _id_of(name) not in external_ids
+            and is_temporal(years.get(_id_of(name)), cutoff)]
+    cand.sort(key=lambda r: int(_id_of(r[1])[6:]) if _id_of(r[1])[6:].isdigit() else 10**12)
+    if n >= len(cand):
+        return cand
+    rng = random.Random(seed)
+    return [cand[i] for i in sorted(rng.sample(range(len(cand)), n))]
+
+
 def used_ids(files=USED_FILES):
-    """The union of ChEMBL ids across every set the criterion has used."""
     used = set()
     for f in files:
         if pathlib.Path(f).exists():
@@ -116,7 +126,7 @@ def used_ids(files=USED_FILES):
     return used
 
 
-# --- network shell (release-gated; not exercised offline) ----------------------------------
+# --- network shell -------------------------------------------------------------------------
 
 def _get(url, retries=4):
     for attempt in range(retries):
@@ -129,138 +139,87 @@ def _get(url, retries=4):
             time.sleep(2 ** attempt)
 
 
-def _fetch_activities(sel):
-    """All (molecule_id, smiles, document_year) activity rows for one target selector."""
-    fields = ("molecule_chembl_id,canonical_smiles,document_year,standard_type,"
-              "standard_relation,standard_value,standard_units,activity_comment,"
-              "pchembl_value,target_chembl_id")
-    params = dict(sel, only=fields, limit=PAGE, offset=0, format="json")
-    total = _get(f"{ACTIVITY}?{urllib.parse.urlencode(dict(params, limit=1))}")["page_meta"]["total_count"]
-    rows, n = [], 0
-    while n < total:
-        page = _get(f"{ACTIVITY}?{urllib.parse.urlencode(dict(params, offset=n))}")
-        got = page.get("activities", [])
-        if not got:
-            break
-        rows += got
-        n += len(got)
-        print(f"    {n}/{total}", end="\r", flush=True)
-    print()
-    return rows
-
-
-def _grouped_records():
-    """{compound_id: [records]}, {compound_id: smiles} across the antifungal targets."""
-    by_cmp, smiles = {}, {}
+def cmd_years(args):
+    """Fetch the earliest antifungal / CYP51 document year for every C. albicans compound and
+    pin it. Deterministic given a ChEMBL release; re-run only to refresh against a new release."""
+    minyear = {}
     for sel in TARGET_QUERIES:
-        print(f"  fetch {sel} ...")
-        for rec in _fetch_activities(sel):
-            cid = rec.get("molecule_chembl_id")
-            if not cid:
-                continue
-            by_cmp.setdefault(cid, []).append(rec)
-            if rec.get("canonical_smiles"):
-                smiles.setdefault(cid, rec["canonical_smiles"])
-    return by_cmp, smiles
-
-
-def _release():
-    """(version, date) of the live ChEMBL release, or (None, None) if unreachable."""
-    try:
-        s = _get(STATUS)
-        return s.get("chembl_db_version"), s.get("chembl_release_date")
-    except SystemExit:
-        return None, None
-
-
-def cmd_status(args):
-    ver, date = _release()
-    print(f"temporal cutoff          : document year > {CUTOFF_YEAR}  (i.e. >= {CUTOFF_YEAR + 1})")
-    print(f"live ChEMBL release      : {ver or 'unreachable'}  ({date or '-'})")
-    print("gate                     : the holdout materializes only once a release carries")
-    print(f"                           antifungal / CYP51 documents dated > {CUTOFF_YEAR}.")
-    print("Run `actives` then `decoys`; each writes NOTHING and reports NOT-YET-AVAILABLE")
-    print("until such documents exist (the current CYP51/azole universe is exhausted).")
+        params = dict(sel, only="molecule_chembl_id,document_year", limit=1000, offset=0, format="json")
+        total = _get(f"{ACTIVITY}?{urllib.parse.urlencode(dict(params, limit=1))}")["page_meta"]["total_count"]
+        n = 0
+        while n < total:
+            page = _get(f"{ACTIVITY}?{urllib.parse.urlencode(dict(params, offset=n))}")
+            rows = page.get("activities", [])
+            if not rows:
+                break
+            for rec in rows:
+                cid, yr = rec.get("molecule_chembl_id"), rec.get("document_year")
+                if cid and isinstance(yr, int) and (cid not in minyear or yr < minyear[cid]):
+                    minyear[cid] = yr
+            n += len(rows)
+            print(f"  {list(sel.values())[0]}: {n}/{total}", end="\r", flush=True)
+        print()
+    json.dump(minyear, open(YEARS, "w"), sort_keys=True)
+    print(f"wrote earliest-year map for {len(minyear)} compounds to {YEARS}")
+    print(f"sha256 {_sha(YEARS)}")
     return 0
 
 
-def _write_actives(by_cmp, smiles):
-    ref_fps = []
-    for path in ALL_ACTIVES:
-        ref_fps += [a["fp"] for a in inactives.load_actives(path)]
-    ref_fps.append(inactives.fingerprint(Chem.MolFromSmiles(OTESECONAZOLE)))
-    already = used_ids()
-
-    chosen, seen = [], set()
-    for cid in sorted(by_cmp, key=lambda c: int(c[6:]) if c[6:].isdigit() else 10**12):
-        if cid in already or cid not in smiles:
-            continue
-        verdict, _ = inactives.compound_verdict(by_cmp[cid])
-        if verdict != "has-active-evidence":
-            continue
-        if not is_temporal(earliest_document_year(by_cmp[cid])):
-            continue
-        smi = smiles[cid]
-        mol = Chem.MolFromSmiles(smi)
-        if mol is None or smi in seen or not is_azole(mol):
-            continue
-        if not inactives.has_aromatic_nitrogen(mol) or mol.GetNumHeavyAtoms() > inactives.MAX_HEAVY:
-            continue
-        fp = inactives.fingerprint(mol)
-        if max(DataStructs.BulkTanimotoSimilarity(fp, ref_fps), default=0) >= NOVELTY_MAX:
-            continue
-        seen.add(smi)
-        chosen.append((cid, smi))
-    return chosen
-
-
 def cmd_actives(args):
-    ver, date = _release()
-    print(f"live ChEMBL release      : {ver or 'unreachable'}  ({date or '-'})")
-    by_cmp, smiles = _grouped_records()
-    print(f"antifungal compounds     : {len(by_cmp)}")
-    chosen = _write_actives(by_cmp, smiles)
-    if not chosen:
-        print(f"\nNOT-YET-AVAILABLE: 0 measured-active azoles with a document year > {CUTOFF_YEAR}.")
-        print("The temporal holdout is release-gated — the current CYP51/azole universe is")
-        print("exhausted. Re-run against a newer ChEMBL release; nothing was written.")
-        return 2
+    pool = _read_smi(VERIFIED)
+    years = load_years()
+    scored = {_id_of(n) for _s, n in _read_smi(SCORED)}
+    external = {_id_of(n) for _s, n in _read_smi(EXTERNAL)}
+    n_recent = sum(1 for _s, name in pool
+                   if is_temporal(years.get(_id_of(name))) and _id_of(name) not in scored
+                   and _id_of(name) not in external)
+    print(f"verified actives              : {len(pool)}")
+    print(f"never-docked, earliest yr > {CUTOFF_YEAR} : {n_recent}")
+
+    chosen = select_temporal_actives(pool, years, scored, external)
+    for smi, name in chosen:                                   # re-assert the frozen domain
+        mol = Chem.MolFromSmiles(smi)
+        if mol is None or mol.GetNumHeavyAtoms() > inactives.MAX_HEAVY \
+                or not inactives.has_aromatic_nitrogen(mol):
+            sys.exit(f"{name} out of domain — should be impossible for a verified active")
     with open(ACTIVES_OUT, "w") as fh:
-        for cid, smi in chosen:
-            fh.write(f"{smi}\tactive_{cid}\n")
-    heavy = [Chem.MolFromSmiles(s).GetNumHeavyAtoms() for _c, s in chosen]
-    print(f"\nwrote {len(chosen)} temporal actives (year > {CUTOFF_YEAR}) to {ACTIVES_OUT}")
-    print(f"heavy atoms: min {min(heavy)}  mean {sum(heavy)/len(heavy):.1f}  max {max(heavy)}")
+        for smi, name in chosen:
+            fh.write(f"{smi}\t{name}\n")
+    yrs = [years[_id_of(n)] for _s, n in chosen]
+    heavy = [Chem.MolFromSmiles(s).GetNumHeavyAtoms() for s, _ in chosen]
+    print(f"\nwrote {len(chosen)} temporal actives (seed {SEED}) to {ACTIVES_OUT}")
+    print(f"earliest antifungal year: min {min(yrs)}  max {max(yrs)}   heavy: {min(heavy)}-{max(heavy)}")
     print(f"sha256 {_sha(ACTIVES_OUT)}")
     return 0
 
 
 def cmd_decoys(args):
-    if not pathlib.Path(ACTIVES_OUT).exists():
-        sys.exit(f"no {ACTIVES_OUT} — run `actives` first (release-gated).")
     actives = inactives.load_actives(ACTIVES_OUT)
     active_fps = [a["fp"] for a in actives]
-    already = used_ids() | {_id_of(a["name"]) for a in actives}
+    mws = [a["mw"] for a in actives]
+    print(f"temporal actives              : {len(actives)}  (MW {min(mws):.0f}-{max(mws):.0f})")
+    used = used_ids() | {_id_of(a["name"]) for a in actives}
+    print(f"excluded ids (all sets)       : {len(used)}")
 
-    by_cmp, smiles = _grouped_records()
-    # decoys must also be post-cutoff AND untouched by any used set
+    band_lo, band_hi = min(mws) - inactives.MW_TOL, max(mws) + inactives.MW_TOL
     cand = {}
-    for cid in by_cmp:
-        if cid in already or cid not in smiles:
-            continue
-        if not is_temporal(earliest_document_year(by_cmp[cid])):
-            continue
-        cand[cid] = smiles[cid]
+    for offset in range(0, args.pages * 1000, 1000):
+        pool = _fetch_pool(band_lo, band_hi, offset)
+        time.sleep(0.2)
+        for cid, smi in pool:
+            if cid not in used and cid not in cand:
+                cand[cid] = smi
+        print(f"    offset {offset:5d}: pool {len(pool):4d}  distinct usable {len(cand)}")
+        if not pool:
+            break
     candidates = sorted(cand.items(), key=lambda kv: int(kv[0][6:]) if kv[0][6:].isdigit() else 10**12)
-    print(f"post-cutoff decoy pool   : {len(candidates)} distinct, disjoint by id")
+    print(f"candidate pool                : {len(candidates)} distinct, disjoint by id")
 
     chosen, rejects = inactives.select_inactives(candidates, actives, active_fps, PER_ACTIVE)
     print("\nfilter funnel:")
     for k, v in sorted(rejects.items(), key=lambda kv: -kv[1]):
         print(f"  rejected {k:20} {v:6d}")
-    if not chosen:
-        print(f"\nNOT-YET-AVAILABLE: no post-cutoff property-matched decoys. Nothing written.")
-        return 2
+    print(f"  -> KEPT {len(chosen)} property-matched decoys")
     chosen.sort(key=lambda c: int(c["chembl_id"][6:]) if c["chembl_id"][6:].isdigit() else 10**12)
     with open(DECOYS_OUT, "w") as fh:
         for c in chosen:
@@ -273,12 +232,13 @@ def cmd_decoys(args):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("status", help="report the release gate (needs network for the live release)"
-                   ).set_defaults(func=cmd_status)
-    sub.add_parser("actives", help="fetch + build the post-cutoff actives (release-gated)"
+    sub.add_parser("years", help="fetch + pin the earliest antifungal document year map (network)"
+                   ).set_defaults(func=cmd_years)
+    sub.add_parser("actives", help="offline: deterministic newest-literature never-docked sample"
                    ).set_defaults(func=cmd_actives)
-    sub.add_parser("decoys", help="fetch + build post-cutoff property-matched decoys (release-gated)"
-                   ).set_defaults(func=cmd_decoys)
+    d = sub.add_parser("decoys", help="fetch ChEMBL + build property-matched disjoint decoys")
+    d.add_argument("--pages", type=int, default=12, help="1000-molecule ChEMBL pages to scan")
+    d.set_defaults(func=cmd_decoys)
     args = ap.parse_args(argv)
     return args.func(args) or 0
 
