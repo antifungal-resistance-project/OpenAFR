@@ -102,6 +102,19 @@ python scripts/recall_erg11.py call --consensus-fasta isolate_erg11.fasta
 # Orchestrated (needs fasterq-dump + minimap2 + samtools>=1.13, and network):
 python scripts/recall_erg11.py recall SRR1234567           # one isolate
 python scripts/recall_erg11.py fill snapshots/PDG000000067.671.tsv --limit 5   # a snapshot, in place
+
+# --- Compose the reader-facing alert from a snapshot's calls (#25) ---
+
+# ERG11/azole: emergence signal joined to the structural (heme-iron) fit so-what.
+python scripts/compose_alert.py run snapshots/PDG000000067.671.tsv --as-of 2025-01-01
+
+# FKS1/echinocandin (v2): DETECTION-ONLY — emergence over fks1_call, no structural
+# verdict (echinocandins coordinate no metal, so the CYP51 geometry does not transfer).
+python scripts/compose_alert.py run snapshots/PDG000000067.671.tsv --gene fks1 --as-of 2025-01-01
+
+# Reproduce both end-to-end on a synthetic called snapshot:
+python scripts/compose_alert.py demo            # ERG11
+python scripts/compose_alert.py demo --gene fks1 # FKS1, detection-only
 ```
 
 The re-caller is split on purpose: the **call logic** (consensus CDS → tokens) is
@@ -110,5 +123,14 @@ stdlib-only, deterministic, and unit-tested against the pinned reference; the
 their presence (exactly like the docking scripts gate on `vina`), so it is honest about
 being the un-reproducible-here layer rather than faking a call when the tools are absent.
 
-Libraries: `openafr/earlywarning.py`, `openafr/recaller.py`.
-Tests: `tests/test_earlywarning_snapshot.py`, `tests/test_recaller.py`.
+The **FKS1 alert is detection-only by design**: `compose_alert.py --gene fks1` runs the
+same emergence detector over `fks1_call` and composes alerts with **no structural fit
+verdict** — echinocandins do not coordinate a metal, so the ERG11 heme-iron so-what does
+not transfer to a glucan synthase. So an FKS1 alert never reaches the `act-now` tier (that
+requires a measured weaker-fit verdict); it stops at `watch`/`context` and states the
+detection-only caveat on every line, so an absent fit call is never read as an all-clear.
+
+Libraries: `openafr/earlywarning.py`, `openafr/recaller.py`, `openafr/fks1_caller.py`,
+`openafr/alert.py`.
+Tests: `tests/test_earlywarning_snapshot.py`, `tests/test_recaller.py`,
+`tests/test_alert.py`, `tests/test_fks1_alert.py`.
