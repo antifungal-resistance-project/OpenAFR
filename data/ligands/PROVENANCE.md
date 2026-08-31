@@ -69,6 +69,30 @@ The `.tsv` carries every compound's median pChEMBL, record count, standard_types
 count, triage verdict and nearest active; the `.smi` is the in-domain dockable subset. Frozen
 with `work/PREREGISTRATION_potency.md`; sha256 in `work/PREREG_potency.sha256`.
 
+### External validation holdout — `external_actives.smi` (n=50), `external_decoys.smi` (n=335) (added 2026-08-30)
+
+For the fresh external-holdout validation (issue #82, `work/PREREGISTRATION_external.md`):
+does the frozen geometric criterion generalize to an active/decoy set **no gate has ever
+scored**, closing the overfitting objection? Built by `scripts/make_external_holdout.py`,
+same provenance discipline as every set — only the provenance of "held out" changes:
+
+- `external_actives` — a deterministic seed-**82** random sample of the measured-active
+  *C. albicans* azoles in `verified_actives.smi` that are **not** in `verified_actives_sample.smi`.
+  The ensemble-confirm look (#9) docked only the seed-42 n=200 sample, so these ~3,400 actives
+  were never docked or scored; the sample of 50 is genuinely never-touched. Domain re-asserted
+  (≤ 45 heavy, ≥ 1 aromatic N).
+- `external_decoys` — property-matched presumed-inactives built by the frozen rule
+  (`openafr.inactives.select_inactives`: MW ± 25, cLogP ± 1.5, rotB ± 2, HBD ± 1, HBA ± 2;
+  ≥ 1 aromatic N; Morgan r=2 Tanimoto < 0.35 vs every external active; ≤ 45 heavy), fetched
+  fresh from ChEMBL under seed 82 and **disjoint by ChEMBL id** from every set the project has
+  used (all actives, both decoy sets, verified inactives, both potency sets — 4,903 ids
+  excluded), so no decoy can secretly be a known active or a reused decoy.
+
+Result (`work/RESULTS_external.md`): mode-C **AUC 0.715** (permutation p < 0.0001, bootstrap
+95% CI 0.630–0.795), EF@5% 4.62× — SUPPORTED-BUT-WIDE per the pre-registered rule (point
+estimate clears the 0.70 bar; CI dips below at n=50). Frozen with
+`work/PREREGISTRATION_external.md`; sha256s in `work/PREREG_external.sha256`.
+
 ## The problem T1 fixes
 
 Two independent findings converged on the active set:
