@@ -293,3 +293,90 @@ def test_cmd_recall_returns_nonzero_on_failure(script, monkeypatch, tmp_path):
                         lambda *a, **k: ("", "sra-fks1-recaller:failed(no FASTQ)"))
     args = argparse.Namespace(run_acc="SRRbad", keep_tmp=False)
     assert script.cmd_recall(args) == 1
+
+
+# --- batch surface (T3): plan / fill / prevalence / migrate over a snapshot ----
+
+from openafr import earlywarning as _ew   # noqa: E402
+
+
+def _snapshot(tmp_path, rows):
+    """Write a current-schema snapshot from (target_acc, run) pairs; return its path."""
+    raw = [{"target_acc": t, "Run": run, "geo_loc_name": "Pakistan",
+            "target_creation_date": "2024-01-01", "collection_date": "2023",
+            "biosample_acc": "SAMN1", "asm_acc": "NULL", "lat_lon": "NULL"}
+           for t, run in rows]
+    records = _ew.normalize(raw)[0]
+    p = tmp_path / "snap.tsv"
+    _ew.write_snapshot(p, records)
+    return p
+
+
+def test_cmd_plan_matches_fill_selection_without_tools(script, tmp_path, capsys):
+    # Two isolates with reads (fill-eligible) + one without (skipped, stays pending).
+    p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "SRR2"), ("PDT3.1", "")])
+    args = argparse.Namespace(snapshot=str(p), limit=0, random=False, seed=0,
+                              list_runs=True)
+    assert script.cmd_plan(args) == 0
+    out = capsys.readouterr().out
+    # PDT3 has no reads -> source is pending:no-reads, not the fill-eligible
+    # pending:sra-fks1-recaller state, so it is not in this count (as in the ERG11 plan).
+    assert "pending:sra-fks1-recaller 2" in out
+    assert "fill would re-call:      2 isolate(s)" in out
+    assert "SRR1" in out and "SRR2" in out
+
+
+def test_cmd_prevalence_is_not_measured_on_fresh_snapshot(script, tmp_path, capsys):
+    p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "SRR2")])
+    args = argparse.Namespace(snapshot=str(p))
+    assert script.cmd_prevalence(args) == 0
+    out = capsys.readouterr().out
+    assert "NOT MEASURED YET" in out
+
+
+def test_cmd_prevalence_reports_frequency_after_a_fill(script, tmp_path, capsys):
+    p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "SRR2")])
+    records = _ew.read_snapshot(p)
+    records[0]["fks1_call"] = "S639F"
+    records[0]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=called,HS2=wild-type"
+    records[1]["fks1_call"] = ""
+    records[1]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=wild-type,HS2=wild-type"
+    _ew.write_snapshot(p, records)
+    assert script.cmd_prevalence(argparse.Namespace(snapshot=str(p))) == 0
+    out = capsys.readouterr().out
+    assert "resolved panel:    2" in out
+    assert "event frequency:   50.0%" in out
+    assert "S639F x1" in out
+
+
+def test_cmd_fill_marks_calls_and_logs(script, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(script, "_require_tools", lambda: None)
+    monkeypatch.setattr(F, "load_reference", lambda *a, **k: ("CDS", "PROT"))
+    monkeypatch.setattr(runlog, "DEFAULT_LOG_DIR", tmp_path / "runlog")
+    monkeypatch.setattr(script, "_recall_one",
+                        lambda *a, **k: ("S639F",
+                                         "sra-fks1-recaller:HS1=called,HS2=wild-type"))
+    p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "")])
+    args = argparse.Namespace(snapshot=str(p), limit=0, random=False, seed=0,
+                              dry_run=False)
+    assert script.cmd_fill(args) == 0
+    records = {r["isolate_key"]: r for r in _ew.read_snapshot(p)}
+    # the with-reads isolate got the call; the no-reads isolate stayed pending, not faked
+    assert records["PDT1"]["fks1_call"] == "S639F"
+    assert records["PDT2"]["fks1_call"] == "" \
+        and records["PDT2"]["fks1_resistance_source"] == "pending:no-reads"
+    assert "S639F" in (tmp_path / "runlog" / "fill-fks1.jsonl").read_text()
+
+
+def test_cmd_migrate_upgrades_a_pre_v2_snapshot(script, tmp_path, capsys):
+    p = tmp_path / "old.tsv"
+    p.write_text(
+        "isolate_key\ttarget_acc\trun_acc\terg11_call\tresistance_source\n"
+        "PDT1\tPDT1.1\tSRR9\t\tpending:sra-recaller\n"
+    )
+    assert script.cmd_migrate(argparse.Namespace(snapshot=str(p))) == 0
+    assert "migrated" in capsys.readouterr().out
+    assert "fks1_resistance_source" in p.read_text()
+    # idempotent second run
+    assert script.cmd_migrate(argparse.Namespace(snapshot=str(p))) == 0
+    assert "already current" in capsys.readouterr().out

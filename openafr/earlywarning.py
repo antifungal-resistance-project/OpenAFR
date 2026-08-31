@@ -53,6 +53,14 @@ NULLISH = {"", "null", "missing", "not provided", "not collected",
 
 # The snapshot schema. Order is fixed so snapshot files are byte-stable and
 # git-diffable. Every isolate row carries exactly these columns.
+#
+# Schema evolution note: the FKS1/echinocandin early-warning track (v2, T3) appended
+# `fks1_call`/`fks1_resistance_source` AFTER the azole-only columns, so a snapshot written
+# before v2 lacks them. `read_snapshot` migrates such a snapshot in memory on load
+# (`migrate_record`), seeding the two fields to their honest `pending` state from run_acc --
+# never a silent "wild type". Appending (not inserting) keeps the pre-v2 columns in their
+# original positions so a diff between a pre-v2 and a migrated snapshot shows only the two
+# new trailing columns.
 SNAPSHOT_COLUMNS = (
     "isolate_key",          # stable identity: target_acc without the .N version
     "target_acc",           # full NCBI target accession, e.g. PDT000585001.1
@@ -66,7 +74,13 @@ SNAPSHOT_COLUMNS = (
     "lat_lon",              # coordinates when present (sparse, ~24%)
     "erg11_call",           # azole-resistance substitutions -- PENDING (#23), never faked
     "resistance_source",    # provenance/why-empty for erg11_call
+    "fks1_call",            # echinocandin-resistance substitutions -- PENDING (v2/T3), never faked
+    "fks1_resistance_source",  # provenance/why-empty for fks1_call
 )
+
+# The columns the v2 FKS1 track appended. A snapshot missing these was written before v2;
+# migrate_record back-fills them on read (seeded from run_acc, honestly pending).
+_V2_FKS1_COLUMNS = ("fks1_call", "fks1_resistance_source")
 
 
 def _get(url):
@@ -143,6 +157,10 @@ def normalize(rows):
             # uncalled isolate for a susceptible one.
             "erg11_call": "",
             "resistance_source": "pending:sra-recaller" if run else "pending:no-reads",
+            # NCBI likewise exposes no echinocandin/FKS1 call. Same discipline as ERG11:
+            # empty call, a pending source recording why, filled by the FKS1 re-caller (v2).
+            "fks1_call": "",
+            "fks1_resistance_source": _pending_fks1_source(run),
         })
     # Deduplicate on isolate_key, keeping the highest target_acc version so a
     # re-processed isolate does not appear twice. NCBI can carry both .1 and .2.
@@ -155,15 +173,45 @@ def normalize(rows):
     return out, dropped
 
 
+def _pending_fks1_source(run_acc):
+    """The honest pending FKS1 source for an isolate, seeded from its run_acc exactly as
+    the ERG11 source is: a linked SRA run means the re-caller can attempt it
+    (`pending:sra-fks1-recaller`); no run means there is nothing to call (`pending:no-reads`)."""
+    return "pending:sra-fks1-recaller" if (run_acc or "").strip() else "pending:no-reads"
+
+
+def migrate_record(rec):
+    """Back-fill any v2 schema column a pre-FKS1 snapshot record lacks, IN PLACE, and return it.
+
+    A snapshot written before the FKS1/echinocandin track carries no `fks1_call` /
+    `fks1_resistance_source`. Reading one back and writing it (e.g. an ERG11 `fill`) would,
+    without this, drop those columns to empty via the DictWriter default -- turning an
+    honestly-uncalled FKS1 status into a blank that could later read as "wild type". So on
+    load we seed them to the SAME pending state `normalize` would have: an empty call and a
+    run_acc-derived pending source. A record that already carries a real FKS1 source (an
+    isolate the re-caller has resolved) is left UNTOUCHED -- we never overwrite a real call
+    with a pending one."""
+    if rec.get("fks1_call") is None:
+        rec["fks1_call"] = ""
+    if not (rec.get("fks1_resistance_source") or "").strip():
+        rec["fks1_resistance_source"] = _pending_fks1_source(rec.get("run_acc"))
+    return rec
+
+
 def _serialize(records):
-    """Render records to the canonical, byte-stable snapshot TSV text."""
+    """Render records to the canonical, byte-stable snapshot TSV text.
+
+    Each record is migrated (on a copy) first, so a record that predates the FKS1 columns is
+    written with its honest pending FKS1 state rather than an empty cell -- which keeps
+    write-then-read an identity (an empty cell would migrate back to pending on read and the
+    digests would disagree)."""
     buf = io.StringIO()
     w = csv.DictWriter(buf, fieldnames=list(SNAPSHOT_COLUMNS),
                        delimiter="\t", lineterminator="\n",
                        extrasaction="ignore")
     w.writeheader()
     for rec in sorted(records, key=lambda x: x["isolate_key"]):
-        w.writerow(rec)
+        w.writerow(migrate_record(dict(rec)))
     return buf.getvalue()
 
 
@@ -181,9 +229,30 @@ def write_snapshot(path, records):
 
 
 def read_snapshot(path):
-    """Load a snapshot TSV back into records (list of dicts)."""
+    """Load a snapshot TSV back into records (list of dicts), migrating pre-v2 rows.
+
+    A snapshot written before the FKS1 track lacks the two v2 columns; each record is
+    passed through `migrate_record` so every returned record carries the full schema with
+    an honest pending FKS1 status. For a current-schema snapshot the migration is a no-op,
+    so `read_snapshot(write_snapshot(x)) == x` still holds."""
     with open(path, newline="") as fh:
-        return list(csv.DictReader(fh, delimiter="\t"))
+        return [migrate_record(r) for r in csv.DictReader(fh, delimiter="\t")]
+
+
+def migrate_snapshot_file(path):
+    """Rewrite a snapshot file to the current schema in place (a pre-v2 -> v2 migration).
+
+    Idempotent: reads (which migrates in memory), then writes the canonical serialization.
+    Returns (sha256, changed) where `changed` is True iff the on-disk bytes moved -- so a
+    caller can report "already current" without a spurious rewrite."""
+    with open(path, newline="") as fh:
+        before = fh.read()
+    records = [migrate_record(r) for r in csv.DictReader(io.StringIO(before), delimiter="\t")]
+    after = _serialize(records)
+    if after != before:
+        with open(path, "w", newline="") as fh:
+            fh.write(after)
+    return hashlib.sha256(after.encode("utf-8")).hexdigest(), after != before
 
 
 def baseline_as_of(records, date):

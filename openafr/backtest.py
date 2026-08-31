@@ -34,6 +34,7 @@ import math
 import re
 
 from openafr import emergence
+from openafr import fks1_caller
 from openafr import recaller
 
 
@@ -321,6 +322,106 @@ def panel_prevalence(records):
             for t in panel_toks:
                 per_mutation[t] = per_mutation.get(t, 0) + 1
         elif (r.get("erg11_call") or "").strip():
+            n_called_nonpanel += 1
+    per_mutation = dict(sorted(per_mutation.items(),
+                               key=lambda kv: int(re.search(r"\d+", kv[0]).group())))
+    return {
+        "n_total": len(records),
+        "n_resolved": n_resolved,
+        "n_panel_positive": n_positive,
+        "event_frequency": (n_positive / n_resolved) if n_resolved else None,
+        "ci95": wilson_interval(n_positive, n_resolved),   # None until anything is resolved
+        "per_mutation": per_mutation,
+        "n_called_nonpanel": n_called_nonpanel,
+        "excluded": excluded,
+    }
+
+
+# ------------------------ echinocandin (FKS1) event frequency (v2) ----------------------
+# The FKS1 analog of panel_prevalence, and the number the FKS1/v2 track exists to produce:
+# once an FKS1 `fill` has populated fks1_call, what fraction of the isolates the caller could
+# RESOLVE at the FKS1 panel carry a known echinocandin-resistance substitution (S639F/P/Y).
+# Where ERG11 carries ONE status per isolate, FKS1's source is per-window
+# (sra-fks1-recaller:HS1=...,HS2=...) because the two hot-spots are called independently -- so
+# resolution is judged over the panel-bearing window(s) only.
+
+_FKS1_SOURCE_PREFIX = "sra-fks1-recaller:"
+# The windows that carry a known-resistance panel position -- the ones whose coverage decides
+# whether the panel is assessable. Derived from the caller so it can never drift (today: HS1;
+# HS2 becomes panel-bearing the moment its mutant set is pinned, with no change here).
+_FKS1_PANEL_WINDOWS = tuple(name for name, w in fks1_caller.FKS1_WINDOWS.items() if w.panel)
+
+
+def _fks1_window_statuses(source):
+    """Parse a `sra-fks1-recaller:HS1=<st>,HS2=<st>` source into {window: base_status}.
+
+    The base status strips any parenthetical detail (`partial(uncalled:639)` -> `partial`).
+    Returns {} for a non-FKS1-recaller source (pending / empty / other) OR a whole-isolate
+    failure source (`sra-fks1-recaller:failed(...)`, which carries no per-window part)."""
+    src = (source or "").strip()
+    if not src.startswith(_FKS1_SOURCE_PREFIX):
+        return {}
+    out = {}
+    for part in src[len(_FKS1_SOURCE_PREFIX):].split(","):
+        name, sep, st = part.partition("=")
+        if sep:
+            out[name.strip()] = st.split("(")[0].strip()
+    return out
+
+
+def _fks1_resolution_bucket(source):
+    """Classify an FKS1 source into resolved / partial / failed / pending over the
+    panel-bearing windows only.
+
+      resolved -- every panel window was called or wild-type (the panel is assessable)
+      failed   -- the whole isolate failed to fetch/align, OR a panel window was refused
+                  (an in-window indel)
+      partial  -- a panel window was partial (a hot-spot residue uncalled) or missing
+      pending  -- not re-called yet (pending:sra-fks1-recaller / :no-reads / empty)
+
+    Only 'resolved' enters the prevalence denominator; the rest are excluded, never counted
+    echinocandin-negative -- the same 'uncalled is not wild type' honesty as ERG11."""
+    src = (source or "").strip()
+    if not src.startswith(_FKS1_SOURCE_PREFIX):
+        return "pending"          # pending:sra-fks1-recaller / :no-reads / empty / other
+    statuses = _fks1_window_statuses(src)
+    if not statuses:
+        return "failed"           # sra-fks1-recaller:failed(...) -- no per-window part
+    panel_sts = [statuses.get(w) for w in _FKS1_PANEL_WINDOWS]
+    if any(s == "refused" for s in panel_sts):
+        return "failed"
+    if all(s in ("called", "wild-type") for s in panel_sts):
+        return "resolved"
+    return "partial"              # any panel window missing/partial/unknown
+
+
+def fks1_panel_prevalence(records):
+    """Echinocandin event frequency on an (FKS1-re-called) snapshot -- the FKS1 analog of
+    panel_prevalence.
+
+    Of the isolates whose FKS1 panel the caller could RESOLVE (every panel window called or
+    wild-type), how many carry a known echinocandin-resistance panel substitution (S639F/P/Y).
+    As with ERG11, `resolved` != panel-positive: positivity is decided from the tokens via
+    fks1_caller.is_panel_token, so an isolate called only for a non-panel/clade SNP is
+    resolved-but-negative. Returns the same shape as panel_prevalence (so a caller/report can
+    treat the two genes uniformly). event_frequency/ci95 are None until anything is resolved --
+    the honest 'NOT MEASURED YET' state on today's un-filled snapshots."""
+    n_resolved = n_positive = n_called_nonpanel = 0
+    per_mutation = {}
+    excluded = {"partial": 0, "failed": 0, "pending": 0}
+    for r in records:
+        bucket = _fks1_resolution_bucket(r.get("fks1_resistance_source"))
+        if bucket != "resolved":
+            excluded[bucket] += 1
+            continue
+        n_resolved += 1
+        panel_toks = [t for t in emergence.parse_call(r.get("fks1_call"))
+                      if fks1_caller.is_panel_token(t)]
+        if panel_toks:
+            n_positive += 1
+            for t in panel_toks:
+                per_mutation[t] = per_mutation.get(t, 0) + 1
+        elif (r.get("fks1_call") or "").strip():
             n_called_nonpanel += 1
     per_mutation = dict(sorted(per_mutation.items(),
                                key=lambda kv: int(re.search(r"\d+", kv[0]).group())))

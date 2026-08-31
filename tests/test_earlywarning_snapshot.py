@@ -54,6 +54,54 @@ def test_normalize_never_fabricates_a_resistance_call():
     assert no_reads["resistance_source"] == "pending:no-reads"
 
 
+def test_normalize_seeds_pending_fks1_call(tmp_path):
+    # v2/T3: NCBI exposes no echinocandin call either, so fks1_call stays empty and
+    # fks1_resistance_source records why -- the same run_acc-derived pending state as ERG11.
+    with_reads = ew.normalize([_raw("PDT1.1", run="SRR9")])[0][0]
+    no_reads = ew.normalize([_raw("PDT2.1", run="NULL")])[0][0]
+    assert with_reads["fks1_call"] == "" and no_reads["fks1_call"] == ""
+    assert with_reads["fks1_resistance_source"] == "pending:sra-fks1-recaller"
+    assert no_reads["fks1_resistance_source"] == "pending:no-reads"
+
+
+def test_read_snapshot_migrates_a_pre_v2_snapshot(tmp_path):
+    # A snapshot written before the FKS1 columns existed: only the azole-era header/rows.
+    p = tmp_path / "old.tsv"
+    p.write_text(
+        "isolate_key\ttarget_acc\trun_acc\terg11_call\tresistance_source\n"
+        "PDT1\tPDT1.1\tSRR9\t\tpending:sra-recaller\n"
+        "PDT2\tPDT2.1\t\t\tpending:no-reads\n"
+    )
+    recs = ew.read_snapshot(p)
+    # The v2 columns are back-filled to an honest pending state, seeded from run_acc --
+    # never a silent wild-type, and the azole columns are untouched.
+    assert recs[0]["fks1_call"] == "" and recs[1]["fks1_call"] == ""
+    assert recs[0]["fks1_resistance_source"] == "pending:sra-fks1-recaller"
+    assert recs[1]["fks1_resistance_source"] == "pending:no-reads"
+    assert recs[0]["resistance_source"] == "pending:sra-recaller"
+
+
+def test_migrate_never_overwrites_a_real_fks1_call():
+    # An isolate the FKS1 re-caller has already resolved must survive a migrate untouched.
+    rec = {"run_acc": "SRR9", "fks1_call": "S639F",
+           "fks1_resistance_source": "sra-fks1-recaller:HS1=called,HS2=wild-type"}
+    ew.migrate_record(rec)
+    assert rec["fks1_call"] == "S639F"
+    assert rec["fks1_resistance_source"] == "sra-fks1-recaller:HS1=called,HS2=wild-type"
+
+
+def test_migrate_snapshot_file_is_idempotent(tmp_path):
+    p = tmp_path / "old.tsv"
+    p.write_text(
+        "isolate_key\ttarget_acc\trun_acc\terg11_call\tresistance_source\n"
+        "PDT1\tPDT1.1\tSRR9\t\tpending:sra-recaller\n"
+    )
+    sha1, changed1 = ew.migrate_snapshot_file(p)
+    assert changed1 and "fks1_resistance_source" in p.read_text()
+    sha2, changed2 = ew.migrate_snapshot_file(p)   # second run is a no-op
+    assert sha2 == sha1 and changed2 is False
+
+
 def test_normalize_drops_unkeyable_rows_and_counts_them():
     recs, dropped = ew.normalize([_raw(""), _raw("NULL"), _raw("PDT3.1")])
     assert dropped == 2
