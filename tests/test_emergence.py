@@ -81,6 +81,29 @@ def test_first_appearance_fires_and_respects_min_count():
     assert res2["signals"] == []
 
 
+def test_detect_emergence_on_fks1_call_field():
+    # v2/T3: the same detector runs on the FKS1 call column via call_field. An empty
+    # erg11_call must NOT be read as susceptible, and S639F must be detected as emerging
+    # from the fks1_call column instead.
+    base = [dict(_rec(f"PDTB{i}", "2024-01-01", ""), fks1_call="") for i in range(5)]
+    recent = [dict(_rec(f"PDTR{i}", "2025-02-01", ""), fks1_call="S639F")
+              for i in range(3)]
+    res = em.detect_emergence(base + recent, "2024-12-31", min_count=3,
+                              call_field="fks1_call")
+    sigs = {s["mutation"]: s for s in res["signals"]}
+    assert "S639F" in sigs and sigs["S639F"]["first_appearance"]
+    assert res["call_field"] == "fks1_call"
+    # the default (erg11_call) sees nothing here -- the calls live in fks1_call only
+    res_erg = em.detect_emergence(base + recent, "2024-12-31", min_count=3)
+    assert res_erg["signals"] == [] and "FKS1" not in (res_erg.get("note") or "")
+
+
+def test_detect_emergence_note_names_the_fks1_recaller():
+    recs = [dict(_rec(f"PDTB{i}", "2024-01-01", ""), fks1_call="") for i in range(3)]
+    res = em.detect_emergence(recs, "2024-12-31", call_field="fks1_call")
+    assert "FKS1 re-caller" in res["note"]
+
+
 def test_rising_fires_on_proportion_increase():
     # K143R: 1/5 baseline (20%) -> 4/4 recent (100%), delta +80%
     base = ([_rec("PDTB0", "2024-01-01", "K143R")]

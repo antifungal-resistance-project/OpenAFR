@@ -118,20 +118,25 @@ def _add_days(iso_day, days):
     return (_dt.date(y, m, d) + _dt.timedelta(days=days)).isoformat()
 
 
-def called(records):
-    """The subset of records that carry a nonempty erg11_call."""
-    return [r for r in records if (r.get("erg11_call") or "").strip()]
+def called(records, call_field="erg11_call"):
+    """The subset of records that carry a nonempty call in `call_field`.
+
+    `call_field` selects which re-caller's column to read -- `erg11_call` (azole, the
+    default) or `fks1_call` (echinocandin, v2). The honesty is identical for both: an empty
+    call is NOT counted, so the denominator is always *called* isolates for that gene."""
+    return [r for r in records if (r.get(call_field) or "").strip()]
 
 
-def mutation_carriers(records):
+def mutation_carriers(records, call_field="erg11_call"):
     """Map each substitution token -> list of records carrying it (called only).
 
     Only iterates over called isolates, so the returned counts are over the
-    called denominator, never over all isolates.
+    called denominator, never over all isolates. `call_field` selects the gene's call
+    column (erg11_call or fks1_call), so the same detector serves both tracks.
     """
     carriers = collections.defaultdict(list)
-    for r in called(records):
-        for tok in parse_call(r.get("erg11_call")):
+    for r in called(records, call_field):
+        for tok in parse_call(r.get(call_field)):
             carriers[tok].append(r)
     return carriers
 
@@ -171,8 +176,8 @@ def assess_backlog(recent_carriers, backlog_frac=0.5, max_lag_years=2):
 
 
 def detect_emergence(records, as_of, window_days=180, min_count=3,
-                     min_delta=0.05, backlog_frac=0.5):
-    """Flag ERG11 substitutions that are newly-appearing or rising.
+                     min_delta=0.05, backlog_frac=0.5, call_field="erg11_call"):
+    """Flag substitutions that are newly-appearing or rising, over one gene's calls.
 
     Splits `records` into a baseline (created <= as_of) and a recent window
     (as_of < created <= as_of + window_days) by NCBI visibility date, then, over
@@ -193,7 +198,7 @@ def detect_emergence(records, as_of, window_days=180, min_count=3,
       note                                -- set when nothing is callable yet
     """
     baseline, recent, undated = split_by_creation(records, as_of, window_days)
-    b_called, r_called = called(baseline), called(recent)
+    b_called, r_called = called(baseline, call_field), called(recent, call_field)
     nb, nr = len(b_called), len(r_called)
 
     coverage = {
@@ -206,15 +211,17 @@ def detect_emergence(records, as_of, window_days=180, min_count=3,
     result = {"as_of": str(as_of)[:10], "window_days": window_days,
               "thresholds": thresholds, "coverage": coverage, "signals": []}
 
+    result["call_field"] = call_field
     if nr == 0:
+        gene = "FKS1" if call_field == "fks1_call" else "ERG11"
         result["note"] = (
             "no called isolates in the recent window -- cannot detect mutation "
-            "emergence yet. Calls are pending the ERG11 re-caller; an empty call "
+            f"emergence yet. Calls are pending the {gene} re-caller; an empty call "
             "is honestly uncalled, never assumed susceptible.")
         return result
 
-    base_carriers = mutation_carriers(baseline)
-    rec_carriers = mutation_carriers(recent)
+    base_carriers = mutation_carriers(baseline, call_field)
+    rec_carriers = mutation_carriers(recent, call_field)
 
     signals = []
     for mut, carriers in rec_carriers.items():

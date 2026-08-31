@@ -27,10 +27,18 @@ against the recorded hash.
 
 `isolate_key`, `target_acc`, `biosample_acc`, `run_acc`, `asm_acc`,
 `collection_date`, `target_creation_date`, `country`, `geo_loc_name`, `lat_lon`,
-`erg11_call`, `resistance_source`.
+`erg11_call`, `resistance_source`, `fks1_call`, `fks1_resistance_source`.
 
 `isolate_key` is `target_acc` with its `.N` version stripped — the identity that
 persists when NCBI re-processes an isolate.
+
+The last two columns (`fks1_call`, `fks1_resistance_source`) were **appended** by the
+FKS1/echinocandin track (v2). A snapshot written before v2 lacks them; it is migrated on
+read (each pre-v2 row's FKS1 fields are back-filled to their honest pending state, seeded
+from `run_acc`) and can be rewritten in place with
+`python scripts/recall_fks1.py migrate <snapshot>`. Appending, rather than inserting, keeps
+the azole-era columns in their original positions so a `git diff` shows only the two new
+trailing columns.
 
 ### `erg11_call` is deliberately empty
 
@@ -55,6 +63,21 @@ becomes one of:
   call, but *never* silently wild type),
 - `sra-recaller:failed(…)` / `:refused(…)` — fetch/align failed, or the consensus was
   out of frame (indels can't be point substitutions). The isolate is marked, not dropped.
+
+### `fks1_call` is deliberately empty too (v2 / echinocandin track)
+
+NCBI exposes no echinocandin call either, so `fks1_call` starts blank and
+`fks1_resistance_source` records why — `pending:sra-fks1-recaller` when reads are linked,
+`pending:no-reads` otherwise. The **FKS1 re-caller** (`openafr/fks1_caller.py` +
+`scripts/recall_fks1.py`) fills it from the isolate's own FKS1/GSC1 sequence against the
+pinned B8441 reference (`fks1_reference/`, accession XM_085597048.1, numbering-verified at
+S639/R1354). It is **detection only** — echinocandins do not coordinate a metal, so the
+CYP51/heme-iron geometry so-what does not transfer and no structural verdict is claimed for
+an FKS1 call. Because FKS1's two hot-spots are called independently, its source is
+**per-window**, e.g. `sra-fks1-recaller:HS1=called,HS2=wild-type` (statuses
+`called` / `wild-type` / `partial(uncalled:…)` / `refused(…)` / `missing` per window, plus a
+whole-isolate `failed(…)`). Batch it over a snapshot with
+`recall_fks1.py plan|fill|prevalence` (the ERG11 batch path, for FKS1).
 
 ## Commands
 
