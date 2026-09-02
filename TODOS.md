@@ -149,7 +149,32 @@ after `validate_gate2.py` passes.
 
 **Source:** /plan-eng-review finding P1, 2026-08-01. Task ID T6.
 
-## Widen early-warning detection to echinocandin/FKS1 resistance (v2) — DEFERRED 2026-08-12
+## Widen early-warning detection to echinocandin/FKS1 resistance (v2) — BUILT (detection-only), 2026-09-01
+
+> **UPDATE 2026-09-01 — the v2 detection-only pipeline is now built end-to-end.** The
+> FKS1/echinocandin track runs the full loop *in parallel to* ERG11, honestly labelled
+> detection-only (no structural verdict — echinocandins coordinate no metal, so the
+> CYP51/heme-iron moat does not transfer). Shipped increments:
+> - **T1 (#51)** — `openafr/fks1_caller.py`: windowed reads→consensus→S639-panel call,
+>   pinned/numbering-verified GSC1 reference (`data/earlywarning/fks1_reference/`).
+> - **T2 (#52)** — `scripts/recall_fks1.py` `call`/`recall`: the CLI, tool-gated like ERG11.
+> - **T3 (#111)** — snapshot schema `fks1_call`/`fks1_resistance_source` + migration +
+>   batch `plan`/`fill`/`prevalence`; `detect_emergence(call_field=...)` serves FKS1.
+> - **Alert surface (#112)** — `alert.compose_fks1_alerts` + `render_fks1_markdown`;
+>   `compose_alert.py --gene fks1` (WATCH/CONTEXT only, never ACT-NOW).
+> - **Delivery (this change)** — `deliver_alert.py --gene fks1` with its OWN committed
+>   digest/state (`DIGEST_FKS1.md`/`STATE_FKS1.json`); the scheduled workflow delivers
+>   both genes independently. `openafr/delivery.py` routes off the result's `gene` marker.
+>
+> **What remains OPEN for v2:**
+> 1. **A real FKS1 `fill` → measured prevalence/backtest.** `fks1_panel_prevalence` reports
+>    "NOT MEASURED YET" until an actual re-caller `fill` runs — same wall as ERG11: bioconda
+>    tools (fasterq-dump/minimap2/samtools≥1.13) + multi-GB SRA downloads on a Linux/x86
+>    host (offline-tested orchestration; unproven binaries). Not doable on osx-arm64.
+> 2. **T5 — the FKS1 structural so-what: still DEFERRED BY DESIGN**, not merely unbuilt.
+>    Echinocandins coordinate no metal; the CYP51 geometry moat does not transfer to a
+>    glucan synthase. Revisit only if a PI asks for it. The detection-only label is the
+>    honest scope, and it is now enforced through composition, rendering, and delivery.
 
 **What:** Extend the resistance early-warning track (issues #20-27) to detect
 emerging FKS1/echinocandin resistance in C. auris, in addition to azole/ERG11.
