@@ -1,7 +1,14 @@
-"""Delivery + no-op decision for the C. auris azole early-warning track (issue #26).
+"""Delivery + no-op decision for the C. auris early-warning track (issue #26).
 
 Pipeline stage: the delivery layer -- makes the composed alert (#25) find a human,
 on a cadence, minimally.
+
+Gene-agnostic. The decision logic (new-vs-known, escalation, quiet no-op, committed
+state) is identical for both tracks; only two rendered labels and which composer's
+renderer to reuse depend on the gene, and those are read off the composed result's own
+`gene` marker (ERG11/azole with a structural so-what, or FKS1/echinocandin which is
+detection-only). Run the two tracks with separate state files so their memories do not
+collide (scripts/deliver_alert.py --gene).
 
 Why this exists
 ---------------
@@ -114,6 +121,23 @@ def next_state(alert_result, state, as_of=None):
 
 
 # ------------------------------- rendering ------------------------------------
+#
+# Delivery is gene-agnostic except for two labels and which composer's renderer to
+# reuse. The composed `result` already carries its own gene marker (compose_fks1_alerts
+# sets gene="FKS1"; the ERG11 compose_alerts sets none), so we route off that rather
+# than threading a parameter -- the digest can never disagree with the alert it wraps.
+_GENE_META = {
+    "ERG11": {"digest_title": "C. auris azole early-warning digest",
+              "issue_gene": "ERG11", "render": alert.render_markdown},
+    "FKS1": {"digest_title": "C. auris echinocandin (FKS1) early-warning digest",
+             "issue_gene": "FKS1", "render": alert.render_fks1_markdown},
+}
+
+
+def _gene_meta(alert_result):
+    """The per-gene labels + renderer for a composed result (default ERG11)."""
+    return _GENE_META.get(alert_result.get("gene", "ERG11"), _GENE_META["ERG11"])
+
 
 def _whats_new_block(fresh, state):
     """One-line-per-mutation summary of what made this run deliver.
@@ -141,7 +165,8 @@ def render_digest(alert_result, fresh, state):
     the body is the composer's full Markdown so the committed file always shows the
     complete current picture, not just the delta.
     """
-    header = ["# C. auris azole early-warning digest",
+    meta = _gene_meta(alert_result)
+    header = [f"# {meta['digest_title']}",
               "",
               f"_Delivered {alert_result.get('as_of', '')}_ — "
               f"{len(fresh)} new/escalated alert(s) this run.",
@@ -150,7 +175,7 @@ def render_digest(alert_result, fresh, state):
               ""]
     header += _whats_new_block(fresh, state)
     header += ["", "---", ""]
-    return "\n".join(header) + "\n" + alert.render_markdown(alert_result)
+    return "\n".join(header) + "\n" + meta["render"](alert_result)
 
 
 def issue_title(alert_result, fresh):
@@ -159,7 +184,8 @@ def issue_title(alert_result, fresh):
     tiers = sorted({a["priority"] for a in fresh}, key=_rank)
     badges = "/".join(alert._BADGE[t] for t in tiers)
     plural = "alert" if n == 1 else "alerts"
-    return (f"[early-warning] {n} new C. auris ERG11 {plural} ({badges}) "
+    gene = _gene_meta(alert_result)["issue_gene"]
+    return (f"[early-warning] {n} new C. auris {gene} {plural} ({badges}) "
             f"— {alert_result.get('as_of', '')}")
 
 

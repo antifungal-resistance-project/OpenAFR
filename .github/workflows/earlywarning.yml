@@ -1,19 +1,24 @@
-# C. auris azole early-warning schedule (issue #26).
+# C. auris early-warning schedule (issue #26).
 #
 # Runs the whole pipeline on a cadence so the signal finds a human without anyone
-# remembering to look: pull the latest NCBI release -> detect emergence -> map to the
-# azole pocket -> estimate the fit so-what -> compose alerts -> deliver ONLY if there
-# is genuine new news. A no-new-emergence run commits nothing and files nothing (the
-# quiet no-op is the design; see openafr/delivery.py).
+# remembering to look: pull the latest NCBI release -> detect emergence -> map/estimate
+# the so-what -> compose alerts -> deliver ONLY if there is genuine new news. A
+# no-new-emergence run commits nothing and files nothing (the quiet no-op is the design;
+# see openafr/delivery.py).
 #
-# Delivery is two artefacts, both produced only on new news:
-#   * data/earlywarning/digest/DIGEST.md + STATE.json committed back to the branch
-#     (STATE.json is the git-tracked memory of what we've already alerted on), and
-#   * an auto-filed GitHub issue whose body is that same digest.
+# Two genes, delivered independently:
+#   * ERG11/azole  -- with the structural fit so-what (DIGEST.md / STATE.json).
+#   * FKS1/echinocandin (v2) -- DETECTION-ONLY, no structural verdict (echinocandins
+#     coordinate no metal, so the CYP51 geometry does not transfer); its own committed
+#     memory (DIGEST_FKS1.md / STATE_FKS1.json) so the two schedules never collide.
 #
-# Honest today-state: on real snapshots every erg11_call is still empty (calls pending
-# the ERG11 re-caller, #23), so `deliver_alert.py run` correctly no-ops until there is
-# a real call to stand behind -- and lights up automatically when #23 lands.
+# Delivery is two artefacts per gene, both produced only on new news: the digest + state
+# committed back to the branch, and an auto-filed GitHub issue whose body is that digest.
+#
+# Honest today-state: on real snapshots every erg11_call / fks1_call is still empty
+# (calls pending the respective re-caller), so `deliver_alert.py run` correctly no-ops
+# until there is a real call to stand behind -- and lights up automatically when a fill
+# lands.
 name: c-auris-early-warning
 
 on:
@@ -53,16 +58,16 @@ jobs:
           echo "window=$WINDOW" >> "$GITHUB_OUTPUT"
           echo "as_of=$(python3 -c "import datetime,os;print((datetime.date.today()-datetime.timedelta(days=int(os.environ['WINDOW']))).isoformat())")" >> "$GITHUB_OUTPUT"
 
-      - name: Pull, detect, compose, deliver
+      - name: Pull, detect, compose, deliver (ERG11/azole)
         id: deliver
         run: |
-          python3 scripts/deliver_alert.py run \
+          python3 scripts/deliver_alert.py run --gene erg11 \
             --as-of "${{ steps.dates.outputs.as_of }}" \
             --window "${{ steps.dates.outputs.window }}" \
             --issue-out "$RUNNER_TEMP/issue.md" \
             --github-output "$GITHUB_OUTPUT"
 
-      - name: Commit digest + state
+      - name: Commit digest + state (ERG11)
         if: steps.deliver.outputs.delivered == 'true'
         run: |
           git config user.name  "github-actions[bot]"
@@ -71,7 +76,7 @@ jobs:
           git commit -m "early-warning: ${{ steps.deliver.outputs.title }}"
           git push
 
-      - name: File alert issue
+      - name: File alert issue (ERG11)
         if: steps.deliver.outputs.delivered == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,4 +84,35 @@ jobs:
           gh issue create \
             --title "${{ steps.deliver.outputs.title }}" \
             --body-file "$RUNNER_TEMP/issue.md" \
+            --label early-warning
+
+      - name: Pull, detect, compose, deliver (FKS1/echinocandin, detection-only)
+        id: deliver_fks1
+        run: |
+          python3 scripts/deliver_alert.py run --gene fks1 \
+            --as-of "${{ steps.dates.outputs.as_of }}" \
+            --window "${{ steps.dates.outputs.window }}" \
+            --issue-out "$RUNNER_TEMP/issue_fks1.md" \
+            --github-output "$RUNNER_TEMP/fks1_output"
+          # surface this step's outputs under its own id
+          cat "$RUNNER_TEMP/fks1_output" >> "$GITHUB_OUTPUT"
+
+      - name: Commit digest + state (FKS1)
+        if: steps.deliver_fks1.outputs.delivered == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase --autostash || true
+          git add data/earlywarning/digest/DIGEST_FKS1.md data/earlywarning/digest/STATE_FKS1.json
+          git commit -m "early-warning: ${{ steps.deliver_fks1.outputs.title }}"
+          git push
+
+      - name: File alert issue (FKS1)
+        if: steps.deliver_fks1.outputs.delivered == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "${{ steps.deliver_fks1.outputs.title }}" \
+            --body-file "$RUNNER_TEMP/issue_fks1.md" \
             --label early-warning
