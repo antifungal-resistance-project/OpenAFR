@@ -1,0 +1,72 @@
+{
+  "developability": {
+    "clogp": 0.74,
+    "esol_logs": -2.41,
+    "herg_risk_factors": false,
+    "mw": 306.3,
+    "n_alerts": 0,
+    "pains": [],
+    "ro5_violations": 0,
+    "structural_alerts": [],
+    "tpsa": 81.6,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.739887041467222,
+    "best_score": -8.196,
+    "n_passing": 2,
+    "n_poses": 20,
+    "rank": 14
+  },
+  "inchikey": "RFHAOTPXVQNOHP-UHFFFAOYSA-N",
+  "name": "fluconazole",
+  "precedent": {
+    "n_off_target": 9272,
+    "nearest_tested": null,
+    "phenotypic": {
+      "tally": {
+        "active": 2750,
+        "ambiguous": 874,
+        "ignore": 6605,
+        "inactive": 1072
+      },
+      "verdict": "tested-active"
+    },
+    "verdict": "tested-active"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "azole warhead (1,2,4-triazole) -> pan-CYP liability type-II(1,2,4-triazole):HIGHx5 (selectivity risk)",
+    "reference: already measured active against the enzyme (positive control, not a novel hit)",
+    "priority B: not automatic-A (not a known active, top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #14 by n-fe geometry with convergent poses (2/20 contact the iron), already a measured enzyme active (reference/positive control); the 1,2,4-triazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "1,2,4-triazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "type-II(1,2,4-triazole):HIGHx5",
+    "n_high": 5,
+    "n_moderate": 0
+  },
+  "smiles": "OC(Cn1cncn1)(Cn1cncn1)c1ccc(F)cc1F",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 2.77
+  }
+}

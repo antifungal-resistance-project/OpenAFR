@@ -1,0 +1,64 @@
+{
+  "developability": {
+    "clogp": 2.69,
+    "esol_logs": -4.35,
+    "herg_risk_factors": false,
+    "mw": 453.9,
+    "n_alerts": 1,
+    "pains": [],
+    "ro5_violations": 0,
+    "structural_alerts": [
+      [
+        "NIH",
+        "betalactam"
+      ]
+    ],
+    "tpsa": 112.7,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.557574436844413,
+    "best_score": -7.753,
+    "n_passing": 1,
+    "n_poses": 19,
+    "rank": 4
+  },
+  "inchikey": "UIOFUWFRIANQPC-JKIFEVAISA-N",
+  "name": "flucloxacillin",
+  "precedent": {
+    "n_off_target": 388,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "priority B: not automatic-A (clean drug-likeness, convergent poses, top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #4 by n-fe geometry with convergent poses (1/19 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+  "selectivity": {
+    "azole_warhead": null,
+    "flagged_isoforms": [
+      "CYP2C9",
+      "CYP2C19"
+    ],
+    "flags": "2C9+2C19",
+    "n_high": 0,
+    "n_moderate": 2
+  },
+  "smiles": "Cc1onc(c1C(=O)N[C@H]1[C@H]2SC(C)(C)[C@@H](N2C1=O)C(O)=O)-c1c(F)cccc1Cl",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "moderate",
+    "sa_score": 3.67
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "developability": {
+    "clogp": -1.93,
+    "esol_logs": -0.41,
+    "herg_risk_factors": false,
+    "mw": 284.2,
+    "n_alerts": 5,
+    "pains": [
+      "azo_A(324)"
+    ],
+    "ro5_violations": 0,
+    "structural_alerts": [
+      [
+        "Brenk",
+        "Azido_group"
+      ],
+      [
+        "Brenk",
+        "diazo_group"
+      ],
+      [
+        "Brenk",
+        "quaternary_nitrogen_3"
+      ],
+      [
+        "NIH",
+        "azide"
+      ]
+    ],
+    "tpsa": 179.6,
+    "veber_ok": false
+  },
+  "geometry": {
+    "best_fe": 2.6208689398747183,
+    "best_score": -7.371,
+    "n_passing": 2,
+    "n_poses": 20,
+    "rank": 8
+  },
+  "inchikey": "ODLGMSQBFONGNG-JVZYCSMKSA-N",
+  "name": "R-1479",
+  "precedent": {
+    "n_off_target": 150,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "C",
+  "priority_reasons": [
+    "PAINS alert: assay-interference risk makes the readout unreliable"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #8 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+  "selectivity": {
+    "azole_warhead": null,
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+    "n_high": 0,
+    "n_moderate": 5
+  },
+  "smiles": "Nc1ccn([C@@H]2O[C@@](CO)(N=[N+]=[N-])[C@@H](O)[C@H]2O)c(=O)n1",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "moderate",
+    "sa_score": 4.46
+  }
+}

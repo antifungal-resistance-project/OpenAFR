@@ -26,7 +26,7 @@ only network stage; --precedent none produces a fully offline, reproducible doss
 Usage:
   python scripts/build_dossier.py SCREEN_DIR LIBRARY.smi [RECEPTOR_PDB] \\
       [-o dossiers.json] [--split DIR] [-n TOP] \\
-      [--precedent both|chembl|pubchem|none] [--near TESTED.smi]
+      [--precedent both|chembl|pubchem|none] [--near TESTED.smi] [--catalogued]
 
   SCREEN_DIR    directory of docked *.pdbqt poses (e.g. work/screen)   — geometry, reused
   LIBRARY.smi   the SAME library, `<SMILES>\\t<name>` per line (admet_filter.read_smi format)
@@ -65,7 +65,15 @@ def _ranked_geometry(screen_dir, receptor_pdb):
 
 
 def _profiles(smiles, name, catalogued):
-    """Local, deterministic profilers. Returns (admet, cyp, synth, error)."""
+    """Local, deterministic profilers. Returns (admet, cyp, synth, error).
+
+    `catalogued` asserts library provenance: when the whole input library is a
+    physical catalogue (e.g. the Drug Repurposing Hub — every entry is a buyable
+    drug), the operator sets it so availability resolves to `catalogued-drug`
+    instead of the network-free default `not-checked`, which the priority table
+    reads as 'physically obtainable'. It is an operator claim about the source,
+    never a per-molecule network lookup, so it stays deterministic and offline.
+    """
     try:
         a = admet.profile(smiles)
         c = cyp_offtarget.profile(smiles)
@@ -97,7 +105,7 @@ def _provenance(receptor_pdb, source):
     }
 
 
-def build(screen_dir, library_smi, receptor_pdb, top, source, near_path):
+def build(screen_dir, library_smi, receptor_pdb, top, source, near_path, catalogued=False):
     rows = _ranked_geometry(screen_dir, receptor_pdb)
     if top is not None:
         rows = rows[:top]
@@ -115,7 +123,7 @@ def build(screen_dir, library_smi, receptor_pdb, top, source, near_path):
                             "error": "not-in-library"})
             continue
 
-        a, c, s, err = _profiles(smi, name, catalogued=False)
+        a, c, s, err = _profiles(smi, name, catalogued=catalogued)
         rec = {"name": name, "smiles": smi, "geometry": geometry,
                "admet": a, "cyp": c, "synth": s, "error": err}
 
@@ -151,11 +159,16 @@ def main(argv=None):
                     help="network precedent source; 'none' skips the network (default: both)")
     ap.add_argument("--near", metavar="TESTED.smi",
                     help="nearest previously-tested neighbour annotation (soft negatives)")
+    ap.add_argument("--catalogued", action="store_true",
+                    help="assert the whole library is a physical catalogue (e.g. the Drug "
+                         "Repurposing Hub) so availability resolves to 'catalogued-drug' "
+                         "instead of 'not-checked'; an operator claim about the source, not "
+                         "a per-molecule lookup")
     args = ap.parse_args(argv)
 
     source = "chembl+pubchem" if args.precedent == "both" else args.precedent
     dossiers = build(args.screen_dir, args.library_smi, args.receptor_pdb,
-                     args.top, source, args.near)
+                     args.top, source, args.near, catalogued=args.catalogued)
 
     text = json.dumps(dossiers, indent=2, sort_keys=True)
     if args.out:

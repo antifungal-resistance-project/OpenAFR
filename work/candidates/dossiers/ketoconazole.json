@@ -1,0 +1,74 @@
+{
+  "developability": {
+    "clogp": 4.21,
+    "esol_logs": -5.67,
+    "herg_risk_factors": true,
+    "mw": 531.4,
+    "n_alerts": 1,
+    "pains": [
+      "anil_di_alk_C(246)"
+    ],
+    "ro5_violations": 1,
+    "structural_alerts": [],
+    "tpsa": 69.1,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.9211953032962437,
+    "best_score": -11.948,
+    "n_passing": 1,
+    "n_poses": 17,
+    "rank": 16
+  },
+  "inchikey": "XMAYWYJOQHXEEK-UHFFFAOYSA-N",
+  "name": "ketoconazole",
+  "precedent": {
+    "n_off_target": 7365,
+    "nearest_tested": null,
+    "phenotypic": {
+      "tally": {
+        "active": 933,
+        "ambiguous": 224,
+        "ignore": 1891,
+        "inactive": 91
+      },
+      "verdict": "tested-active"
+    },
+    "verdict": "tested-active"
+  },
+  "priority": "C",
+  "priority_reasons": [
+    "azole warhead (imidazole) -> pan-CYP liability type-II(imidazole):HIGHx5 (selectivity risk)",
+    "reference: already measured active against the enzyme (positive control, not a novel hit)",
+    "PAINS alert: assay-interference risk makes the readout unreliable"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #16 by n-fe geometry with convergent poses (1/17 contact the iron), already a measured enzyme active (reference/positive control); the imidazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "imidazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "type-II(imidazole):HIGHx5",
+    "n_high": 5,
+    "n_moderate": 0
+  },
+  "smiles": "CC(=O)N1CCN(CC1)c1ccc(OCC2COC(Cn3ccnc3)(c3ccc(Cl)cc3Cl)O2)cc1",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 3.44
+  }
+}

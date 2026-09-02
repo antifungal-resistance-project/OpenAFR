@@ -1,0 +1,63 @@
+{
+  "developability": {
+    "clogp": 1.87,
+    "esol_logs": -3.09,
+    "herg_risk_factors": false,
+    "mw": 250.3,
+    "n_alerts": 0,
+    "pains": [],
+    "ro5_violations": 0,
+    "structural_alerts": [],
+    "tpsa": 73.9,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.6799270512459867,
+    "best_score": -8.108,
+    "n_passing": 1,
+    "n_poses": 19,
+    "rank": 11
+  },
+  "inchikey": "JPAWFIIYTJQOKW-UHFFFAOYSA-N",
+  "name": "olprinone",
+  "precedent": {
+    "n_off_target": 417,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "azole warhead (imidazole) -> pan-CYP liability type-II(imidazole):HIGHx5 (selectivity risk)",
+    "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #11 by n-fe geometry with convergent poses (1/19 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the imidazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "imidazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "type-II(imidazole):HIGHx5",
+    "n_high": 5,
+    "n_moderate": 0
+  },
+  "smiles": "Cc1[nH]c(=O)c(cc1-c1ccc2nccn2c1)C#N",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 2.72
+  }
+}

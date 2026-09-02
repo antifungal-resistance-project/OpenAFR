@@ -1,0 +1,68 @@
+{
+  "developability": {
+    "clogp": 5.0,
+    "esol_logs": -5.53,
+    "herg_risk_factors": false,
+    "mw": 346.4,
+    "n_alerts": 1,
+    "pains": [],
+    "ro5_violations": 1,
+    "structural_alerts": [
+      [
+        "Brenk",
+        "triphenyl_methyl-silyl"
+      ]
+    ],
+    "tpsa": 17.8,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.3711358037868693,
+    "best_score": -8.879,
+    "n_passing": 2,
+    "n_poses": 19,
+    "rank": 1
+  },
+  "inchikey": "QHMWCHQXCUNUAK-UHFFFAOYSA-N",
+  "name": "flutrimazole",
+  "precedent": {
+    "n_off_target": 231,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "azole warhead (imidazole) -> pan-CYP liability type-II(imidazole):HIGHx5 (selectivity risk)",
+    "priority B: not automatic-A (clean drug-likeness)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #1 by n-fe geometry with convergent poses (2/19 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the imidazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "imidazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "type-II(imidazole):HIGHx5",
+    "n_high": 5,
+    "n_moderate": 0
+  },
+  "smiles": "Fc1ccc(cc1)C(c1ccccc1)(c1ccccc1F)n1ccnc1 |&1:7|",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 2.71
+  }
+}
