@@ -1,0 +1,45 @@
+# Known-genotype sanity set for the FKS1 (echinocandin) re-caller
+# (scripts/recaller_sanity_fks1.py). The v2 analog of known_genotypes.tsv (ERG11).
+#
+# Purpose: before trusting the FKS1 reads->window-consensus->call orchestration on a 29k-isolate
+# snapshot, run it on a handful of strains whose FKS1 echinocandin-resistance genotype is already
+# published, and confirm the caller emits the expected panel token (S639F/P/Y). This is the FKS1
+# de-risking slice named in TODOS.md (v2, OPEN step 1) and in work/RUNBOOK_fks1_run.md (step 3) --
+# a fixed, citable truth set, NOT NCBI's (absent) AMR labels.
+#
+# TRUTH SET. The three POSITIVE controls (one per panel token) are drawn from the published FKS1
+# benchmark dataset for C. auris (PMC12323592: "A benchmark dataset for validating FKS1 mutations
+# in Candida auris"), which categorizes 100 WGS isolates as echinocandin susceptible/resistant and
+# lists each resistant isolate's HS1 substitution + its SRA run. That paper exists precisely to
+# validate FKS1 variant callers, so it is the ideal echinocandin analog of Lockhart 2017 (the
+# ERG11 truth set). The NEGATIVE control (B11220) is the same clade-II azole/echinocandin-
+# susceptible reference used in the ERG11 fixture -- reused here as an FKS1 wild-type control.
+#
+# PLATFORM + PROVENANCE (verified 2026-09-02): every run below is ILLUMINA PAIRED WGS, confirmed
+# against the ENA read_run API (instrument_platform=ILLUMINA, library_layout=PAIRED,
+# library_strategy=WGS, scientific_name=Candida[ozyma] auris). This is load-bearing: the
+# orchestration aligns with `minimap2 -ax sr` (the short-read preset), the same path the real
+# `fill` uses -- a PacBio/Nanopore run would misalign under `-ax sr` and yield an honest but
+# useless uncalled, so the sanity set must not use one. Verified fields per run:
+#   SRR28270963  ILLUMINA PAIRED WGS  2,111,011 reads  SAMN40300162   (B11211, S639F)
+#   SRR10461137  ILLUMINA PAIRED WGS  3,785,367 reads  SAMN13294172   (B12136, S639P)
+#   SRR7909222   ILLUMINA PAIRED WGS  2,834,008 reads  SAMN10139331   (B12663, S639Y)
+#   SRR3883452   ILLUMINA PAIRED WGS  (Lockhart 2017; already validated in known_genotypes.tsv)
+# Benchmark WGS is deposited under BioProjects PRJNA638416 / PRJNA722434 (with earlier isolates
+# under PRJNA328792 / PRJNA493622 / PRJNA595978); B11220 is Lockhart 2017's PRJNA328792.
+#
+# expected_panel semantics: the FKS1 HS1 panel substitution(s) the source attributes to this
+# strain -- what result['panel_hits'] must CONTAIN. Empty ("-") means echinocandin-SUSCEPTIBLE /
+# FKS1 wild-type and must yield NO panel hit (a spurious S639* there means the orchestration --
+# alignment/consensus -- not the science, is wrong). Only HS1 (S639F/P/Y) is panel-tagged; HS2
+# (R1354) is reported but not yet tagged, so an HS2 difference is emitted verbatim, not a panel
+# hit, and is not an expectation here. clade is display-only (the FKS1 genotype, not the clade,
+# is the point); "-" where the source does not pin it.
+#
+# Columns (tab-separated): strain  clade  run_acc  expected_panel  note  citation
+#
+strain	clade	run_acc	expected_panel	note	citation
+B11220	II	SRR3883452	-	clade II (East Asia/Japan) -- azole- AND echinocandin-susceptible; the FKS1 WILD-TYPE control (must emit no S639 panel hit); reused from the ERG11 sanity set, same validated Illumina run	Lockhart 2017 CID 64:134 (clade II pan-susceptible)
+B11211	-	SRR28270963	S639F	echinocandin-RESISTANT, FKS1 HS1 S639F (the dominant C. auris echinocandin call); positive control for the S639F token	FKS1 benchmark dataset, PMC12323592 (BioProject PRJNA638416/PRJNA722434)
+B12136	-	SRR10461137	S639P	echinocandin-RESISTANT, FKS1 HS1 S639P; positive control for the S639P token	FKS1 benchmark dataset, PMC12323592 (BioProject PRJNA595978)
+B12663	-	SRR7909222	S639Y	echinocandin-RESISTANT, FKS1 HS1 S639Y; positive control for the S639Y token	FKS1 benchmark dataset, PMC12323592 (BioProject PRJNA493622)
