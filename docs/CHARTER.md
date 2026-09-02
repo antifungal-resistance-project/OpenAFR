@@ -1,195 +1,139 @@
-# The Antifungal Resistance Project — Founding Charter (Draft)
+# The Antifungal Resistance Project — Charter
 
-This is the rulebook that keeps the mission safe. It's the instrument behind the
-[Business Plan](BUSINESS_PLAN.md). It's a founder's charter — a plain statement of
-what we're for and the locks that protect it — meant to be handed to lawyers as
-the intent behind the real articles, bylaws, and share agreements.
+This charter sets out the purpose of The Antifungal Resistance Project and the
+rules that protect that purpose. It is the foundation's statement of intent, and it
+is written to guide the legal documents that formally establish the organization.
 
-**This isn't legal advice and it isn't a binding document yet.**
+## Article I — Purpose
 
-> Why write it now: the Eric Ries point (from *The Startup Way* and the Long-Term
-> Stock Exchange) is that you build mission protection into the structure at the
-> start, while it's cheap and nobody's fighting over it. You can't really add it
-> later once money shows up. And from Novo Nordisk, Patagonia, and steward-
-> ownership: keep control separate from cashing out, so whoever funds the work
-> doesn't get to own or sell the mission.
+The Antifungal Resistance Project, and every organization it controls, exists to
+work toward a world without antifungal resistance: to discover, develop, and fairly
+deliver the medicines, diagnostics, surveillance, and stewardship that fungal
+disease demands.
 
----
+The project serves patients and public health first. Financial return is a means to
+that end and never the end itself. Where the two come into conflict, the mission
+takes precedence.
 
-## Article I — What we're for
+This purpose is permanent. It may be amended only with the agreement of at least
+three-quarters of the mission trustees together with the consent of the golden
+share, and never in a way that removes the priority of patients or the asset lock
+in Article VI.
 
-**1.1** The Antifungal Resistance Project (the "Foundation") and everything it
-controls exists to work toward a world without antifungal resistance — by
-discovering, developing, and fairly delivering antifungal medicines, diagnostics,
-surveillance, and stewardship.
+## Article II — Commitments
 
-**1.2** We serve patients and public health first. Money is fuel for that, never
-the goal. When the two conflict, the mission wins.
+In pursuit of its purpose, the foundation commits to:
 
-**1.3** This article is locked. It can only change with both a supermajority (at
-least 75%) of the mission trustees and the consent of the golden-share holder, and
-never in a way that removes patients-first or the asset lock in Article VI.
+- **A broad mission and a focused effort.** The mission covers the whole of
+  antifungal resistance, but the foundation concentrates on one proven program at a
+  time, and takes on new work only in sequence, never at the expense of the work
+  already underway.
+- **Honesty in every claim.** The foundation does not assert a result, scientific
+  or financial, that it has not earned, and it reports its failures as openly as its
+  successes.
+- **Keeping its core tools open.** The software at the heart of the project remains
+  available at no cost for academic, nonprofit, public health, and personal use.
 
----
+## Article III — Structure
 
-## Article II — The mission, written so we can be held to it
+The foundation is a nonprofit organization. It has no shareholders and no owners,
+and it cannot be bought or taken over. It is the ultimate parent of all the
+project's work.
 
-In keeping with how we run the science — pre-registration, publishing our
-failures, an open tool — the Foundation commits to:
+The development company, which carries out the work of creating medicines, is a
+public benefit corporation. Its stated public benefit is the purpose set out in
+Article I, and its directors are bound to weigh that purpose against financial
+return.
 
-- **Broad mission, narrow execution.** Pursue all of antifungal resistance as the
-  mission, but keep the active project narrow — one validated effort at a time —
-  until it reaches a real result or a committed partner. New tracks like
-  diagnostics come one after another, not all at once.
-- **Earn every claim.** Never assert a win, scientific or financial, that we
-  haven't earned. Publish the nulls and the dead ends.
-- **Keep the tool a public good.** The core triage tool stays source-available and
-  free for all noncommercial, academic, public-health, and personal use.
+The company issues three kinds of shares:
 
----
+- **The golden share**, a single control share held by the foundation, carrying the
+  rights of veto set out in Article IV. It has no financial value and can only ever
+  pass to a successor nonprofit devoted to the same purpose.
+- **Control shares**, held by the foundation, carrying enough votes to keep control
+  of the company even when the foundation holds a minority of its financial value.
+- **Ordinary shares**, held by investors, employees, and partners, carrying
+  financial return and ordinary votes.
 
-## Article III — How it's built
+Control and financial ownership are held separately by design. Investors may earn a
+fair return, but they may not acquire the power to sell the mission or to weaken the
+commitment to patient access.
 
-**3.1** The Foundation is a nonprofit with no shareholders and no owners. It can't
-be bought or taken over. It's the top of the stack.
+## Article IV — Protections
 
-**3.2** DrugCo — the company that develops the medicines — is a public benefit
-corporation. Its stated public benefit is Article I, and its directors are legally
-bound to weigh that against profit.
+The following decisions require the consent of the foundation, through the golden
+share, regardless of who holds the company's financial value:
 
-**3.3** DrugCo has three kinds of shares:
-
-- **The golden share** — one control share held by the Foundation, carrying the
-  vetoes in Article IV. It has no economic value and can only ever pass to a
-  successor mission-nonprofit.
-- **Control shares** — held by the Foundation, with extra votes, enough to keep
-  voting control even when the Foundation owns a minority of the economics. This is
-  the Novo Nordisk Foundation mechanism.
-- **Ordinary shares** — held by investors, employees, and partners, with the
-  economic upside and normal votes. We welcome investors for their money, not for
-  control of the mission.
-
-**3.4** So money and control sit in different hands on purpose. Investors can make
-real returns; they can't buy the power to sell the mission or drop the access
-promises.
-
----
-
-## Article IV — The five locks
-
-**Lock 1 — Ownership.** The top of the stack is a nonprofit with no owners and an
-asset lock (Article VI). The mission isn't for sale, at any price, to anyone.
-
-**Lock 2 — Control (the golden-share veto).** No matter what the cap table looks
-like, these need the Foundation's consent:
-- selling, merging, or changing control of DrugCo;
+- selling, merging, or transferring control of the company;
 - changing the purpose or the public benefit;
-- dropping or weakening the access commitments (Lock 4);
-- issuing shares that would push the Foundation below voting control;
-- changing the locked articles (I, IV, VI);
-- winding down or moving the assets.
+- weakening or removing the access commitments in Article V;
+- issuing shares that would reduce the foundation below control;
+- amending the permanent articles, being Articles I, IV, and VI;
+- winding up the organization or transferring its assets.
 
-**Lock 3 — Purpose.** Directors and trustees owe their first duty to Article I.
-The purpose clause is locked (1.3) and survives changes of management, funding, and
-ownership.
+## Article V — Access
 
-**Lock 4 — Access.** Any medicine we bring toward market carries commitments that
-survive even after we license it to someone else:
-- fair, tiered pricing, with real access in low- and middle-income countries where
-  the fungal disease burden is highest;
-- no patent games used to block access;
-- surveillance and safety data kept open where it helps public health.
-Every license or partnership has to carry these terms forward.
+Any medicine the foundation brings toward patients carries commitments that remain
+in force even after the medicine is licensed to another company:
 
-**Lock 5 — Transparency.** At least once a year we publish an honest account of
-where we are, scientifically and financially — including the failures and the
-programs we killed — and we keep the pre-registration and honest-reporting habits
-of the underlying project.
+- fair and tiered pricing, with genuine access in the lower- and middle-income
+  countries that carry the heaviest burden of fungal disease;
+- no use of patents or legal tactics to block access;
+- surveillance and safety data kept open wherever doing so serves public health.
 
----
+Every licensing agreement or partnership must carry these commitments forward.
 
-## Article V — People
+## Article VI — Assets
 
-**5.1** A small, independent, term-limited board of mission trustees holds the
-golden share's powers and guards Article I. It has to include the voices that
-matter — scientific and clinical, and patient access — and it can't be captured by
-a single funder or commercial interest.
+No part of the foundation's assets or income may be paid to any private individual,
+except as fair payment for work performed.
 
-**5.2** I serve as the first steward and a trustee. My leverage is vision and
-stewardship, on purpose not capital I can flip. I can't sell the mission, and no
-one gets to profit personally in a way that conflicts with Article I.
+Should the foundation ever be wound up, everything that remains, including its
+intellectual property and any proceeds, passes to another nonprofit organization
+devoted to the same purpose. It never returns to founders, trustees, employees, or
+investors.
 
-**5.3** The charter and the board outlive any one person. Trustee terms are
-staggered and limited, with a documented succession plan, so the mission carries on
-past the people.
+## Article VII — Governance
 
-**5.4** We keep the team as small as we can (a virtual biotech leaning on CROs). Low
-burn is a safeguard: it's what keeps money pressure from bending the mission.
+A small, independent board of mission trustees holds the powers of the golden share
+and guards the purpose in Article I. Trustees serve limited terms. The board must
+include the perspectives essential to the mission, including scientific and
+clinical expertise and the interests of patients, and it may not fall under the
+control of any single funder or commercial interest.
 
----
+The founder serves as the project's first steward and as a trustee. The founder's
+role is to lead and to safeguard the mission, not to own it, and no individual may
+profit from the project in any way that conflicts with Article I.
 
-## Article VI — Asset lock
+The charter and the board are built to outlast any individual. Trustee terms are
+staggered, and a clear process governs succession, so that the mission continues
+beyond the people who begin it.
 
-**6.1** None of the Foundation's assets or income ever go to a private person,
-except fair pay for real work.
+The foundation keeps its organizations small. Modest running costs are treated as a
+safeguard of the mission, reducing the financial pressure that can erode an
+organization's purpose over time.
 
-**6.2** If the Foundation ever shuts down, everything left — the IP, the tool, any
-proceeds — goes to another nonprofit whose purpose lines up with Article I. It never
-goes back to founders, trustees, employees, or investors.
+## Article VIII — Funding
 
----
+The foundation prefers funding that does not require giving up ownership or control,
+including grants, prizes, and philanthropy, and accepts investment only when
+necessary and only in a form that preserves the protections in this charter.
 
-## Article VII — How we treat money
+Before accepting any funding, license, or partnership, the foundation asks a single
+question: does it preserve the protections set out here? If it does not, the
+foundation declines it, whatever the terms.
 
-**7.1** We prefer money that doesn't cost us ownership — grants, prizes,
-philanthropy, public-health funding — and take investment money only when we have
-to, and only in a form that keeps the control lock intact.
+Funds returned to the foundation are reinvested in the mission and are not
+accumulated beyond a prudent operating reserve.
 
-**7.2** Every financing, license, or partnership gets one test before we say yes:
-does it keep the five locks? If not, we pass, however good the terms look.
+## Article IX — Amendment
 
-**7.3** Money that comes back to the Foundation gets spent on the mission — the next
-medicine, diagnostics, surveillance, access — not piled up beyond a sensible
-operating cushion.
+The ordinary provisions of this charter may be amended by a majority of the board.
 
----
+The permanent articles, being Articles I, IV, and VI, may be amended only with the
+agreement of at least three-quarters of the mission trustees together with the
+consent of the golden share, and never so as to remove the priority of patients,
+the protections, or the asset lock.
 
-## Article VIII — Changing this
-
-**8.1** Ordinary parts can change with a simple majority of the board.
-
-**8.2** The locked articles (I, IV, VI) can only change with both 75% of the mission
-trustees and the golden share's consent, and never to remove patients-first, the
-five locks, or the asset lock.
-
-**8.3** No change can turn the Foundation into something with private owners, or
-allow the mission to be sold.
-
----
-
-## Article IX — Who we learned this from
-
-Noted so future stewards get the intent, not as binding text:
-
-- **Novo Nordisk Foundation** — a foundation controlling a pharma company through
-  special shares; minority of the money, majority of the control; profits back to
-  the mission. Our closest model.
-- **Patagonia** — voting stock in a purpose trust, economic stock to a nonprofit, a
-  locked mission.
-- **Anthropic's Long-Term Benefit Trust** — an independent trust with a special
-  share class kept away from money pressure.
-- **Steward-ownership / the golden share** — separate control from cashing out; a
-  veto share that blocks anything that breaks the mission.
-- **Public benefit corporation** — a legal duty to weigh the mission against profit.
-- **Eric Ries (the Long-Term Stock Exchange, *The Startup Way*)** — build the
-  long-term commitment into the structure from the start.
-- **OpenAI** — kept as a warning. A nonprofit-controls-a-for-profit setup can get
-  strained when the capital demands get big, which is why we lean on low burn (5.4),
-  the hard veto (Article IV), and access promises that survive any licensee.
-
----
-
-*Draft v0.1 — a founder's statement of intent. Next step: have a lawyer turn these
-articles into real incorporation documents, a PBC certificate, bylaws, and a share
-agreement. Adopt it while the structure is still cheap and uncontested, before
-there's anything worth corrupting.*
+No amendment may turn the foundation into an organization with private owners, nor
+permit the mission to be sold.
