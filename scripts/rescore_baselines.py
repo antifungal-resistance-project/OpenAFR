@@ -24,6 +24,11 @@ Usage:
     python scripts/rescore_baselines.py [POSE_DIR] [RECEPTOR_PDB]
         POSE_DIR      dir of Vina .pdbqt poses      (default work/screen2)
         RECEPTOR_PDB  structure to read the iron from (default work/receptor_A.pdb)
+
+This is the GRADE step. For the full run: scripts/preflight_baselines.py (offline go/no-go),
+then scripts/run_baselines_all.sh (one command: preflight -> both rescores -> grade). The
+pinned cloud recipe (tool versions, receptor prep, pose regeneration) is in
+work/RUNBOOK_baselines_multi.md.
 """
 import os
 import pathlib
