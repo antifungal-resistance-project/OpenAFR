@@ -1,0 +1,63 @@
+{
+  "developability": {
+    "clogp": 3.07,
+    "esol_logs": -4.5,
+    "herg_risk_factors": false,
+    "mw": 399.4,
+    "n_alerts": 0,
+    "pains": [],
+    "ro5_violations": 0,
+    "structural_alerts": [],
+    "tpsa": 83.0,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.6665352050929383,
+    "best_score": -9.226,
+    "n_passing": 1,
+    "n_poses": 20,
+    "rank": 10
+  },
+  "inchikey": "BQDUNOMMYOKHEP-UHFFFAOYSA-N",
+  "name": "L-838417",
+  "precedent": {
+    "n_off_target": 1153,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "azole warhead (1,2,4-triazole) -> pan-CYP liability type-II(1,2,4-triazole):HIGHx5 (selectivity risk)",
+    "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #10 by n-fe geometry with convergent poses (1/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the 1,2,4-triazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "1,2,4-triazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "type-II(1,2,4-triazole):HIGHx5",
+    "n_high": 5,
+    "n_moderate": 0
+  },
+  "smiles": "Cn1ncnc1COc1nn2c(nnc2cc1C(C)(C)C)-c1cc(F)ccc1F",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 2.9
+  }
+}

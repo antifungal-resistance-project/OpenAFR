@@ -1,0 +1,63 @@
+{
+  "developability": {
+    "clogp": 2.54,
+    "esol_logs": -3.32,
+    "herg_risk_factors": false,
+    "mw": 310.4,
+    "n_alerts": 0,
+    "pains": [],
+    "ro5_violations": 0,
+    "structural_alerts": [],
+    "tpsa": 94.9,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.598729882077018,
+    "best_score": -7.064,
+    "n_passing": 3,
+    "n_poses": 20,
+    "rank": 6
+  },
+  "inchikey": "MCPUZZJBAHRIPO-UHFFFAOYSA-N",
+  "name": "lersivirine",
+  "precedent": {
+    "n_off_target": 475,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "azole warhead (pyrazole) -> pan-CYP liability pyrazole:3A4+2C9+2D6+2C19+1A2 (selectivity risk)",
+    "priority B: not automatic-A (top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #6 by n-fe geometry with convergent poses (3/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the pyrazole warhead is the selectivity liability to watch.",
+  "selectivity": {
+    "azole_warhead": "pyrazole",
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "pyrazole:3A4+2C9+2D6+2C19+1A2",
+    "n_high": 0,
+    "n_moderate": 5
+  },
+  "smiles": "CCc1nn(CCO)c(CC)c1Oc1cc(cc(c1)C#N)C#N",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 2.85
+  }
+}

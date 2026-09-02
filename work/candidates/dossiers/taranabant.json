@@ -1,0 +1,62 @@
+{
+  "developability": {
+    "clogp": 6.31,
+    "esol_logs": -6.86,
+    "herg_risk_factors": false,
+    "mw": 516.0,
+    "n_alerts": 0,
+    "pains": [],
+    "ro5_violations": 2,
+    "structural_alerts": [],
+    "tpsa": 75.0,
+    "veber_ok": true
+  },
+  "geometry": {
+    "best_fe": 2.586032869087324,
+    "best_score": -10.496,
+    "n_passing": 2,
+    "n_poses": 20,
+    "rank": 5
+  },
+  "inchikey": "QLYKJCMUNUWAGO-GAJHUEQPSA-N",
+  "name": "taranabant",
+  "precedent": {
+    "n_off_target": 282,
+    "nearest_tested": null,
+    "phenotypic": null,
+    "verdict": "no-precedent"
+  },
+  "priority": "B",
+  "priority_reasons": [
+    "priority B: not automatic-A (clean drug-likeness, top-decile geometry rank)"
+  ],
+  "provenance": {
+    "generated_utc": "2026-09-02T22:12:24+00:00",
+    "openafr_version": "74c1c08-dirty",
+    "precedent_source": "chembl+pubchem",
+    "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
+    "protocol_unmodified": true,
+    "receptor": "work/receptor_A.pdb"
+  },
+  "selection_hypothesis": "Ranks #5 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+  "selectivity": {
+    "azole_warhead": null,
+    "flagged_isoforms": [
+      "CYP3A4",
+      "CYP2C9",
+      "CYP2D6",
+      "CYP2C19",
+      "CYP1A2"
+    ],
+    "flags": "azine:3A4+2C9+2D6+2C19+1A2",
+    "n_high": 0,
+    "n_moderate": 5
+  },
+  "smiles": "C[C@H](NC(=O)C(C)(C)Oc1ccc(cn1)C(F)(F)F)[C@@H](Cc1ccc(Cl)cc1)c1cccc(c1)C#N",
+  "synthesis": {
+    "availability": "catalogued-drug",
+    "pubchem_cid": null,
+    "sa_band": "easy",
+    "sa_score": 3.43
+  }
+}
