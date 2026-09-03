@@ -33,11 +33,26 @@ There are two paths through track 1. They share the same docking engine and the 
   DISCOVERY PATH (only justified after the gate passes)
   ─────────────────────────────────────────────────────
   novel library ─▶ filter ─▶ prep ─▶ screen (dock) ─▶ rank ─▶ report ─▶ hand top of list to a wet lab
+                                                          │
+                                                          ▼
+                     CONFIDENCE LAYER (annotates a rank, never re-ranks)
+                     ── precedent · ADMET · synth · human-CYP · stereo · protomer ·
+                        ensemble · pose-convergence · resistance-retention ·
+                        coordinator-identity ─▶ scorecard ─▶ A/B/C dossier
 ```
 
 The rule from the [overview](02-project-overview.md#the-founding-rule): you do not get to run
 the discovery path until the validation path returns a pass. A rank is a hypothesis, never a
 hit.
+
+> **A note on where the product landed.** The original headline is enrichment on
+> presumed-inactive decoys (AUC 0.794). Two later pre-registered probes sharpened the claim:
+> the criterion was re-run against **measured** inactives (closing the paper's largest caveat)
+> and the within-azole ranking line was tested to exhaustion and **closed**. The net, honest
+> product today is **novel-chemotype triage at AUC ≈ 0.81** — telling a genuinely new
+> iron-coordinating chemotype apart from look-alikes — *not* ranking one working azole above a
+> failed azole analogue. Parts C–E below tell that story. There is also now a **front door**
+> (score your own molecule) and a **candidate-confidence layer** on top of the raw rank.
 
 ---
 
@@ -265,6 +280,21 @@ check that `protocol.yaml` is unmodified), and the caveats that keep the list ho
 Supporting analysis and visualization of the metal-coordination geometry — the tools used to
 inspect *why* a pose does or doesn't coordinate the iron.
 
+### The front door — `scripts/applicability_triage.py` + `scripts/score_molecule.py`
+
+The validated method now has a **front door**: give it a SMILES string and it runs the whole
+pipeline on your own molecule, honestly.
+
+- `applicability_triage.py` answers the question the ranker can't: *is your molecule even
+  inside the region the validation covers?* It returns one verdict — `in-envelope-novel`,
+  `near-known`, `out-of-domain`, `out-of-scope`, or `unparseable` — and only the first two are
+  inside the validated envelope. This runs anywhere `rdkit` is installed, no docking.
+- `score_molecule.py` chains triage → prep → dock → N–Fe read in one command (~9 s/molecule on
+  a laptop). Two honest gates are load-bearing: **(1)** only in-envelope molecules are docked;
+  **(2)** if the docking tools or receptor are missing, the geometry read is reported `PENDING`
+  with the exact command to finish it — a number is never invented. `--json` makes it scriptable
+  as a public benchmark. Sanity-check your install with voriconazole (should report N–Fe ≈ 2.69 Å).
+
 ---
 
 ## Part C: The result, and the caveat the project inflicted on itself
@@ -296,16 +326,147 @@ pipeline exists to enforce, applied to itself.**
 
 ---
 
-## Part D: Honest limitations (from the README, worth internalizing)
+## Part D: Honest limitations (worth internalizing)
 
-- **n = 7** held-out actives — a small test set; the AUC's 95% CI lower bound dips below the
-  pass bar.
-- **Decoys are *presumed* inactive**, not experimentally verified.
+- **n = 7** held-out actives in the original run — a small test set; that AUC's 95% CI lower
+  bound dips below the pass bar. (Later probes below use larger, independent sets.)
+- **The presumed-inactive caveat is closed, and it located a ceiling** — see Part E.
 - **One rigid receptor** — *C. albicans* 5TZ1, not *C. auris*; no induced-fit flexibility.
+  The ensemble look (Part E) tested whether extra crystallographic conformers lift this; they
+  do not lift the within-azole ceiling.
 - **Applicability domain** — ligands ≤ 45 heavy atoms; the posaconazole/itraconazole class is a
   declared blind spot.
+- **The defensible product is novel-chemotype triage, not within-class azole ranking** (Part E).
 - **This validates a ranking criterion, not a drug.** A high rank is a hypothesis for a wet
   lab. **No wet-lab collaborator yet is the one critical open dependency.**
+
+---
+
+## Part E: The criterion, stress-tested to its ceiling
+
+Everything after the original run-2 result is a series of pre-registered attempts to *break* the
+criterion or find where it stops working. Together they are why the honest product is
+"novel-chemotype triage," stated precisely.
+
+### Measured inactives close the largest caveat — and locate the ceiling (look #6)
+
+The 348 run-2 decoys were *presumed* inactive. `openafr/inactives.py` +
+`scripts/make_verified_inactives.py` build a **measured** decoy set: 279 compounds with
+*consistent measured non-inhibition* of *C. albicans* in ChEMBL (single-variable swap — every
+other construction rule held fixed, only "inactive" changes from assumed to measured). Re-run
+unchanged (`scripts/validate_gate_verified.py`), the criterion scores **AUC 0.716 — the gate
+passes**, so the original result is not a decoy-construction artifact.
+
+But the same run *located the ceiling*, and this is the honest headline:
+
+- vs. **non-azole chemotypes**: AUC **0.810**
+- vs. **azole analogues measured not to work**: AUC **0.650** — below its own bar.
+
+So the criterion mostly detects **chemotype**, not **potency**. (`work/RESULTS_verified_inactives.md`.)
+
+### The within-azole ranking line — tested to exhaustion, then closed (looks #7–#9)
+
+Can geometry rank a *working* azole above a *failed* azole analogue? Three pre-registered looks
+say no, on both the rigid and the ensemble receptor:
+
+- **Look #7 (mode F, channel engagement, `validate_gate_channel.py`)** — the one permitted
+  orthogonal feature. AUC 0.590 < 0.70. FAIL. The failure isn't re-measuring size (size-residualized 0.612).
+- **Look #8 (ensemble, `validate_gate_ensemble.py`)** — the min N–Fe over an exhaustive
+  3-structure crystallographic ensemble (`openafr/ensemble.py`). PASSED at AUC 0.750 on n=7,
+  briefly re-opening the line — but its own PASS branch demanded an independent confirmation.
+- **Look #9 (independent confirmation, `validate_gate_ensemble_confirm.py`)** — that ensemble
+  PASS did **not** replicate on an independent n=200 measured-active azole set: AUC 0.682 < 0.70
+  (real signal, p<0.0001, but sub-threshold).
+
+**Settled conclusion:** pose geometry over a fixed *C. albicans* CYP51 target — rigid **or** full
+crystallographic ensemble — cannot rank working azoles above failed analogues to the 0.70 bar.
+That is a property of the *question*, not of any one feature or conformer. The line is closed;
+re-opening it needs genuinely flexible/induced-fit poses (a new dataset and pre-registration).
+
+### Generalization to data the criterion has never touched (holdouts)
+
+Two pre-registered holdouts (#82) test whether the *frozen* criterion generalizes:
+
+- **External holdout** (`make_external_holdout.py` / `validate_gate_external.py`) — a fresh
+  active/decoy set no gate has ever scored.
+- **Temporal holdout** (`make_temporal_holdout.py` / `validate_gate_temporal.py`) — a
+  *publication-date* split that holds out the **newest-literature azoles (2024–25)**. The
+  criterion, defined on older chemistry, still generalizes: **AUC 0.754**.
+
+### Metal-aware baselines — a competent opponent (looks #63, #83)
+
+Vina mishandles metal coordination, so the honest next question is whether the criterion also
+beats a *metal-aware* scorer. `openafr/gnina.py` + `openafr/baselines.py` turn GNINA's CNN
+rescoring (and other rivals) into ranking keys on the **identical** held-out poses, graded by
+`rescore_gnina.py` / `rescore_baselines.py`. The scorer binaries are Linux/x86-native, so they
+run on a cloud host (`run_*_rescore.sh`) while parsing + grading stay reproducible anywhere.
+
+### The heme model, audited (look #72)
+
+`scripts/audit_heme_model.py` audits the heme/iron model the whole criterion rests on — the one
+structural assumption a skeptic would attack first.
+
+---
+
+## Part F: The candidate-confidence layer (rank → dossier)
+
+A geometry rank is necessary but not sufficient. Before a molecule is proposed for a bench, the
+pipeline now profiles it along a stack of **orthogonal per-candidate axes**, fuses them into a
+scorecard, and emits a machine-readable **A/B/C dossier**. Every axis *annotates* a rank — none
+re-ranks, none deletes a row, and none is a hard gate.
+
+| Axis | Module / script | What it flags |
+|---|---|---|
+| Assay precedent | `precedent.py` / `check_precedent.py` | already measured against CYP51 (and failed)? ChEMBL + PubChem + BindingDB. `no-precedent` ≠ untested. |
+| File-drawer bound | `filedrawer.py` | quantifies how much a `no-precedent` could be hiding (a leak *band*, not false precision). |
+| ADMET / alerts | `admet.py` / `admet_filter.py` | Ro5/Veber, PAINS/BRENK/NIH, solubility, a coarse hERG hint. |
+| Synthesizability | `synth.py` / `synth_filter.py` | SAscore + optional catalogue presence. |
+| Human-CYP off-target | `cyp_offtarget.py` / `cyp_offtarget_screen.py` | the type-II heme-ligation warhead the target *rewards* is the liability the human panel *dreads*. |
+| Stereochemistry | `candidate_stereo.py` | every candidate isomer-explicit. |
+| Protonation/tautomer | `candidate_protomer.py` | the pH-7.4 microstates. |
+| Ensemble consistency | `candidate_ensemble.py` | does the pose survive across CYP51 conformers? |
+| Pose convergence | `pose_convergence.py` | did one search settle on one geometry or scatter? |
+| Resistance retention | `candidate_resistance.py`, `candidate_resistance_addatom.py` | does iron-reach survive in the C. auris resistant pocket? |
+| Seed-stability + human-selectivity | `shortlist_confidence.py` | robust to the docking seed; selective over human CYP51. |
+| **Coordinator identity** | `coordinator.py` / `coordinator_identity.py` | **is the rank azole-mechanism, or an artifact?** (see below) |
+
+`scorecard.py` is the pure decision logic that consolidates these (#88); `build_dossier.py`
+(over `openafr/dossier.py`) fuses geometry + precedent + ADMET + CYP + synth + coordinator
+identity into one dossier per molecule with an **A/B/C** priority.
+
+### The coordinator-identity finding — why the sole Priority-A fell
+
+The validated criterion (`min_nitrogen_iron_distance`) measures the closest approach of *any*
+nitrogen — it doesn't ask *which*. But the method was validated on the azole mechanism: an
+**aromatic ring** nitrogen donating a lone pair to the iron. On a novel library, a molecule can
+post an identical tight distance through a **nitrile**, amine, or amide nitrogen — an
+out-of-mechanism artifact. `openafr/coordinator.py` classifies the coordinating N purely from
+pose geometry (bonded-neighbour topology; the one threshold, 1.25 Å, sits in the empty gap
+between a C≡N triple bond and every single/aromatic C–N).
+
+It validates on all 6 azole controls (in-mechanism), then reshapes the shortlist: the sole
+Priority-A candidate (verinurad) turned out to coordinate through its **nitrile** in every seed
+(its aromatic pyridine N reaches only the band edge), so it was **demoted A→B**; two other
+"strong, selective" hits were nitrile artifacts too. **After the mechanism is enforced, no
+molecule clears automatic-A** (dossier A=0 / B=14 / C=2); the strongest survivor is vatalanib
+(in-mechanism, seed-stable, human-selective).
+
+> **The honest twist, kept on purpose.** The obvious fix — restrict the criterion to an aromatic
+> N — was pre-registered and tested (`validate_gate_aromatic.py`). It **lowers** the gate AUC
+> (0.729 < 0.794), because the real active *luliconazole* coordinates via its own nitrile in
+> pose. Lesson: a non-aromatic coordinator is *unvalidated, not disproven*. So the frozen
+> criterion is left **unchanged**, and coordinator identity is used only as a per-candidate flag.
+
+---
+
+## Part G: The drift harness (`scripts/repro.py`)
+
+One command re-checks the entire frozen surface (#89): `protocol.yaml`, **every**
+`work/PREREG_*.sha256` (all the pre-registrations plus the frozen datasets they pin), and that
+the consolidated candidate scorecard still re-derives byte-for-byte from its committed per-axis
+inputs — exiting nonzero on any drift. It runs on every PR (`.github/workflows/repro.yml`).
+Re-docking stays out of scope (pose trees are gitignored and take hours); the harness guarantees
+nothing that does *not* require docking can drift unnoticed.
 
 ---
 
