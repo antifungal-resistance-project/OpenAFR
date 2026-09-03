@@ -68,6 +68,7 @@ def assign_priority(dossier, top_cutoff):
     dev = dossier["developability"]
     sel = dossier["selectivity"]
     syn = dossier["synthesis"]
+    coord = dossier.get("coordinator")
     reasons = []
 
     # informational flags — logged so they travel with the candidate, but do not gate tier
@@ -77,6 +78,26 @@ def assign_priority(dossier, top_cutoff):
     prec_verdict = prec.get("verdict") if prec else None
     if prec_verdict in _KNOWN_ACTIVE:
         reasons.append("reference: already measured active against the enzyme (positive control, not a novel hit)")
+    # Coordinator identity (RESULTS_coordinator.md / RESULTS_aromatic_criterion.md): the rank is
+    # only azole-like if the nitrogen reaching the iron is the validated aromatic ring N. Both a
+    # dual-mode and an out-of-mechanism rank BLOCK automatic-A (see the A-conditions) and are
+    # flagged here — but neither forces C. The pre-registered gate re-validation showed the active
+    # luliconazole itself coordinates via its nitrile in-pose (aromatic N 5.3 A), so a non-aromatic
+    # coordinator is NOT proof of an artifact: it is unvalidated, not disproven. Hard-demoting it to
+    # C would risk rejecting a real active, so the coordinator axis caps priority at B, never C.
+    cv = coord.get("verdict") if coord else None
+    if cv == "dual-mode":
+        ad = coord.get("aromatic_distance")
+        reasons.append("dual-mode coordination: reported rank set by a %s N; the aromatic "
+                       "ring N reaches %s A (azole-like mode available, but the rank is inflated)"
+                       % (coord.get("reported_kind"),
+                          "%.3f" % ad if ad is not None else "?"))
+    elif cv == "out-of-mechanism":
+        reasons.append("out-of-mechanism coordination: reported rank set by a %s N, not the "
+                       "validated aromatic ring N, and no aromatic N reaches the actives' band "
+                       "— the geometric evidence is unvalidated (blocks A, not disproven: the "
+                       "active luliconazole also coordinates via a non-aromatic N)"
+                       % coord.get("reported_kind"))
 
     # --- automatic C (deprioritise: don't spend money, or unreliable readout) --------------
     demote = False
@@ -110,6 +131,10 @@ def assign_priority(dossier, top_cutoff):
             and dev.get("ro5_violations", 99) <= RO5_MAX_A
             and dev.get("n_alerts", 99) <= ALERTS_MAX_A,
         "physically obtainable": _availability_ok(syn),
+        # the rank must reflect the validated azole mechanism (an aromatic ring N reaching
+        # the iron), not a nitrile/amine/azide artifact. Unsupplied coordinator == pass, so
+        # a dossier built without pose access is unchanged (RESULTS_coordinator.md).
+        "in-mechanism coordination": coord is None or coord.get("verdict") == "in-mechanism",
     }
     if all(a_conditions.values()):
         reasons.insert(0, "priority A: " + ", ".join(sorted(a_conditions)))
@@ -144,11 +169,19 @@ def selection_hypothesis(dossier):
     tail = ""
     if sel and sel.get("azole_warhead"):
         tail = "; the %s warhead is the selectivity liability to watch" % sel["azole_warhead"]
+    coord = dossier.get("coordinator")
+    if coord and coord.get("verdict") == "out-of-mechanism":
+        tail += ("; WARNING the rank is set by a %s nitrogen, not the validated aromatic "
+                 "ring N — outside the method's mechanism" % coord.get("reported_kind"))
+    elif coord and coord.get("verdict") == "dual-mode":
+        ad = coord.get("aromatic_distance")
+        tail += ("; the rank is inflated by a %s N (aromatic ring N at %s A)"
+                 % (coord.get("reported_kind"), "%.3f" % ad if ad is not None else "?"))
     return "%s with %s, %s%s." % (rank_bit.capitalize(), conv_bit, prec_bit, tail)
 
 
 def build_one(name, smiles, geometry, *, admet=None, cyp=None, synth=None,
-              prec=None, near=None, error=None, top_cutoff=0):
+              prec=None, near=None, coord=None, error=None, top_cutoff=0):
     """Assemble + prioritise ONE dossier from already-computed pieces.
 
     geometry: {rank, best_fe, n_passing, n_poses, best_score}. admet/cyp/synth: the
@@ -203,6 +236,7 @@ def build_one(name, smiles, geometry, *, admet=None, cyp=None, synth=None,
         "developability": developability,
         "selectivity": selectivity,
         "synthesis": synthesis,
+        "coordinator": coord,   # {reported_kind, in_mechanism, aromatic_distance, verdict} or None
         "_near": near,          # transient input for the priority table; stripped below
     }
     if error:
@@ -232,8 +266,8 @@ def build_all(records, provenance):
         d = build_one(
             r["name"], r["smiles"], r["geometry"],
             admet=r.get("admet"), cyp=r.get("cyp"), synth=r.get("synth"),
-            prec=r.get("prec"), near=r.get("near"), error=r.get("error"),
-            top_cutoff=cutoff,
+            prec=r.get("prec"), near=r.get("near"), coord=r.get("coord"),
+            error=r.get("error"), top_cutoff=cutoff,
         )
         d["provenance"] = provenance
         out.append(d)

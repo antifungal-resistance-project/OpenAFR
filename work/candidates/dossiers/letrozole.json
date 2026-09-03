@@ -1,4 +1,11 @@
 {
+  "coordinator": {
+    "aromatic_distance": 2.719383937585862,
+    "in_mechanism": true,
+    "reported_distance": 2.719383937585862,
+    "reported_kind": "aromatic-ring",
+    "verdict": "in-mechanism"
+  },
   "developability": {
     "clogp": 2.66,
     "esol_logs": -3.66,
@@ -40,8 +47,8 @@
     "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
   ],
   "provenance": {
-    "generated_utc": "2026-09-02T22:12:24+00:00",
-    "openafr_version": "74c1c08-dirty",
+    "generated_utc": "2026-09-03T05:04:39+00:00",
+    "openafr_version": "e6cde2e-dirty",
     "precedent_source": "chembl+pubchem",
     "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
     "protocol_unmodified": true,

@@ -46,7 +46,8 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-from openafr import admet, cyp_offtarget, dossier, precedent, protocol, synth
+from openafr import admet, coordinator, cyp_offtarget, dossier, precedent, protocol, synth
+from openafr.pdbqt import iron_position, read_poses
 from scripts.admet_filter import read_smi
 from scripts.report_candidates import collect
 
@@ -105,12 +106,27 @@ def _provenance(receptor_pdb, source):
     }
 
 
+def _coordinator_block(screen_dir, name, fe):
+    """Coordinator-identity summary for one molecule from its docked poses (or None).
+
+    Reads the same seed-42 screen the geometry rank comes from and labels which nitrogen
+    sets the rank — the validated aromatic mechanism, or a nitrile/amine/azide artifact
+    (openafr.coordinator, RESULTS_coordinator.md). None if the pose file is absent.
+    """
+    p = pathlib.Path(screen_dir) / ("%s.pdbqt" % name)
+    if not p.is_file():
+        return None
+    poses = [atoms for _num, atoms in read_poses(str(p))]
+    return coordinator.coordinator_summary(poses, fe)
+
+
 def build(screen_dir, library_smi, receptor_pdb, top, source, near_path, catalogued=False):
     rows = _ranked_geometry(screen_dir, receptor_pdb)
     if top is not None:
         rows = rows[:top]
     name2smi = {name: smi for name, smi in read_smi(library_smi)}
     neighbours = precedent.load_neighbours(near_path) if near_path else None
+    fe = iron_position(receptor_pdb)
 
     records = []
     for r in rows:
@@ -125,7 +141,8 @@ def build(screen_dir, library_smi, receptor_pdb, top, source, near_path, catalog
 
         a, c, s, err = _profiles(smi, name, catalogued=catalogued)
         rec = {"name": name, "smiles": smi, "geometry": geometry,
-               "admet": a, "cyp": c, "synth": s, "error": err}
+               "admet": a, "cyp": c, "synth": s, "error": err,
+               "coord": _coordinator_block(screen_dir, name, fe)}
 
         if err is None and source != "none":
             try:

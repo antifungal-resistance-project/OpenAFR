@@ -1,5 +1,12 @@
 [
   {
+    "coordinator": {
+      "aromatic_distance": 2.3711358037868693,
+      "in_mechanism": true,
+      "reported_distance": 2.3711358037868693,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 5.0,
       "esol_logs": -5.53,
@@ -38,8 +45,8 @@
       "priority B: not automatic-A (clean drug-likeness)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -68,6 +75,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.797425602227874,
+      "in_mechanism": false,
+      "reported_distance": 2.417185139785528,
+      "reported_kind": "nitrile",
+      "verdict": "dual-mode"
+    },
     "developability": {
       "clogp": 4.73,
       "esol_logs": -5.19,
@@ -95,19 +109,20 @@
       "phenotypic": null,
       "verdict": "no-precedent"
     },
-    "priority": "A",
+    "priority": "B",
     "priority_reasons": [
-      "priority A: clean drug-likeness, convergent poses, not a known active, physically obtainable, top-decile geometry rank"
+      "dual-mode coordination: reported rank set by a nitrile N; the aromatic ring N reaches 2.797 A (azole-like mode available, but the rank is inflated)",
+      "priority B: not automatic-A (in-mechanism coordination)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #2 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+    "selection_hypothesis": "Ranks #2 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the rank is inflated by a nitrile N (aromatic ring N at 2.797 A).",
     "selectivity": {
       "azole_warhead": null,
       "flagged_isoforms": [
@@ -130,6 +145,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.478559662384593,
+      "in_mechanism": true,
+      "reported_distance": 2.478559662384593,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 5.01,
       "esol_logs": -5.54,
@@ -162,8 +184,8 @@
       "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -192,6 +214,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.557574436844413,
+      "in_mechanism": true,
+      "reported_distance": 2.557574436844413,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 2.69,
       "esol_logs": -4.35,
@@ -229,8 +258,8 @@
       "priority B: not automatic-A (clean drug-likeness, convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -256,6 +285,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 6.90983378960739,
+      "in_mechanism": false,
+      "reported_distance": 2.586032869087324,
+      "reported_kind": "nitrile",
+      "verdict": "out-of-mechanism"
+    },
     "developability": {
       "clogp": 6.31,
       "esol_logs": -6.86,
@@ -285,17 +321,18 @@
     },
     "priority": "B",
     "priority_reasons": [
-      "priority B: not automatic-A (clean drug-likeness, top-decile geometry rank)"
+      "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
+      "priority B: not automatic-A (clean drug-likeness, in-mechanism coordination, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #5 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+    "selection_hypothesis": "Ranks #5 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
     "selectivity": {
       "azole_warhead": null,
       "flagged_isoforms": [
@@ -318,6 +355,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 4.054926509814943,
+      "in_mechanism": false,
+      "reported_distance": 2.598729882077018,
+      "reported_kind": "nitrile",
+      "verdict": "out-of-mechanism"
+    },
     "developability": {
       "clogp": 2.54,
       "esol_logs": -3.32,
@@ -348,17 +392,18 @@
     "priority": "B",
     "priority_reasons": [
       "azole warhead (pyrazole) -> pan-CYP liability pyrazole:3A4+2C9+2D6+2C19+1A2 (selectivity risk)",
-      "priority B: not automatic-A (top-decile geometry rank)"
+      "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
+      "priority B: not automatic-A (in-mechanism coordination, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #6 by n-fe geometry with convergent poses (3/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the pyrazole warhead is the selectivity liability to watch.",
+    "selection_hypothesis": "Ranks #6 by n-fe geometry with convergent poses (3/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the pyrazole warhead is the selectivity liability to watch; WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
     "selectivity": {
       "azole_warhead": "pyrazole",
       "flagged_isoforms": [
@@ -381,6 +426,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 3.4664871267610367,
+      "in_mechanism": false,
+      "reported_distance": 2.6027264550851403,
+      "reported_kind": "amine",
+      "verdict": "out-of-mechanism"
+    },
     "developability": {
       "clogp": 3.2,
       "esol_logs": -4.61,
@@ -423,17 +475,18 @@
     },
     "priority": "B",
     "priority_reasons": [
-      "priority B: not automatic-A (clean drug-likeness, convergent poses, top-decile geometry rank)"
+      "out-of-mechanism coordination: reported rank set by a amine N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
+      "priority B: not automatic-A (clean drug-likeness, convergent poses, in-mechanism coordination, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #7 by n-fe geometry with convergent poses (1/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+    "selection_hypothesis": "Ranks #7 by n-fe geometry with convergent poses (1/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); WARNING the rank is set by a amine nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
     "selectivity": {
       "azole_warhead": null,
       "flagged_isoforms": [
@@ -456,6 +509,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 3.336859601481611,
+      "in_mechanism": false,
+      "reported_distance": 2.6208689398747183,
+      "reported_kind": "nitrile",
+      "verdict": "out-of-mechanism"
+    },
     "developability": {
       "clogp": -1.93,
       "esol_logs": -0.41,
@@ -504,17 +564,18 @@
     },
     "priority": "C",
     "priority_reasons": [
+      "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
       "PAINS alert: assay-interference risk makes the readout unreliable"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #8 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+    "selection_hypothesis": "Ranks #8 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
     "selectivity": {
       "azole_warhead": null,
       "flagged_isoforms": [
@@ -537,6 +598,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.653340536003624,
+      "in_mechanism": true,
+      "reported_distance": 2.653340536003624,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 4.24,
       "esol_logs": -5.35,
@@ -578,8 +646,8 @@
       "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -608,6 +676,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.6665352050929383,
+      "in_mechanism": true,
+      "reported_distance": 2.6665352050929383,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 3.07,
       "esol_logs": -4.5,
@@ -641,8 +716,8 @@
       "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -671,6 +746,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 3.7391136650281203,
+      "in_mechanism": false,
+      "reported_distance": 2.6799270512459867,
+      "reported_kind": "nitrile",
+      "verdict": "out-of-mechanism"
+    },
     "developability": {
       "clogp": 1.87,
       "esol_logs": -3.09,
@@ -701,17 +783,18 @@
     "priority": "B",
     "priority_reasons": [
       "azole warhead (imidazole) -> pan-CYP liability type-II(imidazole):HIGHx5 (selectivity risk)",
-      "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
+      "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
+      "priority B: not automatic-A (convergent poses, in-mechanism coordination, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
       "receptor": "work/receptor_A.pdb"
     },
-    "selection_hypothesis": "Ranks #11 by n-fe geometry with convergent poses (1/19 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the imidazole warhead is the selectivity liability to watch.",
+    "selection_hypothesis": "Ranks #11 by n-fe geometry with convergent poses (1/19 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the imidazole warhead is the selectivity liability to watch; WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
     "selectivity": {
       "azole_warhead": "imidazole",
       "flagged_isoforms": [
@@ -734,6 +817,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.6918699820013607,
+      "in_mechanism": true,
+      "reported_distance": 2.6918699820013607,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 2.36,
       "esol_logs": -3.55,
@@ -766,8 +856,8 @@
       "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -796,6 +886,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.719383937585862,
+      "in_mechanism": true,
+      "reported_distance": 2.719383937585862,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 2.66,
       "esol_logs": -3.66,
@@ -837,8 +934,8 @@
       "priority B: not automatic-A (convergent poses, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -867,6 +964,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.739887041467222,
+      "in_mechanism": true,
+      "reported_distance": 2.739887041467222,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 0.74,
       "esol_logs": -2.41,
@@ -909,8 +1013,8 @@
       "priority B: not automatic-A (not a known active, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -939,6 +1043,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.799001429081456,
+      "in_mechanism": true,
+      "reported_distance": 2.799001429081456,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 2.18,
       "esol_logs": -3.55,
@@ -981,8 +1092,8 @@
       "priority B: not automatic-A (not a known active, top-decile geometry rank)"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,
@@ -1011,6 +1122,13 @@
     }
   },
   {
+    "coordinator": {
+      "aromatic_distance": 2.9211953032962437,
+      "in_mechanism": true,
+      "reported_distance": 2.9211953032962437,
+      "reported_kind": "aromatic-ring",
+      "verdict": "in-mechanism"
+    },
     "developability": {
       "clogp": 4.21,
       "esol_logs": -5.67,
@@ -1055,8 +1173,8 @@
       "PAINS alert: assay-interference risk makes the readout unreliable"
     ],
     "provenance": {
-      "generated_utc": "2026-09-02T22:12:24+00:00",
-      "openafr_version": "74c1c08-dirty",
+      "generated_utc": "2026-09-03T05:04:39+00:00",
+      "openafr_version": "e6cde2e-dirty",
       "precedent_source": "chembl+pubchem",
       "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
       "protocol_unmodified": true,

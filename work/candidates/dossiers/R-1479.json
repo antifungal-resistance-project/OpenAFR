@@ -1,4 +1,11 @@
 {
+  "coordinator": {
+    "aromatic_distance": 3.336859601481611,
+    "in_mechanism": false,
+    "reported_distance": 2.6208689398747183,
+    "reported_kind": "nitrile",
+    "verdict": "out-of-mechanism"
+  },
   "developability": {
     "clogp": -1.93,
     "esol_logs": -0.41,
@@ -47,17 +54,18 @@
   },
   "priority": "C",
   "priority_reasons": [
+    "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
     "PAINS alert: assay-interference risk makes the readout unreliable"
   ],
   "provenance": {
-    "generated_utc": "2026-09-02T22:12:24+00:00",
-    "openafr_version": "74c1c08-dirty",
+    "generated_utc": "2026-09-03T05:04:39+00:00",
+    "openafr_version": "e6cde2e-dirty",
     "precedent_source": "chembl+pubchem",
     "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
     "protocol_unmodified": true,
     "receptor": "work/receptor_A.pdb"
   },
-  "selection_hypothesis": "Ranks #8 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+  "selection_hypothesis": "Ranks #8 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
   "selectivity": {
     "azole_warhead": null,
     "flagged_isoforms": [

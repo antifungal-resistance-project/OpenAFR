@@ -2,6 +2,49 @@
 
 Deferred work captured during review. Each item has enough context to pick up cold.
 
+## Coordinator-identity axis — the sole Priority-A candidate is downgraded, 2026-09-02
+
+> **NEW AXIS + FINDING.** Hardening the dossier's single Priority-A candidate (verinurad, #119)
+> surfaced that the validated criterion (`openafr.pdbqt.min_nitrogen_iron_distance`) measures the
+> nearest nitrogen of **any** type, not the aromatic ring N the azole mechanism was validated on.
+> On a novel library this silently rewards nitrile/amine/azide nitrogens. New axis
+> (`openafr/coordinator.py` + `scripts/coordinator_identity.py`, 7 tests; pre-reg
+> `work/PREREGISTRATION_coordinator.md` sha `b595de48…`; result `work/RESULTS_coordinator.md`;
+> JSON `work/candidates/coordinator_identity.json`) classifies the coordinating N per pose by
+> bonded-neighbour topology (nitrile = 1 neighbour, C#N < 1.25 Å; ring = 2+ at ~1.34 Å). It
+> **validates on all 6 azole controls (in-mechanism)**, then reshapes the shortlist:
+> - **verinurad → dual-mode, demoted from Priority-A.** Its rank-#2 2.417 Å is its **nitrile** N
+>   in all 5 seeds; its aromatic pyridine N reaches only 2.790 Å (band edge) → re-ranks to ≈14th.
+> - **taranabant, lersivirine → out-of-mechanism.** Two of the four "strongest, cleanly selective"
+>   hits (#73): their tight ranks are nitrile artifacts (aromatic N 6.87 / 4.05 Å from the iron).
+>   lersivirine's pose-convergence win (#71) was the same out-of-mechanism pose.
+> - **In-mechanism survivors:** vatalanib, flucloxacillin, L-838417, nolatrexed. **vatalanib** is
+>   the only one also seed-stable (#68) AND cleanly human-selective (#73) — now the strongest
+>   single candidate, ahead of verinurad.
+>
+> **FOLLOW-UPS — both DONE (2026-09-02):**
+> - **(1) Criterion fix — tested and NOT validated; criterion left unchanged.**
+>   `openafr.coordinator.min_aromatic_nitrogen_iron_distance` (in-mechanism twin of
+>   `min_nitrogen_iron_distance`); pre-reg `work/PREREGISTRATION_aromatic_criterion.md`
+>   (sha `9a164558…`, frozen before grading); grader `scripts/validate_gate_aromatic.py`;
+>   result `work/RESULTS_aromatic_criterion.md`. Re-graded the run-2 held-out gate (7 azole
+>   actives vs 350 decoys, re-docked, any-N reproduces baseline **AUC 0.794** exactly) under both
+>   criteria: **aromatic-N AUC 0.729 < 0.794 — the fix LOWERS the AUC.** Cause = the named risk
+>   fired: the active **luliconazole coordinates via its nitrile in-pose (2.764 Å; imidazole 5.28
+>   Å)**, so restricting to aromatic-N demotes a real active. **Lesson: a non-aromatic coordinator
+>   is unvalidated, not disproven.** Per the pre-registered rule the frozen `protocol.yaml`/gate
+>   criterion is UNCHANGED; the coordinator identity is used only as a per-candidate flag.
+> - **(2) Dossier regenerated + scorecard folded — DONE.** `openafr/dossier.py` adds a 6th
+>   A-condition `in-mechanism coordination`, so both dual-mode AND out-of-mechanism **block
+>   automatic-A and are flagged, but neither forces C** (softened after the luliconazole finding).
+>   `scripts/build_dossier.py` computes the verdict per molecule from the seed-42 poses.
+>   **Regenerated `work/candidates/dossiers.json`: A=1/B=13/C=2 → A=0/B=14/C=2.** verinurad A→B
+>   (dual-mode); taranabant/lersivirine/LDN-27219/olprinone → B, flagged out-of-mechanism; only
+>   R-1479 + ketoconazole are C (PAINS). `work/RESULTS_dossier.md` updated. Scorecard axis folded
+>   in (`scripts/scorecard.py` derive_concerns + `build_scorecard.py` `coord` column +
+>   `coordinator_identity.json`); all 6 controls read `in`. **No molecule clears automatic-A once
+>   the mechanism is enforced;** strongest survivor = vatalanib (in-mechanism B).
+
 ## Rank WITHIN the azole class — CLOSED (for good) 2026-08-26 by the independent confirmation (#9 FAIL)
 
 > **UPDATE 2026-08-26 — look #9 (independent-active confirmation) FAILED. The within-azole line is
