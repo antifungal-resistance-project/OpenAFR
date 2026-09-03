@@ -22,8 +22,8 @@ drugs we already have. Same enemy, same enzyme, shared structural moat.
 
 ## The honest status you must know before reading the code
 
-The entire chain is **built, tested, and pulls real NCBI data.** But it **cannot yet produce a
-validated warning**, for one specific, well-understood reason discovered in the opening spike:
+The entire chain is **built, tested, and pulls real NCBI data.** The load-bearing discovery
+from the opening spike still holds and shapes everything:
 
 > **NCBI runs no resistance-calling pipeline on *C. auris*.** Its Pathogen Detection feed is a
 > *metadata + genome-pointer* feed — it tells you an isolate exists, where and when it was
@@ -31,16 +31,26 @@ validated warning**, for one specific, well-understood reason discovered in the 
 > mutations that isolate carries. The `AMR_genotypes` field is empty for all ~29,000 isolates.
 
 So the resistance signal — the `erg11_call` for each isolate — has to be **manufactured by this
-project** from the raw reads, via an **ERG11 re-caller**. The re-caller's *deterministic core*
-is built and tested; its *reads-to-consensus orchestration* exists but has not yet been run at
-scale on real data (it needs a Linux/x86 host, bioinformatics tools, and large downloads).
+project** from the raw reads, via an **ERG11 re-caller**. Two things have changed since this
+page was first written, and they reframe the whole track:
 
-Because the calls are absent on every real isolate today, the pre-registered backtest returns
-**NOT-YET-VALIDATED** — and this is *correct behavior*, not a bug: fed absent calls, the
-detector refuses to invent a warning; fed synthetic calls, it fires **397 days before** the
-reference date. **The machinery works; the gap is the input.** Keep this framing in mind as you
-read — most of the "honesty constraints" in the code exist to make sure an *absent* call is
-never mistaken for a *reassuring* one.
+1. **The ERG11 re-caller has now been built *and run*.** A representative, seeded random sample
+   (n=199 resolved isolates) was re-called on a real NCBI snapshot — measuring the number the
+   whole track was gated on: the **azole event frequency = 80.4% (Wilson 95% CI 74.3–85.3%)**
+   (`work/RESULTS_prevalence.md`). The re-caller is no longer "the missing piece."
+
+2. **That measurement redirected the track.** With ~4 of 5 sequenced *C. auris* isolates already
+   carrying a known azole-resistance mutation, azole resistance is **near-saturated at
+   baseline** — so azole *emergence* is a low signal-to-noise early-warning trigger (you'd be
+   flagging what is already the norm). The genuinely dynamic, clinically scary emergence axis is
+   **echinocandin (FKS1) resistance**, so a parallel **FKS1 detection track** was built (v2).
+
+The **azole/ERG11 arrival budget passes on real data** (median 97-day deposit lag), and the
+detector's mechanism is proven (fed synthetic calls it fires hundreds of days early). What
+remains genuinely open is a real FKS1 `fill` (same tool/host wall) and a wet-lab-anchored
+backtest truth set. Keep in mind as you read: most "honesty constraints" in the code exist to
+make sure an *absent* call is never mistaken for a *reassuring* one, and that a detection-only
+signal is never dressed up as a structural verdict.
 
 ---
 
@@ -76,8 +86,14 @@ right; each module has a `work/RESULTS_*.md` write-up.
 | alert composition | `openafr/alert.py` | `scripts/compose_alert.py` | the one-screen brief a clinician acts on |
 | delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | deliver only on genuine new news; a GitHub Action runs it |
 | backtest / validation | `openafr/backtest.py` | `scripts/backtest_earlywarning.py` | the pre-registered credibility test for the whole track |
-| **ERG11 re-caller** | `openafr/recaller.py` | `scripts/recall_erg11.py` | **the missing input:** reads → resistance mutation call |
+| **ERG11 re-caller** | `openafr/recaller.py` | `scripts/recall_erg11.py` | reads → azole-resistance call. **Built and run** (80.4% azole event frequency). |
+| **FKS1 re-caller (v2)** | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin-resistance call. **Detection-only** — no structural so-what. |
 | run provenance log | `openafr/runlog.py` | (used by the above) | append-only record of the un-reproducible tool/network runs |
+
+The emergence, alert, and delivery stages are **gene-parameterized**: the same
+`detect_emergence(call_field=…)` and delivery machinery serve ERG11 and FKS1, and the two genes
+deliver independently (their own digests + state files). The structural so-what stage is
+deliberately **ERG11-only** — see the FKS1 section below for why.
 
 ---
 
@@ -277,9 +293,11 @@ three things that *are* honest (all pre-registered in `PREREGISTRATION_backtest.
   data is visible, so this bounds any achievable lead time. Pre-registered pass bar: median lag
   ≤ 365 days **and** ≥ 60% visible within 365 days. This one **passes on real data** (median
   ~97-day lag) — which is what justifies building the re-caller at all.
-- **H2-null** — a walk-forward over the **real** snapshots: every step returns the honest empty
-  state, because calls are absent. **This is the correct output, not a failure** — the pipeline
-  refusing to emit a false all-clear.
+- **H2-null** — a walk-forward over the **real** snapshots. It originally returned the honest
+  empty state at every step (calls were absent). With the re-caller now run, that null is
+  **converted into a measured result**: the azole event frequency of 80.4% (below). The empty
+  walk-forward was correct behavior — the pipeline refusing a false all-clear — *and* it is no
+  longer the end of the story.
 - **H3-mechanism** — the *same* walk-forward over a labelled **synthetic** replay, proving the
   detector converts a first-appearance into a dated, positive-lead-time flag *once calls
   exist*. This isolates H2's emptiness to the missing re-caller, not a broken method.
@@ -295,10 +313,18 @@ the pre-registrations.
 
 ---
 
-## The missing piece — the ERG11 re-caller (`openafr/recaller.py`)
+## The ERG11 re-caller — built and run (`openafr/recaller.py`)
 
-This is **the single blocker for the whole track** and the top item in [TODOS.md](../TODOS.md).
-It's the thing that would turn every empty `erg11_call` into a real resistance call.
+This is the module that turns every empty `erg11_call` into a real resistance call. It was the
+single blocker for the whole track; it has now been **built, sanity-checked, and run** on a
+representative real sample, producing the deliverable number the track was gated on.
+
+> **The measured result.** A seeded random `fill --random --seed 0 --limit 200` on NCBI release
+> PDG000000067.675 resolved 199 isolates (1 partial, 0 failed), gated behind a 4/4 sanity pass
+> (B11220 wild-type clean; B11221→F126L; B11243/B11245→Y132F). **Azole event frequency =
+> 160/199 = 80.4%, Wilson 95% CI [74.3%, 85.3%]** (`work/RESULTS_prevalence.md`). Provenance is
+> in `data/earlywarning/runlog/fill.jsonl` (run_id `e4a0def6586a`); the GCP VM has since been
+> deleted, but the run is reproducible from the committed snapshot + seed.
 
 **The boundary it draws.** Turning raw reads into a per-isolate ERG11 *consensus coding
 sequence* is the messy, tool-and-network half (`fasterq-dump` / `minimap2` / `samtools`, in
@@ -306,7 +332,8 @@ sequence* is the messy, tool-and-network half (`fasterq-dump` / `minimap2` / `sa
 `vina`). `openafr/recaller.py` starts *after* that: **a consensus CDS in, substitution tokens
 out.** Everything on this side is **stdlib-only and deterministic**, so it's unit-tested against
 the pinned reference; the un-reproducible tool-orchestration side is kept out of the tested core
-and honestly labelled.
+and honestly labelled (its *logic* is tested offline in `test_recall_orchestration.py` so a
+`fill` bug can't corrupt a snapshot after the expensive downloads).
 
 Its four honesty constraints (the same shape as the other modules):
 
@@ -351,6 +378,34 @@ the entry on exit *even if the run body crashed*, and re-raises. Same spirit as 
 
 ---
 
+## The FKS1 / echinocandin track (v2, detection-only) — `openafr/fks1_caller.py`
+
+The 80.4% azole baseline is *why this exists.* With azole resistance near-saturated, the dynamic
+emergence axis for *C. auris* is **echinocandin (FKS1) resistance**, so a parallel FKS1 track was
+built — running the same detect → alert → deliver loop, in parallel to ERG11.
+
+**One design change from ERG11: windowed, not whole-CDS.** ERG11 is a compact 1,575-nt gene, so
+`recaller.py` builds a full-length in-frame consensus and refuses anything whose length differs.
+FKS1 is a ~5.6 kb gene (1,888 aa), but all echinocandin resistance lives in two short, conserved
+hot-spot windows (**HS1** around S639, **HS2** around R1354). Calling the whole gene buys nothing
+clinically and makes the length-exact frame contract fragile — one low-coverage indel anywhere
+would discard an isolate whose hot-spots were perfectly covered. So `fks1_caller.py` operates
+**per window**: each hot-spot is validated and called independently, and a frameshift inside one
+window refuses *that window* with a reason without discarding the other. The same four honesty
+constraints as the ERG11 re-caller apply per window (pinned/numbering-verified GSC1 reference in
+`data/earlywarning/fks1_reference/`; an uncalled codon is uncalled; frame asserted per window;
+panel tagged, novelty not invented — HS1 S639F/P/Y are panel-tagged, HS2 awaits a literature pin
+and is emitted untagged, a documented gap).
+
+**Detection-only, enforced end-to-end.** Echinocandins do **not** coordinate a metal — FKS1 is a
+1,3-β-glucan synthase, not a heme enzyme — so the CYP51/heme-iron structural moat *does not
+transfer*. The FKS1 half therefore claims **no structural so-what**, and that scope is enforced
+through composition (`alert.compose_fks1_alerts` emits **WATCH/CONTEXT only, never ACT-NOW**),
+rendering (`render_fks1_markdown`), and delivery (its own `DIGEST_FKS1.md` / `STATE_FKS1.json`).
+The `structural.py` stage stays ERG11-only by design; a FKS1 structural verdict is *deferred, not
+merely unbuilt* (revisit only if a PI asks). **What remains open:** a real FKS1 `fill` to turn
+`fks1_panel_prevalence` from "NOT MEASURED YET" into a number — same tool/host wall as ERG11.
+
 ## Try it without NCBI (synthetic demo mode)
 
 Every stage has a `demo` mode so a fresh clone can watch the chain fire end to end without
@@ -364,16 +419,23 @@ python scripts/backtest_earlywarning.py mechanism      # detector produces lead 
 ```
 
 For the real run order (pull a fresh snapshot → offline preflight → sanity control → `fill` in
-small batches), see [TODOS.md](../TODOS.md) and `work/RUNBOOK_recaller_run.md`.
+small batches), see [TODOS.md](../TODOS.md), `work/RUNBOOK_recaller_run.md` (ERG11), and
+`work/RUNBOOK_fks1_run.md` (FKS1).
 
 ---
 
-## Two caveats the track says out loud
+## Caveats the track says out loud
 
 - **Coverage is US-centric** (~88% USA). "Global early warning" is honestly "US early warning +
   thin international." The alert copy reflects that.
-- **The whole track is NOT-YET-VALIDATED** until the ERG11 re-caller runs on real data. The
-  scaffold is real, the gap is named precisely, and nothing claims validation it hasn't earned.
+- **The azole/ERG11 re-caller has run** — the deliverable (80.4% event frequency) is measured —
+  **but a fully *validated warning* still needs a wet-lab-anchored backtest truth set** (published
+  clade/mutation panels; few NCBI isolates carry AST phenotype). The scaffold and the mechanism
+  are proven; end-to-end validation against ground truth is the remaining step.
+- **The FKS1 track is detection-only and awaits a real fill.** It claims no structural verdict,
+  and its prevalence reads "NOT MEASURED YET" until an echinocandin `fill` runs.
+- **Nothing claims validation it hasn't earned** — the gaps above are named precisely rather
+  than papered over.
 
 ---
 

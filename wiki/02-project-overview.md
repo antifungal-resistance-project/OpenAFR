@@ -68,10 +68,11 @@ how easy it is to fool yourself in this field.
   works on held-out known drugs              Reuses Track 1's structural model of
   before trusting it.                        the pocket to give each mutation a
                                              "structural so-what."
-  STATUS: validated core, works.             STATUS: full scaffold built & tested,
-  Needs a wet-lab partner (the one           blocked on one missing piece (the
-  critical open dependency).                 ERG11 re-caller). Honestly NOT-YET-
-                                             VALIDATED until that exists.
+  STATUS: validated core; product now        STATUS: full scaffold built & tested;
+  scoped to novel-chemotype triage; a         ERG11 re-caller BUILT & RUN (80.4%
+  candidate-confidence/dossier layer on       azole event frequency). That baseline
+  top. Needs a wet-lab partner (the one       redirected the track to a parallel
+  critical open dependency).                  FKS1/echinocandin DETECTION track.
 ```
 
 ### Track 1 — Drug discovery (the validated one)
@@ -100,6 +101,14 @@ each molecule only once, and collapses under repeated sampling. The **broad** ra
 top-~5% shortlist, not a razor-top ranking."* The fact that the project **found and published
 its own inflated number** is exactly the discipline the whole thing is about.
 
+Two further rounds of pre-registered stress-testing sharpened the claim into its current form.
+Re-run against **measured** (not presumed) inactives, the criterion passes — and *locates a
+ceiling*: it separates novel chemotypes well (AUC ≈ 0.81) but cannot rank a *working* azole
+above a *failed* azole analogue (AUC ≈ 0.65), a limit confirmed on both the rigid and the
+crystallographic-ensemble receptor. So the **defensible product is novel-chemotype triage**, and
+the tool now also has a **front door** (score your own molecule) and a **candidate-confidence
+layer** (precedent, ADMET, human-CYP liability, coordinator identity, … → an A/B/C dossier).
+
 → Full code-level walkthrough: **[The Drug-Discovery Pipeline](03-drug-discovery-pipeline.md)**
 
 ### Track 2 — Early-warning surveillance (built, honestly blocked)
@@ -120,12 +129,14 @@ load-bearing discovery:
 > `AMR_genotypes` field is empty for all ~29,000 isolates.
 
 So the resistance signal has to be **manufactured by this project**, from the raw reads, via
-an **ERG11 re-caller** (reads → resistance mutation call). The *deterministic core* of that
-re-caller is built and tested; the messy reads-to-consensus orchestration exists but has not
-yet been run at scale on real data. That single missing run is the one blocker for the whole
-track, and the pipeline is honest about it: fed absent calls, the detector correctly refuses
-to invent a warning; fed synthetic calls, it fires hundreds of days early — proving the
-machinery works and **the gap is the input, not the method.**
+an **ERG11 re-caller** (reads → resistance mutation call). That re-caller is now **built and
+run**: a representative sample was re-called on a real NCBI snapshot, measuring the number the
+track was gated on — the **azole event frequency = 80.4%** (Wilson 95% CI 74.3–85.3%). That
+result *redirected* the track: with azole resistance near-saturated at baseline, azole
+*emergence* is a weak early-warning signal, so a parallel **FKS1/echinocandin detection track**
+was built (honestly detection-only — echinocandins coordinate no metal, so the CYP51 structural
+moat does not transfer). Fully *validating* a warning still needs a wet-lab-anchored backtest
+truth set, so nothing over-claims — but the machinery works and the deliverable is measured.
 
 → Full code-level walkthrough: **[The Early-Warning Pipeline](04-early-warning-pipeline.md)**
 
@@ -218,14 +229,17 @@ These patterns show up in *both* tracks. Recognizing them makes every file easie
 ## Current status & the critical open dependencies
 
 - **Track 1:** the validated core is complete and passing. The full novel-screening path
-  (filter → prep → screen → rank → report) works end to end. **The one blocking dependency is
-  a wet-lab collaborator** — nothing computational is validated as a *drug* until someone puts
-  candidates on real fungus. A high rank is a hypothesis for a wet lab, never a hit.
+  (filter → prep → screen → rank → report → dossier) works end to end, with a front door and a
+  candidate-confidence layer on top, and the product is honestly scoped to novel-chemotype
+  triage. **The one blocking dependency is a wet-lab collaborator** — nothing computational is
+  validated as a *drug* until someone puts candidates on real fungus. A high rank is a
+  hypothesis for a wet lab, never a hit.
 
-- **Track 2:** the whole scaffold is built and tested. **The one blocker is running the ERG11
-  re-caller on real data at scale** (it needs a Linux/x86 host with bioinformatics tools and
-  large genome downloads). Until then the track honestly reports NOT-YET-VALIDATED. See
-  [TODOS.md](../TODOS.md) for the exact run order.
+- **Track 2:** the whole scaffold is built and tested, and the **ERG11 re-caller has been run**
+  (80.4% azole event frequency measured). That baseline redirected the track to a parallel
+  **FKS1/echinocandin detection** effort. What remains open: a real FKS1 `fill` (same
+  Linux/x86 + bioinformatics-tools wall) and a wet-lab-anchored backtest truth set for a fully
+  validated warning. See [TODOS.md](../TODOS.md) for the exact run order.
 
 ---
 

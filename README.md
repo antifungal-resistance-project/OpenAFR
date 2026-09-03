@@ -138,6 +138,15 @@ program's own affinity score — on the exact same poses. Geometry beats the sco
 > chemotypes but 0.650 against azole analogues measured not to work** — below its own bar. Most
 > of what it detects is *chemotype*, not potency.
 
+> **Generalizes to data it has never scored (2026-08, look #82).** Two pre-registered holdouts
+> test the *frozen* criterion on fresh chemistry: a never-scored external active/decoy set, and a
+> **temporal** (publication-date) split that holds out the newest-literature azoles (2024–25).
+> The criterion, defined on older chemistry, still generalizes — **temporal AUC 0.754**
+> ([work/RESULTS_temporal.md](work/RESULTS_temporal.md), [work/RESULTS_external.md](work/RESULTS_external.md)).
+> The within-*azole* ranking line, by contrast, was tested to exhaustion and **closed**: pose
+> geometry over a fixed *C. albicans* CYP51 (rigid or ensemble) cannot rank a working azole above
+> a failed azole analogue to the bar. The defensible product is **novel-chemotype triage**.
+
 Full write-ups, including a run that **failed** its gate first, are in `work/`.
 
 ## Honest limitations
@@ -309,13 +318,22 @@ python scripts/rank_candidates.py work/screen -o work/candidates.tsv # ranked by
 python scripts/report_candidates.py work/screen -o work/report.md    # human-readable report + evidence
 python scripts/check_precedent.py work/in_domain.smi \
     --near data/ligands/verified_inactives.smi -o work/precedent.tsv  # already measured (and failed)?
+python scripts/build_dossier.py work/screen -o work/candidates/dossiers.json  # fuse every axis -> A/B/C dossier
 ```
 
-The final `check_precedent.py` step is the file-drawer guard: it annotates the ranked
-list with any deposited ChEMBL/PubChem assay verdict so a high geometry rank never
+The `check_precedent.py` step is the file-drawer guard: it annotates the ranked
+list with any deposited ChEMBL/PubChem/BindingDB assay verdict so a high geometry rank never
 silently proposes a molecule a wet lab already found inactive. A worked run over the
 repurposing screen is written up in
 [`work/RESULTS_candidate_shortlist.md`](work/RESULTS_candidate_shortlist.md).
+
+`build_dossier.py` then fuses every **candidate-confidence axis** — geometry rank, precedent,
+ADMET/structural alerts, human-CYP off-target liability, synthesizability, and a
+*coordinator-identity* check (is the iron-reach a real aromatic-N azole contact, or a
+nitrile/amine artifact?) — into one machine-readable **A/B/C** dossier per molecule. Each axis
+*annotates* a rank; none re-ranks or drops a row. Hardening the shortlist this way is what
+demoted its sole Priority-A candidate once the coordinating nitrogen was checked
+([work/RESULTS_dossier.md](work/RESULTS_dossier.md), [work/RESULTS_coordinator.md](work/RESULTS_coordinator.md)).
 
 The shortlist is docked against **one** species' CYP51 — the *C. albicans* 5TZ1 stand-in —
 but the mission targets *C. auris* and, for any broad-spectrum claim, *Aspergillus fumigatus*.
@@ -350,27 +368,35 @@ published surveillance record — then attaches a **structural so-what** (does f
 still fit the pocket if this spreads?) to each flag. Track 1 finds new drugs; track 2
 watches the enemy evolve against the drugs we have.
 
-### Honest status: scaffold complete, blocked on one missing piece
+### Honest status: scaffold complete, re-caller run, track redirected to FKS1
 
-The whole chain is **built, tested, and pulls real NCBI data** — but it cannot produce a
-validated warning yet, and the docs say so plainly. The load-bearing finding, from the
-initial spike ([work/RESULTS_earlywarning_spike.md](work/RESULTS_earlywarning_spike.md)):
+The whole chain is **built, tested, and pulls real NCBI data.** The load-bearing finding, from
+the initial spike ([work/RESULTS_earlywarning_spike.md](work/RESULTS_earlywarning_spike.md)),
+still shapes everything:
 
 > **NCBI runs no AMR pipeline on *C. auris*.** It is a metadata + genome-pointer feed, not
 > a resistance feed. `AMR_genotypes` is empty for all ~29k isolates — there is no
 > resistance call to read off the feed.
 
 So the resistance signal has to be *manufactured by us*, via an **ERG11 re-caller** (SRA
-reads → azole-resistance mutation call). **That re-caller has not been built** — it is the
-single blocker for the whole track, and it is the top open item in
-[TODOS.md](TODOS.md). Because `erg11_call` is empty on every real isolate, the
-pre-registered backtest ([work/RESULTS_backtest.md](work/RESULTS_backtest.md)) came back
-**NOT-YET-VALIDATED**: a walk-forward over 8 years of real snapshots flagged the target
-mutation 0 times (it correctly refuses to invent a warning from absent calls), while the
-same detector fed synthetic calls fires **397 days before** the reference date — proving
-the machinery works and the gap is the input, not the method. What *is* real: the arrival
-budget clears the bar (median 97-day lag from sample collection to NCBI visibility), so the
-re-caller is worth building.
+reads → azole-resistance mutation call). **That re-caller is now built and has been run.** A
+representative, seeded random sample (n=199 resolved isolates, gated behind a 4/4 sanity pass)
+was re-called on a real NCBI snapshot, measuring the number the track was gated on:
+
+> **Azole event frequency = 160/199 = 80.4%** (Wilson 95% CI 74.3–85.3%) —
+> [work/RESULTS_prevalence.md](work/RESULTS_prevalence.md).
+
+That measurement **redirected the track**. With ~4 of 5 sequenced isolates already carrying a
+known azole-resistance mutation, azole resistance is near-saturated at baseline, so azole
+*emergence* is a weak early-warning signal — you'd be flagging what is already the norm. The
+genuinely dynamic emergence axis is **echinocandin (FKS1) resistance**, so a parallel **FKS1
+detection track** was built (v2), honestly **detection-only**: echinocandins coordinate no
+metal, so the CYP51/heme-iron structural moat does not transfer, and no structural verdict is
+claimed for FKS1. What *remains* open: a real FKS1 `fill` (same Linux/x86 + bioinformatics-tools
+wall) to measure the echinocandin event frequency, and a wet-lab-anchored backtest truth set for
+a fully *validated* warning. The arrival budget already clears the bar (median 97-day lag from
+sample collection to NCBI visibility), and the detector mechanism is proven (fed synthetic calls
+it fires hundreds of days early — [work/RESULTS_backtest.md](work/RESULTS_backtest.md)).
 
 ### The pieces (all shipped and tested; each has a `work/RESULTS_*.md` write-up)
 
@@ -381,8 +407,10 @@ re-caller is worth building.
 | mutation → pocket mapping | `openafr/mapping.py` | `scripts/map_mutation.py` | a flagged token → where the residue sits in the modeled azole pocket; can build the mutant |
 | structural so-what | `openafr/structural.py` | `scripts/structural_sowhat.py` | does fluconazole still fit if this spreads, and how much worse — or an honest decline |
 | alert composition | `openafr/alert.py` | `scripts/compose_alert.py` | the one-screen brief a clinician acts on |
-| delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | delivers only on genuine new news; `.github/workflows/earlywarning.yml` runs it |
+| delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | delivers only on genuine new news; per-gene digest/state; `.github/workflows/earlywarning.yml` runs it |
 | backtest / validation | `openafr/backtest.py` | `scripts/backtest_earlywarning.py` | the pre-registered credibility test for the whole track |
+| ERG11 re-caller (**run**) | `openafr/recaller.py` | `scripts/recall_erg11.py` | reads → azole call; measured 80.4% event frequency |
+| FKS1 re-caller (v2, **detection-only**) | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin call; windowed hot-spots; no structural verdict |
 
 The initial feasibility probe is `scripts/probe_ncbi_auris.py`. Persistence and delivery
 state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/README.md)

@@ -49,6 +49,16 @@ Grouped by area. For the fuller story behind the biology terms, see the
   difficulty of antifungals (fungi are eukaryotes, like us).
 - **MIC (minimum inhibitory concentration)** — the standard wet-lab measure of how much drug it
   takes to stop a microbe; the first real yes/no a computational hit must survive.
+- **Echinocandin** — the other major antifungal class (caspofungin, micafungin, anidulafungin).
+  Targets β-1,3-glucan synthase (FKS1), **not** CYP51 — coordinates no metal, so track 1's
+  structural moat does not transfer.
+- **FKS1 / GSC1** — the gene encoding β-1,3-glucan synthase, the echinocandin target. Track 2's
+  v2 detection axis; resistance lives in two hot-spot windows (**HS1** ≈ S639, **HS2** ≈ R1354).
+- **Hot-spot window (HS1 / HS2)** — the short, conserved FKS1 regions where echinocandin
+  resistance mutations cluster; the FKS1 re-caller calls these per window rather than whole-gene.
+- **Type-II heme coordination / ligation** — an sp²-ring-nitrogen lone pair binding the ferric
+  heme iron as its sixth axial ligand. The azole antifungal mechanism *on the target* — and the
+  same mechanism by which azoles inhibit **human** CYPs (the off-target liability).
 
 ## Structure & docking (track 1)
 
@@ -100,8 +110,11 @@ Grouped by area. For the fuller story behind the biology terms, see the
 - **Wilson (score) interval** — a confidence interval for a proportion that stays well-behaved at
   small n and near 0/1 (unlike the textbook Wald interval); used for the azole event frequency.
 - **Azole event frequency / panel prevalence** — of the isolates the re-caller could *resolve*,
-  the fraction carrying a known panel mutation. The eventual deliverable number of track 2;
-  "NOT MEASURED YET" until the re-caller runs.
+  the fraction carrying a known panel mutation. Track 2's deliverable number; **measured for
+  ERG11 at 80.4%** (Wilson 95% CI 74.3–85.3%, n=199). The FKS1 equivalent is still "NOT MEASURED
+  YET" until an echinocandin `fill` runs.
+- **pChEMBL** — ChEMBL's −log₁₀(molar potency): IC50/Ki/Kd/EC50 on one comparable scale (7 =
+  100 nM, 8 = 10 nM). The continuous potency axis the geometry criterion was tested against (#81).
 
 ## Project-specific concepts
 
@@ -128,13 +141,48 @@ Grouped by area. For the fuller story behind the biology terms, see the
 - **Evidence tier / confidence** — a structural verdict is `measured` (a real dock exists),
   `estimate` (a direction, no magnitude), or `none` (honest no-call).
 - **ERG11 re-caller** — the module (`openafr/recaller.py` + `scripts/recall_erg11.py`) that turns
-  raw reads into a resistance call. **The single blocker for track 2.**
+  raw reads into an azole-resistance call. **Built and run** (n=199, 80.4% event frequency).
+- **FKS1 re-caller** — the v2 analog (`openafr/fks1_caller.py` + `scripts/recall_fks1.py`) for
+  echinocandin resistance; **windowed** (hot-spots only) and **detection-only**.
 - **NCBI Pathogen Detection** — the public feed track 2 reads; a metadata + genome-pointer feed
   with *no* resistance calls for *C. auris*.
 - **SRA** — the Sequence Read Archive; where NCBI stores the raw sequencing reads the re-caller
   would download.
 - **Snapshot / baseline / diff** — one normalized NCBI pull; the isolates seen up to a date; the
   change between two pulls.
+
+## The candidate-confidence layer (track 1)
+
+- **Confidence axis** — an orthogonal per-candidate check that *annotates* a geometry rank but
+  never re-ranks or deletes it (precedent, ADMET, synth, human-CYP, stereo, protomer, ensemble,
+  pose-convergence, resistance-retention, coordinator identity).
+- **Scorecard / dossier** — the scorecard consolidates every axis (`scorecard.py`, #88); the
+  **dossier** (`dossier.py` / `build_dossier.py`) fuses them into one machine-readable file per
+  molecule with an **A/B/C** experimental priority. Priority is orthogonal to the rank, never a
+  re-rank.
+- **Coordinator identity** — *which* nitrogen reaches the iron (aromatic ring vs. nitrile vs.
+  amine/amide), read from pose geometry. A tight N–Fe distance via a **nitrile** is an
+  out-of-mechanism artifact, not azole-mimetic coordination.
+- **Novel-chemotype triage** — the tool's defensible product: separating a genuinely new
+  iron-coordinating chemotype from look-alikes (AUC ≈ 0.81), *not* ranking a working azole above
+  a failed azole analogue (the within-class ceiling, AUC ≈ 0.65).
+- **Verified inactive** — a decoy *measured* not to inhibit (single-variable swap from the
+  presumed-inactive decoys); closed the paper's largest caveat and located the ceiling.
+- **Ensemble receptor / ensemble-min** — docking over several crystallographic CYP51 conformers
+  and taking the best (minimum) N–Fe across them; tested for the within-azole line (did not lift it).
+- **Pose convergence** — whether one docking search settled on one geometry or scattered
+  (unaligned pose-RMSD clustering).
+- **ADMET / Ro5 / Veber / PAINS / BRENK / hERG** — drug-likeness and liability heuristics
+  reported informationally by `admet.py`: Lipinski's rule-of-five and Veber oral-bioavailability
+  rules (violation *counts*, not gates); PAINS/BRENK/NIH structural-alert catalogs; a coarse
+  hERG cardiotoxicity risk-factor *hint* (not an IC50).
+- **SAscore** — Ertl & Schuffenhauer synthetic-accessibility score (1 easy … 10 hard); the
+  substantive signal in the synthesizability axis.
+- **BindingDB** — a third precedent source (curated binding affinities with citations), queried
+  target-first, alongside ChEMBL and PubChem.
+- **File-drawer / leak (L)** — the under-publication problem: a `no-precedent` verdict may just
+  mean a failing measurement was never deposited. `filedrawer.py` bounds the *leak* — the
+  fraction of existing negatives that evade the queried stores — as a band, not false precision.
 
 ## Tooling
 
