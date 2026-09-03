@@ -1,11 +1,13 @@
 # Mechanism-anchored geometric rescoring on fungal CYP51: broad enrichment is robust, top-rank enrichment is not, and property-matched decoys explain why
 
-**Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11 from
-five pre-registered runs in this repository. Every number below is traceable to a
-`work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing here is a new
-analysis, and no result was re-graded for this writeup. (§4.4 and §6.9 carry one later,
-clearly-labeled addition — a 2026-08-22 compound-curation finding that bounds what the method
-can claim about resistance; it is not a docking run and re-grades nothing.)
+**Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11,
+revised 2026-09-02, from nine pre-registered runs in this repository. Every number below is
+traceable to a `work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing
+here is a new analysis, and no result was re-graded for this writeup. The dated update banners
+above and §§4.3–4.5 fold in four later pre-registered results — a measured-inactive decoy set
+(look #6), an ensemble receptor (looks #8–#9), a 2026-08-22 compound-curation finding that
+bounds resistance claims (§4.4/§6.9), and a 2026-09-02 coordinator-identity caveat (§4.5) — each
+graded against its own frozen hash and each re-grading nothing that preceded it.
 
 
 ---
@@ -27,7 +29,41 @@ can claim about resistance; it is not a docking run and re-grades nothing.)
 > fact about the chemistry rather than about our decoy generator, and §4.4's "trustworthy
 > top-~5% shortlist" should be read with the added caveat that such a shortlist will be crowded
 > with azole-like molecules that have already been tried and failed.
-> *(The PDF in this directory predates this update.)*
+
+---
+
+> **UPDATE 2026-08-26 — the ceiling holds under an ensemble receptor, closing §4.3's leading
+> escape route.** §4.3 names "induced-fit or ensemble receptor treatment" as the most promising
+> signal a rigid single-conformer pose omits. It has now been tested. An exhaustive 3-conformer
+> experimental *C. albicans* CYP51 ensemble (5TZ1 + 5FSA + 5V5Z, hash-pinned, mode C unchanged,
+> aggregated by ensemble-minimum) was pre-registered and graded twice on the within-azole
+> question. On the 7 held-out azoles it **passed** (AUC 0.750, look #8,
+> [RESULTS_ensemble.md](RESULTS_ensemble.md)) — but with a wide n=7 CI (0.683–0.825) and a
+> pre-committed demand for confirmation on an independent active set. That confirmation (look #9,
+> [RESULTS_ensemble_confirm.md](RESULTS_ensemble_confirm.md), pre-reg sha `7754050e…`) ran on an
+> **independent N=200** sample of ChEMBL measured-active azoles: **ensemble-min mode C AUC 0.682 <
+> 0.70, CI 0.647–0.715 — FAIL.** The ensemble adds a genuine lift (5TZ1 alone 0.638 → ensemble
+> 0.682, permutation p<0.0001) but lands below the usefulness bar, and the n=7 pass did not
+> replicate. The within-azole ranking line is now closed on **both** the rigid and the ensemble
+> receptor — a property of the question, not of any one conformer. The novel-chemotype guard is
+> unaffected (AUC 0.823 vs 0.810). See revised §4.3 and ledger rows 7–9.
+
+---
+
+> **UPDATE 2026-09-02 — which nitrogen? A criterion-identity caveat on novel libraries.** The
+> validated criterion (`min_nitrogen_iron_distance`) measures the closest approach of the nearest
+> ligand nitrogen of *any* type. On the azole controls that is always the aromatic ring N the
+> mechanism was validated on (6/6 in-mechanism, [RESULTS_coordinator.md](RESULTS_coordinator.md)).
+> On a *novel* library it need not be: two of the strongest, cleanly-selective repurposing hits
+> (taranabant, lersivirine) reach the iron through a **nitrile** N whose nearest aromatic ring N is
+> 6.87 / 4.05 Å away — out-of-mechanism coordination the method never validated. The principled fix
+> — rank on the aromatic ring N only — was pre-registered and tested
+> ([RESULTS_aromatic_criterion.md](RESULTS_aromatic_criterion.md)): it **lowers** the validated gate
+> AUC from 0.794 to 0.729, because a real held-out active, **luliconazole, itself coordinates via
+> its nitrile (2.76 Å) not its imidazole (5.28 Å)**. A non-aromatic coordinator is therefore
+> *unvalidated, not disproven*; the frozen criterion stands, and coordinator identity is reported
+> as a per-candidate flag. See new §4.5.
+> *(The PDF in this directory predates these updates.)*
 
 ---
 
@@ -52,10 +88,15 @@ enrichment via a sub-0.1 Å reshuffle; and (ii) at typical held-out sample sizes
 or 12.68x — it has no resolution and should not be used as a pass/fail criterion, including
 by us.
 
+The leading escape route — an ensemble of experimental receptor conformers — was
+subsequently pre-registered and tested: it yields a genuine but sub-threshold lift (AUC 0.638
+→ 0.682) that fails to clear the 0.70 bar and does not replicate on an independent 200-azole
+set, so the top-rank ceiling stands on an ensemble receptor as well as a rigid one.
+
 We conclude that mechanism-based rescoring buys *broad* enrichment — a trustworthy top-~5%
 shortlist — and that a mechanism-matched decoy set structurally bounds what any
-mechanism-based criterion can achieve at the extreme top. All five pre-registrations,
-including the three that failed, are published with their hashes.
+mechanism-based criterion can achieve at the extreme top. All pre-registrations,
+including those that failed, are published with their hashes.
 
 ---
 
@@ -334,12 +375,29 @@ most useful next contribution anyone could make to this benchmark.
    record is reported as `no-precedent`, never "untested." The full read-out is in the repository's
    candidate-shortlist result.
 
-### 4.3 What could break the ceiling
+### 4.3 What could break the ceiling — and the one route we tested
 
 Signals a rigid-receptor, single-conformer Vina pose does not contain, in rough order of promise:
 explicit iron–nitrogen coordination chemistry at a QM or semi-empirical level; induced-fit or
-ensemble receptor treatment; desolvation. None is decidable from the data used here, and we make no
-claim any of them would work.
+ensemble receptor treatment; desolvation.
+
+We tested the second, because it was the most promising and the most tractable. An exhaustive
+ensemble of the three experimental *C. albicans* CYP51 crystal structures (5TZ1 + 5FSA + 5V5Z,
+hash-pinned, mode C unchanged, aggregated by the pre-committed ensemble-minimum) was pre-registered
+and graded on the within-*class* question — separating measured-active azoles from measured-*inactive*
+azole analogues, the pool where a single rigid conformer scored only AUC 0.650. On the 7 held-out
+azoles the ensemble **passed** at 0.750 (look #8, `RESULTS_ensemble.md`), but with an n=7 CI of
+0.683–0.825 and a pre-committed demand for confirmation on an independent active set. That
+confirmation ran on an independent N=200 sample of ChEMBL measured-active azoles and **failed at AUC
+0.682 < 0.70** (look #9, `RESULTS_ensemble_confirm.md`, tight CI 0.647–0.715). The ensemble delivers
+a real but sub-threshold lift — 0.638 (5TZ1 alone) → 0.682, permutation p<0.0001 — and the conformer
+carrying it is itself sample-dependent (5FSA in look #8, 5V5Z in look #9), the signature of a
+small-sample interaction rather than a robust mechanism. **The within-azole tip therefore does not
+survive an ensemble receptor any more than it survives a rigid one**, and §5's stopping rule now
+closes the line on both. The remaining signals (QM coordination chemistry, desolvation) are
+undecidable from these data, and we make no claim any of them would work. All of this concerns
+*within-class* ranking only; the novel-chemotype guard is unaffected by the ensemble (AUC 0.823 vs
+the 0.810 single-conformer comparator), consistent with §4.4.
 
 ### 4.4 What the method is good for
 
@@ -364,6 +422,32 @@ resistance-breaker discovery. The honest ceiling is broad azole-like enrichment 
 pocket. Lifting it would need a flexible-receptor / induced-fit protocol that widens the domain —
 listed in §4.3, not claimed here.
 
+### 4.5 Which nitrogen coordinates — a criterion-identity caveat
+
+The criterion ranks on `min_nitrogen_iron_distance`: the closest approach to the heme iron of the
+nearest ligand nitrogen *of any type*. On the azole actives this is unambiguous — the mechanism is an
+aromatic triazole/imidazole ring N donating to the iron, and a purely topological classifier (a
+nitrile is the only nitrogen with a single sub-1.25 Å bond; a ring N carries two ~1.34 Å bonds)
+confirms **6/6 controls coordinate through that ring N** (`RESULTS_coordinator.md`, pre-reg sha
+`b595de48…`). On a novel library the identity of the coordinating nitrogen is *not* guaranteed.
+Re-examining the strongest hits of a repurposing focus set by coordinator identity, two of the four
+strongest cleanly-selective candidates — taranabant and lersivirine — reach the iron through a
+terminal **nitrile** nitrogen, with their nearest aromatic ring N 6.87 and 4.05 Å away. Their tight
+ranks are coordination through chemistry the method was never validated on.
+
+The obvious fix is to restrict the criterion to the aromatic ring nitrogen. We pre-registered and
+tested it (`RESULTS_aromatic_criterion.md`, sha `9a164558…`), and it does not survive contact with
+the validation set: on the re-docked run-2 held-out gate the aromatic-only criterion scores **AUC
+0.729 versus the any-N 0.794** — a 0.065 drop — because a genuine held-out active, **luliconazole,
+coordinates the iron through its own nitrile (2.76 Å) while its imidazole sits 5.28 Å away**.
+Enforcing the mechanism demotes a real drug. The lesson is not that non-aromatic coordination is
+spurious but that it is *unvalidated, not disproven*: at least one working azole uses it. We
+therefore leave the frozen criterion unchanged and report coordinator identity as a per-candidate
+confidence flag — a molecule ranked on a nitrile is a weaker hypothesis than one ranked on a ring
+nitrogen, not a rejected one. The general point stands for anyone deploying a distance-to-metal
+criterion on a novel library: **the distance does not tell you which atom achieved it, and on a
+novel scaffold that atom may not be the one the mechanism validated on.**
+
 ## 5. Pre-registration and multiple-comparison ledger
 
 Every look ever taken at the held-out data, in order, with its committed outcome:
@@ -377,19 +461,27 @@ Every look ever taken at the held-out data, in order, with its committed outcome
 | 4 | `RESULTS_reliability.md` | pool-size-neutral median — noise or ceiling? | `f8aa1ff9…` | **FAIL** |
 | 5 | `RESULTS_axial.md` | one orthogonal feature: approach direction | `3ff59c29…` | **FAIL** |
 | 6 | `RESULTS_verified_inactives.md` | **new dataset**: same criterion vs 279 *measured* inactives | `d2926f77…` | **PASS** (AUC 0.716) |
+| 7 | `RESULTS_channel_engagement.md` | one orthogonal feature (mode F) on the azole-analogue pool | `62592a10…` | **FAIL** (AUC 0.590) |
+| 8 | `RESULTS_ensemble.md` | 3-conformer ensemble receptor, within-class, n=7 held-out | `8041b38e…` | **PASS** (AUC 0.750) — *superseded by 9* |
+| 9 | `RESULTS_ensemble_confirm.md` | ensemble receptor, **independent N=200** azole actives | `7754050e…` | **FAIL** (AUC 0.682) |
 
-Four looks were taken at the wild-type poses (1, 3, 4, 5). Each pre-registration bounded the number
-of subsequent attempts and pre-committed the failure conclusion; the reliability pre-registration
-foreclosed further *aggregators*, and the axial pre-registration foreclosed further *features* on
-this dataset. **The stopping rule is now in force: no further criterion will be tried on these
-poses.** Any further attempt requires an independent dataset — new actives or a new decoy
-construction — not another feature on this one.
+Four looks were taken at the original wild-type poses (1, 3, 4, 5). Each pre-registration bounded the
+number of subsequent attempts and pre-committed the failure conclusion; the reliability
+pre-registration foreclosed further *aggregators*, and the axial pre-registration foreclosed further
+*features* on this dataset. Once that stopping rule was in force, no further criterion could be tried
+on those poses: any further attempt required an independent dataset — new actives, a new decoy
+construction, or a new receptor — not another feature on the same one.
 
-Look 6 is that independent dataset, and it obeys the rule: **no new criterion, no new feature,
-no re-aggregation** — the same mode-C distance, the same protocol hash, the same seed, the same
-7 actives, re-run against a decoy set built from measurement rather than assumption. It is the
-only kind of look this ledger still permits, and it was pre-registered before any of its
-molecules were docked.
+Looks 6–9 are exactly those independent tests, each pre-registered before any of its molecules were
+docked. Look 6 rebuilt the decoys from *measurement* rather than assumption (279 measured inactives)
+and passed broadly (AUC 0.716) while confirming the tip is worse, not better. Look 7 spent the one
+permitted orthogonal feature (channel engagement) and failed (0.590). Looks 8–9 changed the
+*receptor*, not the criterion: an experimental 3-conformer ensemble, which passed on 7 held-out
+azoles (0.750) but failed to replicate on an independent 200-azole sample (0.682 < 0.70). With the
+within-class line now closed on a rigid receptor, an orthogonal feature, *and* an ensemble receptor,
+the settled conclusion is that top-rank separation of working from failed azoles is a property of the
+question, not of any feature, aggregator, or conformer set. What remains open is only what §4.3
+lists as undecidable from these data.
 
 The `RESULTS_axial.md` run also included a harness check: the reliability-distance slice reproduced
 the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.310) bit-for-bit.
@@ -401,10 +493,15 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
 2. **Decoys are presumed inactive, not verified.** Any true binder among the 348 depresses measured
    performance; any systematic selection bias inflates it. This is the single largest caveat and the
    subject of §4.1.
-3. **One decoy set, four looks.** The ceiling is demonstrated *on this set*.
-4. **One rigid receptor**, *C. albicans* 5TZ1, solved with the short ligand VT-1161. No induced fit.
-   The posaconazole/itraconazole long-tail class is a known blind spot; the declared applicability
-   domain is ≤ 45 heavy atoms.
+3. **One decoy set for the rigid-pose looks.** The rigid-receptor ceiling is demonstrated *on that
+   set*; look #6 re-tested it against an independently constructed measured-inactive set (AUC 0.716)
+   and looks #8–#9 against an independent 200-azole active set, so the conclusion no longer rests on
+   a single decoy construction.
+4. **Primarily one rigid receptor**, *C. albicans* 5TZ1, solved with the short ligand VT-1161. No
+   induced fit for the main analyses; the posaconazole/itraconazole long-tail class is a known blind
+   spot and the declared applicability domain is ≤ 45 heavy atoms. An experimental 3-conformer
+   ensemble (5TZ1+5FSA+5V5Z) was tested for the within-class question (§4.3) and did not lift the tip
+   above the bar; full flexible/induced-fit treatment remains untested.
 5. **The Y132F model is a rigid single-atom deletion.** Clinical Y132F also involves conformational
    change, H-bond network rearrangement, and co-occurring efflux and expression changes. K143R
    (clade I) and F126L (clade III) were not tested.
@@ -420,7 +517,7 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
 
 ## 7. Data and code availability
 
-All code, all five pre-registrations with their hashes, the frozen `protocol.yaml`, the actives and
+All code, all nine pre-registrations with their hashes, the frozen `protocol.yaml`, the actives and
 decoy SMILES, the full 2,776-compound ranking, and every `RESULTS_*.md` are in this repository.
 Docking intermediates (~180 MB) are regenerated rather than versioned; each results file carries an
 exact reproduce recipe. Licensed PolyForm Noncommercial 1.0.0.
@@ -432,6 +529,6 @@ exact reproduce recipe. Licensed PolyForm Noncommercial 1.0.0.
 The ingredients here are not new. Metal-coordination and pharmacophore rescoring of docking poses is
 a decades-old idea, and we are not the first to distrust a docking score. What this repository
 contributes is a pre-registered, hash-frozen, blind-holdout execution of that idea on a
-clinically important target — including four published failures and a mechanistic explanation for
+clinically important target — including seven published failures and a mechanistic explanation for
 them — in a field where ranked lists are routinely published with no evidence the ranking means
 anything. The honest negative is the result.
