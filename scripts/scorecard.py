@@ -62,7 +62,7 @@ NOT_YET_CHECKED = {
 
 
 def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=None,
-                    cyp=None, res_addatom=None):
+                    cyp=None, res_addatom=None, coord=None):
     """Given a candidate's per-axis records, list its open concerns.
 
     Each rule maps one measured axis to a human-readable concern string, so the
@@ -156,4 +156,17 @@ def derive_concerns(cf, am, sy, dm, pr, is_ctrl, res=None, st=None, pt=None, en=
     # but do not demote (nearly every heme-seeking scaffold carries one — too broad to strike).
     if cyp is not None and cyp.get("n_high", 0) > 0 and not is_ctrl:
         concerns.append("human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)")
+    # Coordinator identity (RESULTS_coordinator.md): the geometry rank is only meaningful if the
+    # nitrogen reaching the iron is the validated aromatic ring N. A candidate whose rank is set
+    # by a nitrile/amine/azide nitrogen is out-of-mechanism (the rank is an artifact); a dual-mode
+    # candidate's rank is inflated by such a nitrogen even though an aromatic mode exists. Both are
+    # demotions for a novel candidate. Control-exempt: the azoles are in-mechanism by construction,
+    # so a control never triggers this — but the guard keeps the rule symmetric with the others.
+    if coord is not None and not is_ctrl:
+        if coord.get("verdict") == "out-of-mechanism":
+            concerns.append("out-of-mechanism: rank set by a %s N, not the aromatic ring N"
+                            % coord.get("reported_kind"))
+        elif coord.get("verdict") == "dual-mode":
+            concerns.append("dual-mode: rank inflated by a %s N (aromatic ring N at band edge)"
+                            % coord.get("reported_kind"))
     return concerns

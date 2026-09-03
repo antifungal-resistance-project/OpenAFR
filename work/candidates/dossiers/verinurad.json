@@ -1,4 +1,11 @@
 {
+  "coordinator": {
+    "aromatic_distance": 2.797425602227874,
+    "in_mechanism": false,
+    "reported_distance": 2.417185139785528,
+    "reported_kind": "nitrile",
+    "verdict": "dual-mode"
+  },
   "developability": {
     "clogp": 4.73,
     "esol_logs": -5.19,
@@ -26,19 +33,20 @@
     "phenotypic": null,
     "verdict": "no-precedent"
   },
-  "priority": "A",
+  "priority": "B",
   "priority_reasons": [
-    "priority A: clean drug-likeness, convergent poses, not a known active, physically obtainable, top-decile geometry rank"
+    "dual-mode coordination: reported rank set by a nitrile N; the aromatic ring N reaches 2.797 A (azole-like mode available, but the rank is inflated)",
+    "priority B: not automatic-A (in-mechanism coordination)"
   ],
   "provenance": {
-    "generated_utc": "2026-09-02T22:12:24+00:00",
-    "openafr_version": "74c1c08-dirty",
+    "generated_utc": "2026-09-03T05:04:39+00:00",
+    "openafr_version": "e6cde2e-dirty",
     "precedent_source": "chembl+pubchem",
     "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
     "protocol_unmodified": true,
     "receptor": "work/receptor_A.pdb"
   },
-  "selection_hypothesis": "Ranks #2 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested).",
+  "selection_hypothesis": "Ranks #2 by n-fe geometry with convergent poses (2/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the rank is inflated by a nitrile N (aromatic ring N at 2.797 A).",
   "selectivity": {
     "azole_warhead": null,
     "flagged_isoforms": [

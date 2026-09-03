@@ -20,7 +20,8 @@
     "stereochemistry (supplied-SMILES isomer audit + isomer dock)",
     "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
     "ensemble_consistency (crystallographic C. albicans ensemble dock)",
-    "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)"
+    "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)",
+    "coordinator_identity (which nitrogen sets the rank: aromatic ring vs nitrile/amine/azide)"
   ],
   "axes_not_yet_checked": {
     "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -149,6 +150,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.3711358037868693,
+        "reported_nfe_A": 2.3711358037868693
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -284,11 +293,20 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "dual-mode",
+        "reported_kind": "nitrile",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 2.790453726546992,
+        "reported_nfe_A": 2.417185139785528
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
-        "domain: coordinator-fragile"
+        "domain: coordinator-fragile",
+        "dual-mode: rank inflated by a nitrile N (aromatic ring N at band edge)"
       ]
     },
     {
@@ -414,6 +432,14 @@
           "CYP2C19": "moderate",
           "CYP1A2": "moderate"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.478559662384593,
+        "reported_nfe_A": 2.478559662384593
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -548,6 +574,14 @@
           "CYP2C19": "moderate",
           "CYP1A2": "low"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.516722074445249,
+        "reported_nfe_A": 2.557574436844413
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -685,12 +719,21 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "out-of-mechanism",
+        "reported_kind": "nitrile",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 6.869713603928474,
+        "reported_nfe_A": 2.586032869087324
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: Ro5x2,insoluble",
-        "domain: coordinator-fragile"
+        "domain: coordinator-fragile",
+        "out-of-mechanism: rank set by a nitrile N, not the aromatic ring N"
       ]
     },
     {
@@ -817,10 +860,20 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "out-of-mechanism",
+        "reported_kind": "nitrile",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 4.052242465598525,
+        "reported_nfe_A": 2.598729882077018
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
-      "concerns": []
+      "concerns": [
+        "out-of-mechanism: rank set by a nitrile N, not the aromatic ring N"
+      ]
     },
     {
       "name": "L-838417",
@@ -945,6 +998,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.5795629474777346,
+        "reported_nfe_A": 2.6665352050929383
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -1077,6 +1138,14 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "out-of-mechanism",
+        "reported_kind": "amine",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 3.4664871267610367,
+        "reported_nfe_A": 2.6027264550851403
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
@@ -1086,7 +1155,8 @@
         "loses coordination in C. auris Y132F pocket",
         "loses coordination in C. auris F126L pocket (modeled-rotamer)",
         "rank depends on protonation/tautomer state at pH 7.4",
-        "coordination is conformer-fragile (single-snapshot artifact)"
+        "coordination is conformer-fragile (single-snapshot artifact)",
+        "out-of-mechanism: rank set by a amine N, not the aromatic ring N"
       ]
     },
     {
@@ -1213,12 +1283,21 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "out-of-mechanism",
+        "reported_kind": "nitrile",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 3.0378159917941088,
+        "reported_nfe_A": 2.6208689398747183
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "ADMET: Veber,PAINS,alert",
-        "rank depends on protonation/tautomer state at pH 7.4"
+        "rank depends on protonation/tautomer state at pH 7.4",
+        "out-of-mechanism: rank set by a nitrile N, not the aromatic ring N"
       ]
     },
     {
@@ -1344,6 +1423,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.653340536003624,
+        "reported_nfe_A": 2.653340536003624
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -1473,6 +1560,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.65659669502167,
+        "reported_nfe_A": 2.799001429081456
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -1605,6 +1700,14 @@
           "CYP1A2": "moderate"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.676860287725159,
+        "reported_nfe_A": 2.6918699820013607
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
@@ -1736,13 +1839,22 @@
           "CYP1A2": "high"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "out-of-mechanism",
+        "reported_kind": "nitrile",
+        "in_mechanism": false,
+        "aromatic_nfe_A": 3.6973083452695756,
+        "reported_nfe_A": 2.6799270512459867
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
       "concerns": [
         "seed-unstable (single-dock artifact)",
         "coordination is conformer-fragile (single-snapshot artifact)",
-        "human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)"
+        "human-CYP type-II inhibition liability (azole warhead; CYP3A4 DDI risk)",
+        "out-of-mechanism: rank set by a nitrile N, not the aromatic ring N"
       ]
     },
     {
@@ -1868,6 +1980,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.705348406397968,
+        "reported_nfe_A": 2.719383937585862
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
@@ -2000,6 +2120,14 @@
           "CYP1A2": "high"
         }
       },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.7107137436476068,
+        "reported_nfe_A": 2.739887041467222
+      },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"
       },
@@ -2130,6 +2258,14 @@
           "CYP2C19": "high",
           "CYP1A2": "high"
         }
+      },
+      "coordinator_identity": {
+        "status": "proven",
+        "verdict": "in-mechanism",
+        "reported_kind": "aromatic-ring",
+        "in_mechanism": true,
+        "aromatic_nfe_A": 2.9211953032962437,
+        "reported_nfe_A": 2.9211953032962437
       },
       "not_yet_checked": {
         "auris_tr_promoter": "auris TR-type tandem-duplication / promoter (copy-number) resistance (#77) \u2014 an expression/copy-number event, not a CDS pocket point mutation, so this structural geometry axis cannot model it (all three point mutants Y132F/K143R/F126L now measured)"

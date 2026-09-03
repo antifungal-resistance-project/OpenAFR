@@ -1,0 +1,362 @@
+{
+  "axis": "coordinator_identity",
+  "band": [
+    2.47,
+    2.88
+  ],
+  "seeds": [
+    "42",
+    "1",
+    "2",
+    "3",
+    "4"
+  ],
+  "candidates": [
+    {
+      "name": "flutrimazole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.3711358037868693,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.371
+      },
+      "in_mechanism_distance": 2.3711358037868693,
+      "gap": 0.0,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "verinurad",
+      "is_control": false,
+      "reported_kind": "nitrile",
+      "reported_distance": 2.417185139785528,
+      "reported_in_mechanism": false,
+      "modal_kind": "nitrile",
+      "per_seed_kind": {
+        "42": "nitrile",
+        "1": "nitrile",
+        "2": "nitrile",
+        "3": "nitrile",
+        "4": "nitrile"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.79,
+        "nitrile": 2.417
+      },
+      "in_mechanism_distance": 2.790453726546992,
+      "gap": 0.37326858676146424,
+      "verdict": "dual-mode"
+    },
+    {
+      "name": "vatalanib",
+      "is_control": false,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.478559662384593,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.479
+      },
+      "in_mechanism_distance": 2.478559662384593,
+      "gap": 0.0,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "flucloxacillin",
+      "is_control": false,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.557574436844413,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.517
+      },
+      "in_mechanism_distance": 2.516722074445249,
+      "gap": -0.04085236239916368,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "taranabant",
+      "is_control": false,
+      "reported_kind": "nitrile",
+      "reported_distance": 2.586032869087324,
+      "reported_in_mechanism": false,
+      "modal_kind": "nitrile",
+      "per_seed_kind": {
+        "42": "nitrile",
+        "1": "nitrile",
+        "2": "nitrile",
+        "3": "nitrile",
+        "4": "nitrile"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 6.87,
+        "nitrile": 2.564
+      },
+      "in_mechanism_distance": 6.869713603928474,
+      "gap": 4.28368073484115,
+      "verdict": "out-of-mechanism"
+    },
+    {
+      "name": "lersivirine",
+      "is_control": false,
+      "reported_kind": "nitrile",
+      "reported_distance": 2.598729882077018,
+      "reported_in_mechanism": false,
+      "modal_kind": "nitrile",
+      "per_seed_kind": {
+        "42": "nitrile",
+        "1": "nitrile",
+        "2": "nitrile",
+        "3": "nitrile",
+        "4": "nitrile"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 4.052,
+        "nitrile": 2.572
+      },
+      "in_mechanism_distance": 4.052242465598525,
+      "gap": 1.4535125835215066,
+      "verdict": "out-of-mechanism"
+    },
+    {
+      "name": "LDN-27219",
+      "is_control": false,
+      "reported_kind": "amine",
+      "reported_distance": 2.6027264550851403,
+      "reported_in_mechanism": false,
+      "modal_kind": "amine",
+      "per_seed_kind": {
+        "42": "amine",
+        "1": "amine",
+        "2": "amine",
+        "3": "amine",
+        "4": "amine"
+      },
+      "best_by_kind": {
+        "amine": 2.603,
+        "aromatic-ring": 3.466
+      },
+      "in_mechanism_distance": 3.4664871267610367,
+      "gap": 0.8637606716758963,
+      "verdict": "out-of-mechanism"
+    },
+    {
+      "name": "R-1479",
+      "is_control": false,
+      "reported_kind": "nitrile",
+      "reported_distance": 2.6208689398747183,
+      "reported_in_mechanism": false,
+      "modal_kind": "nitrile",
+      "per_seed_kind": {
+        "42": "nitrile",
+        "1": "nitrile",
+        "2": "nitrile",
+        "3": "nitrile",
+        "4": "nitrile"
+      },
+      "best_by_kind": {
+        "amine": 3.015,
+        "aromatic-ring": 3.038,
+        "nitrile": 2.621
+      },
+      "in_mechanism_distance": 3.0378159917941088,
+      "gap": 0.4169470519193905,
+      "verdict": "out-of-mechanism"
+    },
+    {
+      "name": "ravuconazole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.653340536003624,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.653,
+        "nitrile": 8.379
+      },
+      "in_mechanism_distance": 2.653340536003624,
+      "gap": 0.0,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "L-838417",
+      "is_control": false,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.6665352050929383,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.58
+      },
+      "in_mechanism_distance": 2.5795629474777346,
+      "gap": -0.08697225761520366,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "olprinone",
+      "is_control": false,
+      "reported_kind": "nitrile",
+      "reported_distance": 2.6799270512459867,
+      "reported_in_mechanism": false,
+      "modal_kind": "nitrile",
+      "per_seed_kind": {
+        "42": "nitrile",
+        "1": "nitrile",
+        "2": "nitrile",
+        "3": "aromatic-ring",
+        "4": "nitrile"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 3.697,
+        "nitrile": 2.68
+      },
+      "in_mechanism_distance": 3.6973083452695756,
+      "gap": 1.017381294023589,
+      "verdict": "out-of-mechanism"
+    },
+    {
+      "name": "nolatrexed",
+      "is_control": false,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.6918699820013607,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "amine": 3.111,
+        "aromatic-ring": 2.677
+      },
+      "in_mechanism_distance": 2.676860287725159,
+      "gap": -0.015009694276201913,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "letrozole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.719383937585862,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.705,
+        "nitrile": 2.785
+      },
+      "in_mechanism_distance": 2.705348406397968,
+      "gap": -0.014035531187893913,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "fluconazole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.739887041467222,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.711
+      },
+      "in_mechanism_distance": 2.7107137436476068,
+      "gap": -0.029173297819615307,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "voriconazole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.799001429081456,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.657
+      },
+      "in_mechanism_distance": 2.65659669502167,
+      "gap": -0.14240473405978626,
+      "verdict": "in-mechanism"
+    },
+    {
+      "name": "ketoconazole",
+      "is_control": true,
+      "reported_kind": "aromatic-ring",
+      "reported_distance": 2.9211953032962437,
+      "reported_in_mechanism": true,
+      "modal_kind": "aromatic-ring",
+      "per_seed_kind": {
+        "42": "aromatic-ring",
+        "1": "aromatic-ring",
+        "2": "aromatic-ring",
+        "3": "aromatic-ring",
+        "4": "aromatic-ring"
+      },
+      "best_by_kind": {
+        "aromatic-ring": 2.921
+      },
+      "in_mechanism_distance": 2.9211953032962437,
+      "gap": 0.0,
+      "verdict": "in-mechanism"
+    }
+  ]
+}

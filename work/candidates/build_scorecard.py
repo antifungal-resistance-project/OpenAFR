@@ -131,6 +131,13 @@ def load_cyp():
     return {x["name"]: x for x in json.load(open(path))["candidates"]}
 
 
+def load_coordinator():
+    path = os.path.join(C, "coordinator_identity.json")
+    if not os.path.exists(path):
+        return {}
+    return {x["name"]: x for x in json.load(open(path))["candidates"]}
+
+
 def build():
     ranked = load_ranked()
     conf = load_confidence()
@@ -145,6 +152,7 @@ def build():
     protomer = load_protomer()
     ensemble = load_ensemble()
     cyp = load_cyp()
+    coordinator = load_coordinator()
 
     # Candidate universe: everything the stability/selectivity run scored, in its order.
     order = [x["name"] for x in json.load(open(os.path.join(C, "shortlist_confidence.json")))["candidates"]]
@@ -163,11 +171,12 @@ def build():
         pt = protomer.get(name, {})
         en = ensemble.get(name, {})
         cy = cyp.get(name, {})
+        co = coordinator.get(name, {})
         is_ctrl = name in CONTROLS
 
         concerns = derive_concerns(cf, am, sy, dm, pr, is_ctrl, rs or None,
                                    st or None, pt or None, en or None, cy or None,
-                                   rsa or None)
+                                   rsa or None, co or None)
         fungal = cf.get("fungal_consensus")
         reaches = cf.get("reaches_fungal_iron")
         stable = cf.get("stable")
@@ -292,6 +301,14 @@ def build():
                 "liability": ({k: v["liability"] for k, v in cy.get("panel", {}).items()}
                               or None),
             },
+            "coordinator_identity": {
+                "status": "proven" if co else "not-yet-checked",
+                "verdict": co.get("verdict"),
+                "reported_kind": co.get("reported_kind"),
+                "in_mechanism": co.get("reported_in_mechanism"),
+                "aromatic_nfe_A": co.get("in_mechanism_distance"),
+                "reported_nfe_A": co.get("reported_distance"),
+            },
             "not_yet_checked": dict(NOT_YET_CHECKED),
             "concerns": concerns,
         }
@@ -317,6 +334,7 @@ def build():
             "protomer_tautomer (pH-7.4 protonation/tautomer microstate dock)",
             "ensemble_consistency (crystallographic C. albicans ensemble dock)",
             "cyp_offtarget (human CYP3A4/2C9/2D6/2C19/1A2 type-II + pharmacophore liability)",
+            "coordinator_identity (which nitrogen sets the rank: aromatic ring vs nitrile/amine/azide)",
         ],
         "axes_not_yet_checked": NOT_YET_CHECKED,
         "candidates": cards,
@@ -418,14 +436,31 @@ def cyp_cell(c):
     return "clean"
 
 
+def coord_cell(c):
+    """Compact coordinator-identity cell: which nitrogen sets the rank.
+
+    'in' = aromatic ring N (validated mechanism); 'dual/<kind>' = non-aromatic N sets the rank
+    but the aromatic N still reaches the band; 'OUT/<kind>' = non-aromatic N and no aromatic N
+    in band (the rank is an artifact). Full distances live in the JSON card."""
+    co = c["coordinator_identity"]
+    if co["status"] != "proven":
+        return "—"
+    v = co.get("verdict")
+    if v == "in-mechanism":
+        return "in"
+    kind = (co.get("reported_kind") or "?")[:6]
+    return ("dual/%s" % kind) if v == "dual-mode" else ("OUT/%s" % kind
+            if v == "out-of-mechanism" else (v or "—"))
+
+
 def print_table(sc):
     novel = [c for c in sc["candidates"] if not c["is_control"]]
     ctrl = [c for c in sc["candidates"] if c["is_control"]]
     cols = ("candidate", "N-Fe", "seeds", "sel-margin", "admet", "SA",
             "domain", "Y132F", "K143R/F126L", "ensemble", "pose-conv", "stereo", "protomer",
-            "hCYP", "precedent", "#concern")
+            "hCYP", "coord", "precedent", "#concern")
     w = ("%-14s %-6s %-6s %-10s %-14s %-9s %-18s %-8s %-13s %-11s %-10s %-11s %-12s "
-         "%-10s %-16s %s")
+         "%-10s %-12s %-16s %s")
     print("\nNOVEL CANDIDATES (geometry-ranked)")
     print(w % cols)
     print("-" * 130)
@@ -445,6 +480,7 @@ def print_table(sc):
             stereo_cell(c),
             protomer_cell(c),
             cyp_cell(c),
+            coord_cell(c),
             (c["precedent"]["phenotypic"] if c["precedent"]["phenotypic"] != "—"
              else c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
@@ -468,6 +504,7 @@ def print_table(sc):
             stereo_cell(c),
             protomer_cell(c),
             cyp_cell(c),
+            coord_cell(c),
             (c["precedent"]["enzyme_verdict"])[:16],
             len(c["concerns"]),
         ))

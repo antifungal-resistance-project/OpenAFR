@@ -113,6 +113,48 @@ def test_full_conjunction_earns_A():
     assert any(r.startswith("priority A") for r in d["priority_reasons"])
 
 
+# --- coordinator-identity gating (RESULTS_coordinator.md) -----------------------------------
+
+def _coord(verdict, kind="nitrile", aromatic=6.9):
+    return {"reported_kind": kind, "in_mechanism": verdict == "in-mechanism",
+            "reported_distance": 2.42, "aromatic_distance": aromatic, "verdict": verdict}
+
+
+def test_coordinator_key_in_schema():
+    d = _build(coord=_coord("in-mechanism", kind="aromatic-ring", aromatic=2.42))
+    assert "coordinator" in d
+    assert json.loads(json.dumps(d)) == d
+
+
+def test_out_of_mechanism_blocks_A_not_C():
+    # a non-aromatic coordinator blocks automatic-A and is flagged, but does NOT force C:
+    # the active luliconazole also coordinates via a nitrile, so it is unvalidated, not disproven
+    d = _build(coord=_coord("out-of-mechanism", kind="nitrile", aromatic=6.9))
+    assert d["priority"] == "B"
+    assert any("out-of-mechanism" in r for r in d["priority_reasons"])
+    assert any("in-mechanism coordination" in r for r in d["priority_reasons"])
+
+
+def test_dual_mode_blocks_A_drops_to_B():
+    # rank inflated by a nitrile but the aromatic N reaches the band -> not C, but not A
+    d = _build(coord=_coord("dual-mode", kind="nitrile", aromatic=2.79))
+    assert d["priority"] == "B"
+    assert any("dual-mode" in r for r in d["priority_reasons"])
+    assert any("in-mechanism coordination" in r for r in d["priority_reasons"])
+
+
+def test_in_mechanism_still_earns_A():
+    d = _build(coord=_coord("in-mechanism", kind="aromatic-ring", aromatic=2.42))
+    assert d["priority"] == "A"
+
+
+def test_absent_coordinator_is_backward_compatible():
+    # no coordinator supplied -> the in-mechanism A-condition passes, behaviour unchanged
+    d = _build()
+    assert d["priority"] == "A"
+    assert d["coordinator"] is None
+
+
 @pytest.mark.parametrize("break_it,expect_in", [
     (dict(geometry=_geom(rank=99)), "top-decile"),          # rank outside top decile
     (dict(admet=_admet(ro5=3)), "clean drug-likeness"),      # too many Ro5 violations

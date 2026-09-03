@@ -1,5 +1,23 @@
 # Candidate dossiers — the fused, machine-readable artifact
 
+> **UPDATE 2026-09-02 — regenerated under the coordinator-identity gate; tally is now
+> A=0, B=14, C=2 (was A=1, B=13, C=2).** After this dossier first ran, hardening its sole
+> Priority-A candidate (verinurad) exposed that the geometry criterion measures the nearest
+> nitrogen of *any* type, not the aromatic ring N the azole mechanism was validated on (see
+> [RESULTS_coordinator.md](RESULTS_coordinator.md)). The dossier now gates automatic-A on the
+> coordinator's identity — the sixth A-condition, `in-mechanism coordination`, requires the
+> nitrogen reaching the iron to be an aromatic ring N. Both a **dual-mode** rank (inflated by
+> a non-aromatic N, aromatic N still in band) and an **out-of-mechanism** rank (set by a
+> nitrile/amine/azide N, aromatic N not in band) therefore **cannot earn automatic-A**, and
+> both are flagged prominently — **but neither is hard-demoted to C.** The pre-registered gate
+> re-validation ([RESULTS_aromatic_criterion.md](RESULTS_aromatic_criterion.md)) found that a
+> real active, **luliconazole**, itself coordinates via its nitrile in-pose (aromatic N 5.3 Å),
+> so a non-aromatic coordinator is *unvalidated, not disproven* — forcing it to C would risk
+> rejecting a genuine active. Consequence: **verinurad → B (dual-mode)**; **taranabant,
+> lersivirine, LDN-27219, olprinone → B, flagged out-of-mechanism**; **no molecule clears
+> automatic-A.** Ordering is unchanged (still N–Fe, the frozen criterion — the coordinator gate
+> annotates priority, it never re-ranks). All 6 azole controls remain in-mechanism.
+
 Date: 2026-09-02
 
 The first time the dossier generator (`openafr/dossier.py` + `scripts/build_dossier.py`,
@@ -24,26 +42,46 @@ dossier records `protocol_unmodified: true` — the anti-tuning guarantee held.
 > order. The tool's defensible claim is novel-chemotype triage (AUC ~0.81), not within-azole
 > potency ranking.
 
-## The tally: A=1, B=13, C=2
+## The tally: A=0, B=14, C=2
 
-| rank | molecule | N–Fe (Å) | priority | why (short) |
-|---:|---|---:|:--:|---|
-| 1  | flutrimazole   | 2.371 | B | azole control; 1 Ro5 + 1 structural alert, imidazole pan-CYP warhead |
-| 2  | **verinurad**  | 2.417 | **A** | top-decile, convergent, novel, clean drug-likeness, obtainable |
-| 3  | vatalanib      | 2.479 | B | 1 Ro5 violation (not automatic-A clean) |
-| 4  | flucloxacillin | 2.558 | B | 1 structural alert |
-| 5  | taranabant     | 2.586 | B | 2 Ro5 violations (insoluble, over size) |
-| 6  | lersivirine    | 2.599 | B | clean, but below the top-decile geometry cutoff |
-| 7  | LDN-27219      | 2.603 | B | 3 structural alerts (reactive hydrazide) |
-| 8  | R-1479         | 2.621 | **C** | PAINS (azide/diazo) — assay-interference, unreliable readout |
-| 9  | ravuconazole   | 2.653 | B | azole reference (record-inconclusive precedent) |
-| 10 | L-838417       | 2.667 | B | clean, but below the top-decile geometry cutoff |
-| 11 | olprinone      | 2.680 | B | below top-decile (also a demoted single-dock artifact, #68) |
-| 12 | nolatrexed     | 2.692 | B | below top-decile (also hits human CYP51, #73) |
-| 13 | letrozole      | 2.719 | B | azole reference (record-inconclusive) |
-| 14 | fluconazole    | 2.740 | B | **reference: measured enzyme-active** (positive control) |
-| 15 | voriconazole   | 2.799 | B | **reference: measured enzyme-active** (positive control) |
-| 16 | ketoconazole   | 2.921 | **C** | PAINS + reference-active — a control, correctly deprioritised |
+`coord` = which nitrogen sets the reported N–Fe (RESULTS_coordinator.md): **in** = aromatic
+ring N (validated mechanism); **dual** = non-aromatic N sets the rank but the aromatic N still
+reaches the band; **out** = non-aromatic N, aromatic N not in band. Both dual and out **block
+automatic-A** and are flagged; neither forces C (a non-aromatic coordinator is unvalidated, not
+disproven — the active luliconazole also uses one, RESULTS_aromatic_criterion.md).
+
+| rank | molecule | N–Fe (Å) | coord | priority | why (short) |
+|---:|---|---:|:--:|:--:|---|
+| 1  | flutrimazole   | 2.371 | in   | B | azole control; 1 Ro5 + 1 structural alert, imidazole pan-CYP warhead |
+| 2  | **verinurad**  | 2.417 | dual | **B** | rank set by its **nitrile** N; aromatic pyridine N only 2.80 Å (band edge) — no longer automatic-A |
+| 3  | vatalanib      | 2.479 | in   | B | in-mechanism; below top-decile + 1 Ro5 violation (not automatic-A) |
+| 4  | flucloxacillin | 2.558 | in   | B | in-mechanism; 1 structural alert |
+| 5  | taranabant     | 2.586 | out  | **B** | rank set by a **nitrile** N; aromatic N 6.9 Å from iron — flagged out-of-mechanism |
+| 6  | lersivirine    | 2.599 | out  | **B** | rank set by a **nitrile** N (2 nitriles); aromatic N 4.1 Å — flagged out-of-mechanism |
+| 7  | LDN-27219      | 2.603 | out  | **B** | rank set by an **amine** N; also single-dock unstable (#68) — flagged out-of-mechanism |
+| 8  | R-1479         | 2.621 | out  | **C** | PAINS (azide/diazo) forces C; rank also set by the **azide** terminus |
+| 9  | ravuconazole   | 2.653 | in   | B | azole reference (record-inconclusive precedent) |
+| 10 | L-838417       | 2.667 | in   | B | in-mechanism, but below the top-decile geometry cutoff |
+| 11 | olprinone      | 2.680 | out  | **B** | rank set by a **nitrile** N; also single-dock unstable (#68) — flagged out-of-mechanism |
+| 12 | nolatrexed     | 2.692 | in   | B | in-mechanism; below top-decile (also hits human CYP51, #73) |
+| 13 | letrozole      | 2.719 | in   | B | azole reference (record-inconclusive) |
+| 14 | fluconazole    | 2.740 | in   | B | **reference: measured enzyme-active** (positive control) |
+| 15 | voriconazole   | 2.799 | in   | B | **reference: measured enzyme-active** (positive control) |
+| 16 | ketoconazole   | 2.921 | in   | **C** | PAINS + reference-active — a control, correctly deprioritised |
+
+### No molecule clears automatic-A once the mechanism is enforced
+
+The sole Priority-A (verinurad) was demoted to B: its rank-#2 2.417 Å is set by its nitrile
+nitrogen, and automatic-A now requires the coordinating nitrogen to be the validated aromatic
+ring N. Four more candidates whose rank is set by a nitrile/amine/azide nitrogen (taranabant,
+lersivirine, LDN-27219, olprinone) are also blocked from A and carry a prominent
+out-of-mechanism flag — but they stay **B, not C**: the gate re-validation showed a real active
+(luliconazole) coordinating via a non-aromatic N, so hard-demoting these would risk rejecting a
+genuine binder. The honest read: the fused pipeline, with the mechanism enforced, yields **no
+automatic-A candidate** — the strongest hypotheses are the in-mechanism B tier (vatalanib,
+flucloxacillin, L-838417, nolatrexed), each carrying its own named caveat (a Ro5 violation, a
+structural alert, a below-decile rank, or a human-CYP hit). Only R-1479 and ketoconazole are C,
+both on PAINS.
 
 ### The priority table validated itself on the controls
 - **fluconazole / voriconazole** carry `precedent: tested-active` and are tagged
@@ -51,21 +89,31 @@ dossier records `protocol_unmodified: true` — the anti-tuning guarantee held.
   inhibitor to a discovery slot, exactly as designed.
 - **ketoconazole** lands in C: it recovers its known PAINS/liability profile — the control
   proving the deprioritisation logic bites.
-- **R-1479** → C on the same PAINS rule, consistent with the ADMET axis (#75) that already
-  flagged its azide/diazo as chemically implausible. The fused artifact re-derives that
-  demotion from primitives, not from a hand-copied note.
+- **R-1479** → C on two independent rules now: the PAINS/ADMET axis (#75, azide/diazo
+  chemically implausible) *and* the coordinator gate — its reported rank is set by the
+  **azide** terminus, not an aromatic ring N. The fused artifact re-derives both from
+  primitives, not from a hand-copied note.
 
-## The single priority-A: verinurad
-> Ranks #2 by N-Fe geometry with convergent poses (2/20 contact the iron), no prior
-> fungal-CYP51 measurement (novel, but absence is not proof of untested).
+## Why verinurad was demoted from Priority-A
+> Ranks #2 by N-Fe geometry — but the coordinating nitrogen is its **nitrile**, not an
+> aromatic ring N. Its pyridine N (the azole-mimetic coordinator) reaches only 2.80 Å.
 
-Automatic-A requires **all five**: top-decile geometry rank, convergent poses, not a known
-active, clean drug-likeness (≤1 Ro5 violation and 0 structural alerts), and physically
-obtainable. verinurad is the only novel molecule clearing every gate. Read the caveat the
-other axes attach: verinurad is flagged **coordinator-fragile** (single aromatic N — a
-stricter ≥2 rule would drop it, `RESULTS_domain_sensitivity.md` #87), and it is stable but
-only *provisional* on the human-selectivity axis. Priority A means "test this first," not
-"this is the answer."
+In the first run verinurad was the sole automatic-A: it cleared top-decile geometry rank,
+convergent poses, novelty, clean drug-likeness, and obtainability. The
+"coordinator-fragile" flag (#87) worried its single aromatic N was a thin coordinator.
+Hardening that flag showed the sharper truth ([RESULTS_coordinator.md](RESULTS_coordinator.md)):
+its rank-#2 2.417 Å is set by its **nitrile** nitrogen in all 5 seeds — an out-of-mechanism
+interaction the method was never validated on. Its aromatic pyridine N reaches only **2.790 Å**
+(band edge), which on its own would rank verinurad ≈14th. Automatic-A now requires the
+coordinating nitrogen to be the validated aromatic ring N (the sixth A-condition,
+`in-mechanism coordination`), so verinurad is **dual-mode → B**: an azole-like binding mode
+exists, but the geometry that made it the top pick was a nitrile artifact. (Note also: the
+human-selectivity axis is no longer *provisional* — the #73 native-pose control validated the
+receptor; verinurad is simply marginally selective there.)
+
+**There is no Priority-A candidate in this regeneration.** The strongest hypotheses are the
+in-mechanism B tier — **vatalanib** foremost (in-mechanism, seed-stable #68, cleanly
+human-selective #73; held out of A only by a single Ro5 violation).
 
 ## An honest note on the run: the `--catalogued` provenance flag
 On the first invocation every molecule showed `availability: not-checked`, which the

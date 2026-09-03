@@ -1,4 +1,11 @@
 {
+  "coordinator": {
+    "aromatic_distance": 4.054926509814943,
+    "in_mechanism": false,
+    "reported_distance": 2.598729882077018,
+    "reported_kind": "nitrile",
+    "verdict": "out-of-mechanism"
+  },
   "developability": {
     "clogp": 2.54,
     "esol_logs": -3.32,
@@ -29,17 +36,18 @@
   "priority": "B",
   "priority_reasons": [
     "azole warhead (pyrazole) -> pan-CYP liability pyrazole:3A4+2C9+2D6+2C19+1A2 (selectivity risk)",
-    "priority B: not automatic-A (top-decile geometry rank)"
+    "out-of-mechanism coordination: reported rank set by a nitrile N, not the validated aromatic ring N, and no aromatic N reaches the actives' band \u2014 the geometric evidence is unvalidated (blocks A, not disproven: the active luliconazole also coordinates via a non-aromatic N)",
+    "priority B: not automatic-A (in-mechanism coordination, top-decile geometry rank)"
   ],
   "provenance": {
-    "generated_utc": "2026-09-02T22:12:24+00:00",
-    "openafr_version": "74c1c08-dirty",
+    "generated_utc": "2026-09-03T05:04:39+00:00",
+    "openafr_version": "e6cde2e-dirty",
     "precedent_source": "chembl+pubchem",
     "protocol_sha256": "6eca16b1be2e5e33ae42d4b1b7a63a0e9b891a5dd6cbfb19642dd3e9a149aba4",
     "protocol_unmodified": true,
     "receptor": "work/receptor_A.pdb"
   },
-  "selection_hypothesis": "Ranks #6 by n-fe geometry with convergent poses (3/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the pyrazole warhead is the selectivity liability to watch.",
+  "selection_hypothesis": "Ranks #6 by n-fe geometry with convergent poses (3/20 contact the iron), no prior fungal-CYP51 measurement (novel, but absence is not proof of untested); the pyrazole warhead is the selectivity liability to watch; WARNING the rank is set by a nitrile nitrogen, not the validated aromatic ring N \u2014 outside the method's mechanism.",
   "selectivity": {
     "azole_warhead": "pyrazole",
     "flagged_isoforms": [
