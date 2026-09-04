@@ -94,6 +94,11 @@ Full detail — per-candidate iron-coordinating pose counts, the demoted docking
 provenance — is in [`work/repurposing/REPORT_repurposing.md`](repurposing/REPORT_repurposing.md).
 The complete ranking of all 2776 is `work/repurposing/ranked.tsv`.
 
+A prior-art scan of the top candidates against ChEMBL, PubChem BioAssay and PubMed — asking
+whether any have *already* been tested against fungi — is in
+[`work/repurposing/PRIORART_repurposing.md`](repurposing/PRIORART_repurposing.md). Short
+version: no recorded antifungal test, active or inactive, for any of the top ten.
+
 Several top hits are N-heterocyclic kinase inhibitors and azole-adjacent scaffolds — chemistry
 that can coordinate a heme iron. That is exactly what the criterion measures, and exactly why
 none of this is a hit yet: coordinating the iron in a static pose is necessary, not sufficient.
