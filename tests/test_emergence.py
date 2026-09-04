@@ -157,3 +157,13 @@ def test_signal_ordering_genuine_before_backlog():
     # genuine signal must sort ahead of the (larger) backlog spike
     assert res["signals"][0]["mutation"] == "VF125A"
     assert res["signals"][-1]["possible_backlog"]
+
+
+def test_assess_backlog_all_undated_cannot_decide():
+    # every carrier lacks a usable (collection, visibility) date pair -> no decision, and the
+    # reason names how many were undatable rather than defaulting to a pass or a fail
+    carriers = [{"collection_date": "", "target_creation_date": ""} for _ in range(4)]
+    possible, reason = em.assess_backlog(carriers)
+    assert possible is False
+    assert reason.startswith("undatable")
+    assert "4 carriers" in reason

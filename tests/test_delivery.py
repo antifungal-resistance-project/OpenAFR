@@ -152,3 +152,11 @@ def test_issue_title_is_scannable():
     assert title.startswith("[early-warning]")
     assert "ACT-NOW" in title  # most urgent tier surfaced
     assert AS_OF in title
+
+
+def test_issue_body_is_exactly_the_digest_a_human_reads():
+    # the GitHub-issue body is the same rendered digest, not a divergent second render
+    result = _compose()
+    state = delivery.load_state("")
+    fresh = delivery.new_alerts(result, state)
+    assert delivery.issue_body(result, fresh, state) == delivery.render_digest(result, fresh, state)

@@ -213,3 +213,12 @@ def test_deterministic_json():
     a = json.dumps(_build(**kw), sort_keys=True)
     b = json.dumps(_build(**kw), sort_keys=True)
     assert a == b
+
+
+def test_top_rank_cutoff_degenerate_and_small_pools():
+    # no rankable candidates -> no top-decile cutoff at all (0), never a spurious rank 1
+    assert dossier.top_rank_cutoff(0) == 0
+    assert dossier.top_rank_cutoff(-3) == 0
+    # any non-empty pool always admits at least rank 1
+    assert dossier.top_rank_cutoff(1) == 1
+    assert dossier.top_rank_cutoff(100) == 10

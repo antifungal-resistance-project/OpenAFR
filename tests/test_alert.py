@@ -147,3 +147,12 @@ def test_render_markdown_is_one_screen_signal_not_dump():
     assert "WEAKER azole fit" in md
     # caveats are carried, not stripped
     assert "caveat" in md
+
+
+# ---- the emergence-kind phrase covers all three combinations ------------------
+
+def test_emergence_kind_phrases():
+    from openafr.alert import _emergence_kind
+    assert _emergence_kind({"first_appearance": True, "rising": True}) == "newly appearing and rising"
+    assert _emergence_kind({"first_appearance": True, "rising": False}) == "newly appearing"
+    assert _emergence_kind({"first_appearance": False, "rising": True}) == "rising"

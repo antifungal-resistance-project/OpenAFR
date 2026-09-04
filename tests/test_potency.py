@@ -128,3 +128,9 @@ def test_bootstrap_ci_brackets_point_estimate():
     lo, hi = potency.bootstrap_ci(x, y, n_boot=1000, seed=5)
     assert lo <= rho <= hi
     assert lo < 0  # a real negative relationship's CI sits below zero
+
+
+def test_spearman_length_mismatch_is_refused():
+    # mismatched vectors cannot be ranked against each other -> explicit refusal
+    with pytest.raises(ValueError):
+        potency.spearman([1.0, 2.0, 3.0], [1.0, 2.0])

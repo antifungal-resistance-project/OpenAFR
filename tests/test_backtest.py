@@ -239,3 +239,21 @@ def test_prevalence_non_panel_mutant_letter_at_panel_position_is_not_a_hit():
     p = bt.panel_prevalence(recs)
     assert p["n_panel_positive"] == 0
     assert p["n_called_nonpanel"] == 1
+
+
+# ---- guard branches: empty / None / non-FKS1 inputs are honest, not crashes ---
+
+def test_quantile_of_empty_is_none():
+    assert bt._quantile([], 0.5) is None
+
+
+def test_month_steps_with_a_missing_bound_is_empty():
+    assert bt.month_steps(None, _dt.date(2024, 6, 1)) == []
+    assert bt.month_steps(_dt.date(2024, 6, 1), None) == []
+
+
+def test_fks1_window_statuses_ignores_non_recaller_sources():
+    # only the FKS1-recaller prefix carries per-window parts; everything else -> {}
+    assert bt._fks1_window_statuses("sra-recaller:called") == {}
+    assert bt._fks1_window_statuses("") == {}
+    assert bt._fks1_window_statuses(None) == {}

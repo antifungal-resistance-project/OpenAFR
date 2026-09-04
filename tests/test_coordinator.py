@@ -11,8 +11,10 @@ These lock the pure topological rule frozen in work/PREREGISTRATION_coordinator.
 import math
 
 from openafr.coordinator import (
+    BAND,
     classify_nitrogen,
     coordinating_nitrogen,
+    coordinator_summary,
     min_aromatic_nitrogen_iron_distance,
     nearest_by_kind,
 )
@@ -101,3 +103,76 @@ def test_aromatic_min_none_when_only_nonaromatic_nitrogens():
     fe = (0.0, 0.0, 0.0)
     atoms = [("N", 2.0, 0.0, 0.0), ("C", 3.16, 0.0, 0.0)]
     assert min_aromatic_nitrogen_iron_distance(atoms, fe) is None
+
+
+# --- coordinator_summary: the four pre-registered verdicts (PREREGISTRATION_coordinator.md) ---
+#
+# Fe sits at the origin. Pose builders below place a nitrogen of a given KIND at a chosen
+# distance from the iron: a ring N carries two ~1.34 A C neighbours (aromatic-ring), a
+# nitrile N carries one 1.16 A C neighbour (out-of-mechanism). BAND = (2.47, 2.88) is the
+# validated actives' iron-bound distance window.
+
+_FE = (0.0, 0.0, 0.0)
+
+
+def _ring_at(d):
+    """An aromatic ring N at distance d from Fe on +x (two C neighbours at ~1.34 A)."""
+    return [("N", d, 0.0, 0.0), ("C", d + 1.34, 0.0, 0.0), ("C", d, 1.34, 0.0)]
+
+
+def _nitrile_at(d):
+    """A nitrile N at distance d from Fe on +y (one triple-bonded C at 1.16 A)."""
+    return [("N", 0.0, d, 0.0), ("C", 0.0, d + 1.16, 0.0)]
+
+
+def test_summary_in_mechanism_when_nearest_n_is_aromatic():
+    # the reported (iron-nearest) coordinator is an aromatic ring N inside the band
+    s = coordinator_summary([_ring_at(2.6)], _FE)
+    assert s["verdict"] == "in-mechanism"
+    assert s["reported_kind"] == "aromatic-ring"
+    assert s["in_mechanism"] is True
+    assert s["reported_distance"] == 2.6
+    assert s["aromatic_distance"] == 2.6
+
+
+def test_summary_out_of_mechanism_when_nitrile_reports_and_aromatic_misses_band():
+    # nitrile nearer the iron sets the rank; the only aromatic N sits past the band -> artifact
+    pose = _nitrile_at(2.0) + _ring_at(3.5)   # aromatic 3.5 A is above BAND (2.88)
+    s = coordinator_summary([pose], _FE)
+    assert s["verdict"] == "out-of-mechanism"
+    assert s["reported_kind"] == "nitrile"
+    assert s["in_mechanism"] is False
+    assert s["reported_distance"] == 2.0
+    assert s["aromatic_distance"] == 3.5
+
+
+def test_summary_dual_mode_when_nitrile_reports_but_aromatic_reaches_band():
+    # nitrile sets the (inflated) rank, but an aromatic ring N still reaches inside the band
+    pose = _nitrile_at(2.0) + _ring_at(2.7)   # aromatic 2.7 A is within BAND
+    s = coordinator_summary([pose], _FE)
+    assert s["verdict"] == "dual-mode"
+    assert s["reported_kind"] == "nitrile"
+    assert BAND[0] <= s["aromatic_distance"] <= BAND[1]
+
+
+def test_summary_no_coordination_when_no_nitrogen_reaches():
+    # no nitrogen in any pose -> nothing coordinates the iron
+    poses = [[("C", 1.0, 0.0, 0.0)], [("C", 0.0, 2.0, 0.0), ("O", 0.0, 3.0, 0.0)]]
+    s = coordinator_summary(poses, _FE)
+    assert s["verdict"] == "no-coordination"
+    assert s["reported_kind"] is None
+    assert s["in_mechanism"] is None
+    assert s["reported_distance"] is None
+    assert s["aromatic_distance"] is None
+
+
+def test_summary_fuses_across_poses_reported_and_aromatic_from_different_poses():
+    # the reported (nearest) coordinator and the band-reaching aromatic N come from
+    # DIFFERENT poses: the fusion must take the min of each across the whole ensemble.
+    pose_a = _nitrile_at(2.0)          # nearest coordinator overall (a nitrile)
+    pose_b = _ring_at(2.7)             # aromatic N reaching the band, in another pose
+    s = coordinator_summary([pose_a, pose_b], _FE)
+    assert s["reported_kind"] == "nitrile"
+    assert s["reported_distance"] == 2.0
+    assert s["aromatic_distance"] == 2.7
+    assert s["verdict"] == "dual-mode"

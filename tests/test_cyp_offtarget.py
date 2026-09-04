@@ -103,3 +103,19 @@ def test_summary_string_leads_with_the_worst_signal():
 def test_unparseable_smiles_is_refused():
     with pytest.raises(ValueError):
         cy.profile("not_a_molecule)))")
+
+
+# ---- flag_summary lead selection for the non-strong, still-flagged profiles ----
+
+def test_flag_summary_weak_warhead_leads_with_the_warhead_name():
+    # a weak (non-HIGH) warhead still flags isoforms; the lead names the warhead
+    p = {"warhead_strength": "weak", "flagged_isoforms": ["CYP3A4", "CYP2D6"],
+         "azole_warhead": "pyrazole", "azine_nitrogen": False, "n_high": 0}
+    assert cy.flag_summary(p) == "pyrazole:3A4+2D6"
+
+
+def test_flag_summary_pure_pharmacophore_hit_has_no_lead():
+    # no warhead and no azine N, but a substrate-pharmacophore isoform fired -> bare list
+    p = {"warhead_strength": None, "flagged_isoforms": ["CYP2C9"],
+         "azole_warhead": None, "azine_nitrogen": False, "n_high": 0}
+    assert cy.flag_summary(p) == "2C9"

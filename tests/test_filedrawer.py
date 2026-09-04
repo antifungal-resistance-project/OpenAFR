@@ -80,3 +80,11 @@ def test_caveat_line_is_honest_and_cited():
     assert "not 'untested'" in line             # never implies novelty
     # the default 30-60% band shows up as percentages
     assert "30" in line and "60" in line
+
+
+# --- adding sources refuses a malformed base band --------------------------------------
+
+@pytest.mark.parametrize("bad", [(-0.1, 0.5), (0.6, 0.4), (0.5, 1.2), (1.2, 0.5)])
+def test_leak_after_adding_sources_refuses_bad_base_band(bad):
+    with pytest.raises(ValueError):
+        fd.leak_after_adding_sources([0.3], base_band=bad)

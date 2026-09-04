@@ -124,6 +124,27 @@ def test_estimate_never_emits_a_number(struct):
     assert "mutate_receptor.py" in v["fluconazole_fit_verdict"]
 
 
+def test_buildable_lost_contact_without_a_dock_is_a_weaker_fit_estimate():
+    """A deletion that is buildable AND removes a drug-contacting atom, but has no
+    pre-registered dock, is the geometric WEAKER-FIT estimate: a direction with caveats,
+    never a magnitude. (Y132F's OH-contact geometry, minus its empirical dock entry.)"""
+    # a synthetic verdict so no EMPIRICAL_DOCKS entry short-circuits to the measured tier
+    # (wt/mut are three-letter codes -- the keys DELETION_ATOMS is indexed by)
+    mv = {"token": "SYN", "mappable": True, "buildable": True, "pocket_contact": True,
+          "wt": "TYR", "mut": "PHE", "position": 132}
+    residues = {132: ("TYR", [("OH", (0.0, 0.0, 0.0)), ("CB", (10.0, 10.0, 10.0))])}
+    ligand_atoms = [(0.5, 0.0, 0.0)]  # 0.5 A from the removed OH -> within the contact cutoff
+    v = structural.estimate_fit_consequence(mv, residues, ligand_atoms)
+    assert v["empirical"] is None
+    assert v["evidence_class"] == "geometric-estimate"
+    assert v["confidence"] == "estimate"
+    assert v["direction"] == "weaker-fit"
+    assert [c["atom"] for c in v["lost_contacts"]] == ["OH"]
+    assert "WEAKER azole fit" in v["fluconazole_fit_verdict"]
+    assert "mutate_receptor.py" in v["fluconazole_fit_verdict"]
+    assert v["caveats"]  # a directional estimate always ships its honesty ledger
+
+
 # ---- Tier 3: unbuildable and unmappable are honest no-calls ------------------
 
 def test_f126l_pocket_contact_unbuildable_is_plausible_nocall(struct):
