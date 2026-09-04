@@ -14,6 +14,7 @@ import io
 import json
 import urllib.error
 
+import pytest
 from rdkit import Chem
 
 from openafr import precedent as P
@@ -408,3 +409,25 @@ def test_lookup_ignores_bindingdb_when_source_not_requested():
     opener = _FakeOpener({"molecule.json": {"molecules": []}})
     out = P.lookup(smi, sources=("chembl",), opener=opener, bdb_index=index)
     assert out["verdict"] == "no-precedent" and out["bindingdb"] == []
+
+
+# ---- guard branches: malformed neighbour rows and the 404-tolerant getter -----
+
+def test_load_neighbours_skips_rows_without_an_identifier(tmp_path):
+    p = tmp_path / "neighbours.tsv"
+    # middle line has a single column (no id) -> skipped, not miscounted
+    p.write_text("c1ccccc1\tCHEMBL1\tactive\nonly_one_column\nc1ccncc1\tCHEMBL2\n")
+    out = P.load_neighbours(str(p))
+    assert sorted(o["id"] for o in out) == ["CHEMBL1", "CHEMBL2"]
+
+
+def test_get_json_or_none_returns_none_only_on_404():
+    def _raise(code):
+        def opener(url, timeout=None):
+            raise urllib.error.HTTPError(url, code, "err", {}, None)
+        return opener
+    # 404 == 'not found' == a normal miss
+    assert P._get_json_or_none_on_404("http://x", _raise(404)) is None
+    # any other HTTP error is a real failure and must propagate
+    with pytest.raises(urllib.error.HTTPError):
+        P._get_json_or_none_on_404("http://x", _raise(500))

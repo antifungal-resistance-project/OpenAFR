@@ -100,3 +100,13 @@ def test_no_coordinating_pose_reports_none():
     rec = convergence(poses, scores, coordinating_index=None)
     assert rec["coordinating_pose_rank"] is None
     assert rec["coordinating_pose_in_top_cluster"] is None
+
+
+def test_rmsd_of_empty_pose_raises():
+    with pytest.raises(ValueError):
+        pose_rmsd([], [])
+
+
+def test_convergence_of_no_poses_is_none():
+    # no docked poses at all -> no convergence verdict to compute (None, not a crash)
+    assert convergence([], [], coordinating_index=None) is None

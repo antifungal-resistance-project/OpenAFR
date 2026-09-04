@@ -124,3 +124,36 @@ def test_map_signals_accepts_signal_dicts_and_tokens():
     assert [v["token"] for v in verdicts] == ["Y132F", "K143R", "TR34"]
     assert verdicts[0]["pocket_contact"] is True
     assert verdicts[2]["mappable"] is False
+
+
+# ---- the PDB readers drop hydrogens; _min_dist has no points to measure -------
+
+def _atom_line(serial, name, resname, resseq, x, y, z, element):
+    """One column-exact PDB ATOM record (heavy-atom fields the readers parse)."""
+    return ("ATOM  " + f"{serial:>5}" + " " + f"{name:<4}" + " " + f"{resname:>3}" +
+            " A" + f"{resseq:>4}" + "    " + f"{x:>8.3f}{y:>8.3f}{z:>8.3f}" +
+            " " * 22 + f"{element:>2}")
+
+
+def test_read_residues_drops_hydrogens(tmp_path):
+    pdb = tmp_path / "r.pdb"
+    pdb.write_text("\n".join([
+        _atom_line(1, "N", "TYR", 132, 10.0, 20.0, 30.0, "N"),
+        _atom_line(2, "H", "TYR", 132, 11.0, 20.0, 30.0, "H"),
+    ]) + "\n")
+    residues = mapping.read_residues(str(pdb))
+    assert [n for n, _ in residues[132][1]] == ["N"]  # the hydrogen was skipped
+
+
+def test_read_ligand_atoms_drops_hydrogens(tmp_path):
+    pdb = tmp_path / "lig.pdb"
+    pdb.write_text("\n".join([
+        _atom_line(1, "C1", "VT1", 1, 1.0, 2.0, 3.0, "C"),
+        _atom_line(2, "H1", "VT1", 1, 1.5, 2.0, 3.0, "H"),
+    ]) + "\n")
+    assert mapping.read_ligand_atoms(str(pdb)) == [(1.0, 2.0, 3.0)]
+
+
+def test_min_dist_with_no_points_is_none():
+    # nothing to measure against -> None, never a spurious distance
+    assert mapping._min_dist([("CA", (0.0, 0.0, 0.0))], []) is None

@@ -109,3 +109,34 @@ def test_tool_version_absent_tool_is_none():
     assert runlog.tool_version("definitely-not-a-real-binary-xyz") is None
     versions = runlog.tool_versions(["definitely-not-a-real-binary-xyz"])
     assert versions == {"definitely-not-a-real-binary-xyz": None}
+
+
+def test_first_line_returns_first_nonblank_or_none():
+    assert runlog._first_line("\n\n  hello \nworld") == "hello"
+    assert runlog._first_line("   \n\t\n") is None
+    assert runlog._first_line("") is None
+    assert runlog._first_line(None) is None
+
+
+def test_git_commit_outside_a_repo_is_none_none(tmp_path):
+    # best-effort provenance: a directory with no git history yields (None, None), not a raise
+    assert runlog.git_commit(root=tmp_path) == (None, None)
+
+
+def test_read_runs_skips_blank_lines(tmp_path):
+    (tmp_path / "sanity.jsonl").write_text(
+        json.dumps({"run": 1}) + "\n\n" + json.dumps({"run": 2}) + "\n")
+    runs = runlog.read_runs("sanity", log_dir=tmp_path)
+    assert [r["run"] for r in runs] == [1, 2]  # the blank line was skipped, not fatal
+
+
+def test_tool_version_reads_the_banner_from_stdout_or_stderr(tmp_path):
+    # many bio tools print their --version banner to stderr; tool_version falls back to it
+    def _fake_tool(name, stream):
+        p = tmp_path / name
+        p.write_text(f"#!/bin/sh\n{'echo' if stream == 'out' else 'echo 1>&2'} 'faketool 9.9'\n")
+        p.chmod(0o755)
+        return str(p)
+
+    assert runlog.tool_version(_fake_tool("v_out", "out")) == "faketool 9.9"
+    assert runlog.tool_version(_fake_tool("v_err", "err")) == "faketool 9.9"  # stderr fallback

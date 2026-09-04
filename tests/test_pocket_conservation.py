@@ -141,3 +141,24 @@ def test_divergence_is_only_toward_aspergillus(result):
 
 def test_coordination_shell_divergence(result):
     assert result["summary"]["coord_shell_divergent"] == [307]
+
+
+# ---- aligner + identity edge cases -------------------------------------------
+
+def test_percent_identity_with_no_aligned_columns_is_zero():
+    # an empty reference gives no non-gap columns to score over -> 0.0, never a divide-by-zero
+    assert cz.percent_identity("", "ACD") == 0.0
+    assert cz.percent_identity("", "") == 0.0
+
+
+def test_needleman_wunsch_handles_extreme_length_disparity():
+    # a one-residue sequence against a long one forces the traceback down a pure-gap edge;
+    # the alignment stays consistent: equal length, and each side recovers its own residues
+    a, b = cz.needleman_wunsch("ACDEFGHIK", "A")
+    assert len(a) == len(b)
+    assert a.replace("-", "") == "ACDEFGHIK"
+    assert b.replace("-", "") == "A"
+    a2, b2 = cz.needleman_wunsch("A", "ACDEFGHIK")
+    assert len(a2) == len(b2)
+    assert a2.replace("-", "") == "A"
+    assert b2.replace("-", "") == "ACDEFGHIK"
