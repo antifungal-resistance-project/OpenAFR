@@ -210,10 +210,20 @@ after `validate_gate2.py` passes.
 >   both genes independently. `openafr/delivery.py` routes off the result's `gene` marker.
 >
 > **What remains OPEN for v2:**
-> 1. **A real FKS1 `fill` → measured prevalence/backtest.** `fks1_panel_prevalence` reports
->    "NOT MEASURED YET" until an actual re-caller `fill` runs — same wall as ERG11: bioconda
->    tools (fasterq-dump/minimap2/samtools≥1.13) + multi-GB SRA downloads on a Linux/x86
->    host (offline-tested orchestration; unproven binaries). Not doable on osx-arm64.
+> 1. **A real FKS1 `fill` → measured prevalence. — DONE 2026-09-04 (measured).** Ran on a GCP
+>    e2-standard-2 (project `openafr-recaller-20260818`, us-central1-a, VM deleted after):
+>    setup 674 tests green + tool gate (fasterq-dump 3.1.1 / minimap2 2.28 / samtools 1.21),
+>    sanity 4/4 PASS (WT B11220 clean; S639F/P/Y controls all called), then
+>    `fill --random --seed 0 --limit 450` on snapshot **PDG000000067.686** (443 resolved, 4
+>    partial, 3 failed; run_id `037ca9a103ea`, `data/earlywarning/runlog/fill-fks1.jsonl`).
+>    **Echinocandin event frequency = 10/443 = 2.3%, Wilson 95% CI [1.2%, 4.1%]** (S639F ×9,
+>    S639Y ×1; +13 non-panel hot-spot changes reported-but-excluded: D642Y ×6, R1354H ×4,
+>    L640V ×2, F635C ×1). Result: [`work/RESULTS_fks1_prevalence.md`](work/RESULTS_fks1_prevalence.md).
+>    **Reads honestly: LOW and non-saturated — the useful case.** Vs the ERG11 azole ~80%,
+>    echinocandin resistance is still rare, so early-warning has real headroom. The v2
+>    redirection premise is now confirmed by DATA on both halves (azole no-headroom, FKS1
+>    headroom). Backtest against an external truth set is the only remaining sub-item, same as
+>    ERG11 step 2 (optional; the deliverable prevalence number is measured).
 > 2. **T5 — the FKS1 structural so-what: still DEFERRED BY DESIGN**, not merely unbuilt.
 >    Echinocandins coordinate no metal; the CYP51 geometry moat does not transfer to a
 >    glucan synthase. Revisit only if a PI asks for it. The detection-only label is the
