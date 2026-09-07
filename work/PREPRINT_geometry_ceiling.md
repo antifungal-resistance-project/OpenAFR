@@ -1,13 +1,15 @@
 # Mechanism-anchored geometric rescoring on fungal CYP51: broad enrichment is robust, top-rank enrichment is not, and property-matched decoys explain why
 
 **Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11,
-revised 2026-09-02, from nine pre-registered runs in this repository. Every number below is
+revised 2026-09-06, from ten pre-registered runs in this repository. Every number below is
 traceable to a `work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing
 here is a new analysis, and no result was re-graded for this writeup. The dated update banners
-above and §§4.3–4.5 fold in four later pre-registered results — a measured-inactive decoy set
+above and §§4.3–4.5 fold in five later pre-registered results — a measured-inactive decoy set
 (look #6), an ensemble receptor (looks #8–#9), a 2026-08-22 compound-curation finding that
-bounds resistance claims (§4.4/§6.9), and a 2026-09-02 coordinator-identity caveat (§4.5) — each
-graded against its own frozen hash and each re-grading nothing that preceded it.
+bounds resistance claims (§4.4/§6.9), a 2026-09-02 coordinator-identity caveat (§4.5), and a
+2026-09-06 power run that widened the primary gate to a blind N = 300 and retired the n = 7
+caveat (look #10, §3.1/§6.1) — each graded against its own frozen hash and each re-grading
+nothing that preceded it.
 
 
 ---
@@ -185,6 +187,14 @@ iron-approach distance rather than by Vina score inverts the outcome:
 
 Permutation test (20,000 label shuffles): **p = 0.0028**. Bootstrap 95% CI over actives: AUC
 0.590–0.946. Held-out active ranks (of 355): 3, 8, 29, 43, 49, 124, 274.
+
+That n = 7 CI lower bound (0.590) sat *below* the 0.70 bar, so this run alone could not exclude
+a true AUC beneath it. A pre-registered power run (look #10, [RESULTS_active_power.md](RESULTS_active_power.md),
+pre-reg sha `9327563a…`) later re-ran the *identical* gate — same receptor, criterion, decoy
+pool, protocol and seed — with only the active side widened, to a blind **N = 300** sample of
+measured-active azoles: **AUC 0.750, bootstrap 95% CI 0.717–0.782**, permutation p = 5×10⁻⁵.
+The point estimate is a little below the n = 7 value, but the interval is ~4× tighter and its
+lower bound clears the bar, so a sub-0.70 true AUC is now excluded (see Limitation 1).
 
 This is the durable result. On this target, the docking program's own affinity estimate is
 anti-informative, and a single mechanistic distance recovers real drugs it has never seen.
@@ -464,6 +474,7 @@ Every look ever taken at the held-out data, in order, with its committed outcome
 | 7 | `RESULTS_channel_engagement.md` | one orthogonal feature (mode F) on the azole-analogue pool | `62592a10…` | **FAIL** (AUC 0.590) |
 | 8 | `RESULTS_ensemble.md` | 3-conformer ensemble receptor, within-class, n=7 held-out | `8041b38e…` | **PASS** (AUC 0.750) — *superseded by 9* |
 | 9 | `RESULTS_ensemble_confirm.md` | ensemble receptor, **independent N=200** azole actives | `7754050e…` | **FAIL** (AUC 0.682) |
+| 10 | `RESULTS_active_power.md` | run-1 gate, actives widened to **blind N=300** (power run) | `9327563a…` | **PASS** (AUC 0.750, CI 0.717–0.782) |
 
 Four looks were taken at the original wild-type poses (1, 3, 4, 5). Each pre-registration bounded the
 number of subsequent attempts and pre-committed the failure conclusion; the reliability
@@ -488,8 +499,14 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
 
 ## 6. Limitations
 
-1. **n = 7 held-out actives.** The bootstrap 95% CI lower bound (0.590) sits *below* the 0.70 pass
-   bar; a true AUC under the bar cannot be excluded from the primary run.
+1. **The primary gate ran on n = 7 held-out actives** (bootstrap 95% CI 0.590–0.946, lower bound
+   below the 0.70 bar). This was retired by a pre-registered power run (look #10,
+   `RESULTS_active_power.md`): the *identical* gate with the active side widened to a blind
+   **N = 300** sample of measured-active azoles gives **AUC 0.750, 95% CI 0.717–0.782** —
+   the lower bound now clears the bar, so a true AUC beneath it is excluded. The N = 300 point
+   estimate (0.750) is marginally below the n = 7 value (0.794); the honest headline is the tight
+   interval, not the small-sample point estimate. (The *within-azole* n = 7 → N = 200 widening is a
+   separate question and went the other way — see Limitation 3 and look #9.)
 2. **Decoys are presumed inactive, not verified.** Any true binder among the 348 depresses measured
    performance; any systematic selection bias inflates it. This is the single largest caveat and the
    subject of §4.1.
