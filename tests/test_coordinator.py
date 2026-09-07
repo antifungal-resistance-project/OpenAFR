@@ -176,3 +176,55 @@ def test_summary_fuses_across_poses_reported_and_aromatic_from_different_poses()
     assert s["reported_distance"] == 2.0
     assert s["aromatic_distance"] == 2.7
     assert s["verdict"] == "dual-mode"
+
+
+# --- the type-aware coordinator criterion (min_coordinating_nitrogen_iron_distance) ---
+# Hypothesis of work/PREREGISTRATION_coordinator_type.md: admit aromatic-ring AND nitrile
+# (both type-II-capable donors, and a real active — luliconazole — uses its nitrile), but
+# NOT amine/azide. These lock that the criterion admits exactly that kind set.
+
+def _amine_at(d):
+    """An sp3 amine N at distance d from Fe on +z (one single-bonded C at 1.47 A)."""
+    return [("N", 0.0, 0.0, d), ("C", 0.0, 0.0, d + 1.47)]
+
+
+def test_type_aware_admits_aromatic():
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    assert min_coordinating_nitrogen_iron_distance(_ring_at(2.6), _FE) == 2.6
+
+
+def test_type_aware_admits_nitrile():
+    # the key difference from the aromatic-only criterion: a nitrile still sets the distance
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    assert min_coordinating_nitrogen_iron_distance(_nitrile_at(2.4), _FE) == 2.4
+    assert min_aromatic_nitrogen_iron_distance(_nitrile_at(2.4), _FE) is None
+
+
+def test_type_aware_excludes_amine():
+    # an amine nearer the iron must NOT set the distance (out-of-mechanism kind)
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    assert min_coordinating_nitrogen_iron_distance(_amine_at(2.0), _FE) is None
+
+
+def test_type_aware_picks_nitrile_over_nearer_amine():
+    # amine sits nearest (2.0) but is inadmissible; the nitrile (2.5) sets the distance
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    pose = _amine_at(2.0) + _nitrile_at(2.5)
+    assert min_coordinating_nitrogen_iron_distance(pose, _FE) == 2.5
+
+
+def test_type_aware_sits_between_any_n_and_aromatic_only():
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    from openafr.pdbqt import min_nitrogen_iron_distance
+    # amine nearest (1.8), then nitrile (2.4), then aromatic (2.9)
+    pose = _amine_at(1.8) + _nitrile_at(2.4) + _ring_at(2.9)
+    assert min_nitrogen_iron_distance(pose, _FE) == 1.8            # any-N: the amine
+    assert min_coordinating_nitrogen_iron_distance(pose, _FE) == 2.4  # type-aware: the nitrile
+    assert min_aromatic_nitrogen_iron_distance(pose, _FE) == 2.9   # aromatic-only: the ring N
+
+
+def test_type_aware_kinds_argument_is_honoured():
+    # restricting kinds to aromatic-only reproduces the aromatic criterion
+    from openafr.coordinator import min_coordinating_nitrogen_iron_distance
+    pose = _nitrile_at(2.4) + _ring_at(2.9)
+    assert min_coordinating_nitrogen_iron_distance(pose, _FE, kinds=("aromatic-ring",)) == 2.9
