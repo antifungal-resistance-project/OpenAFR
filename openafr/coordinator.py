@@ -109,6 +109,42 @@ def min_aromatic_nitrogen_iron_distance(atoms, fe):
     return best
 
 
+# The nitrogen kinds that can donate a lone pair to heme Fe in a type-II mechanism the
+# method has direct evidence for: an aromatic ring N (the azole mechanism, sp2 lone pair)
+# and a nitrile N (sp lone pair, roughly colinear for sigma-donation). The nitrile is here
+# not by analogy but because a *real active*, luliconazole, coordinates the iron through
+# its nitrile in-pose (work/RESULTS_aromatic_criterion.md) — so excluding it demotes a
+# known active. An sp3 amine (protonated / bulky at physiological pH) and a terminal azide
+# are the kinds with no such evidence; they are the out-of-mechanism artifacts the
+# any-N criterion silently rewards. This set is the pre-registered hypothesis of
+# work/PREREGISTRATION_coordinator_type.md, NOT the frozen gate criterion.
+COORDINATOR_KINDS = ("aromatic-ring", "nitrile")
+
+
+def min_coordinating_nitrogen_iron_distance(atoms, fe, kinds=COORDINATOR_KINDS):
+    """Closest approach to the heme iron of a *type-II-capable coordinator* nitrogen, or None.
+
+    A middle ground between `openafr.pdbqt.min_nitrogen_iron_distance` (any N — silently
+    rewards amine/azide artifacts) and `min_aromatic_nitrogen_iron_distance` (aromatic only
+    — demotes the nitrile-coordinating active luliconazole). It admits exactly the nitrogen
+    kinds in `kinds` (default `COORDINATOR_KINDS` = aromatic-ring + nitrile) and ignores the
+    rest, so an amine/azide N that happens to sit nearest cannot set the distance while a
+    nitrile — a mechanism a real active uses — still can. None means no admissible
+    coordinator reaches the pocket in this pose. Pure geometry; classification is
+    `classify_nitrogen`.
+    """
+    best = None
+    for k, a in enumerate(atoms):
+        if not a[0].startswith("N"):
+            continue
+        if classify_nitrogen(atoms, k) not in kinds:
+            continue
+        d = math.dist(a[1:], fe)
+        if best is None or d < best:
+            best = d
+    return best
+
+
 BAND = (2.47, 2.88)   # validated actives' iron-bound band (work/RESULTS_all_azoles.md)
 
 
