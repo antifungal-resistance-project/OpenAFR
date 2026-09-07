@@ -192,6 +192,34 @@ python scripts/recall_fks1.py prevalence <snapshot>
   azole); a surprisingly high one is itself a finding. Either way it is now a measured number,
   not a measured-zero-because-unmeasured null.
 
+## 7. (Optional, same host) Grade the caller against the full external benchmark
+
+The `fill` above measures *prevalence* trusting a caller whose accuracy is only a 4-strain
+control (step 3). While the box is up, also run the pre-registered **concordance** validation
+— the caller's measured sensitivity/specificity against the 100-isolate PMC12323592 benchmark
+(TODOS v2 step 3; `work/PREREGISTRATION_fks1_concordance.md`, frozen sha `da8e3827…`). This is
+the "widen n → measured CI" move that retired preprint Limitation #1, applied to the caller.
+
+**Prerequisite done off-host:** transcribe PMC12323592 Table 1 (100 isolates: SRR, FKS1
+genotype, R/S) into `data/earlywarning/recaller_sanity/fks1_benchmark_100.tsv` (schema in the
+script header) and pin its hash. The paper is **not open-access** — do NOT auto-scrape it (an
+LLM scrape produced a self-contradictory duplicate row); copy from the PDF and verify each SRR
+live against ENA `read_run` (Illumina/PAIRED/WGS), then:
+
+```bash
+shasum -a 256 data/earlywarning/recaller_sanity/fks1_benchmark_100.tsv \
+  >> work/PREREG_fks1_concordance.sha256          # freeze the fixture hash
+python scripts/validate_fks1_concordance.py --limit 3   # cheap smoke test first
+python scripts/validate_fks1_concordance.py             # full benchmark + pre-registered verdict
+```
+
+The grader re-checks the prereg + fixture hashes and refuses to certify if either moved. Read
+the verdict: **PASS** → fold the measured accuracy into `RESULTS_fks1_prevalence.md`;
+**UNDERPOWERED** (resolved < 80%) → more reads / lower `--min-depth`; **FAIL** → a named,
+reproducible caller defect (which token, which direction) that blocks promoting the FKS1 track
+past detection-of-record. The scoring engine (`openafr/concordance.py`) is unit-tested offline,
+so a surprise here is the *reads/orchestration*, not the metric.
+
 ## Abort conditions (stop and investigate, don't push through)
 
 - samtools < 1.13, or any gate/tool error → fix the environment; do not bypass the gate.
