@@ -224,7 +224,35 @@ after `validate_gate2.py` passes.
 >    redirection premise is now confirmed by DATA on both halves (azole no-headroom, FKS1
 >    headroom). Backtest against an external truth set is the only remaining sub-item, same as
 >    ERG11 step 2 (optional; the deliverable prevalence number is measured).
-> 2. **T5 — the FKS1 structural so-what: still DEFERRED BY DESIGN**, not merely unbuilt.
+> 3. **Validate the CALLER itself against the full external benchmark — ENGINE BUILT
+>    2026-09-07, blocked on the truth-set transcription + a GCP run.** The prevalence number
+>    (item 1) trusts a caller whose accuracy was only ever a 4-strain PASS/FAIL control
+>    (`recaller_sanity_fks1.py`). This sub-item turns that into a measured error rate — the
+>    same "widen n → measured CI" move that retired preprint Limitation #1 (active-power). The
+>    external truth set is **PMC12323592** ("A benchmark dataset for validating FKS1 mutations
+>    in C. auris"): 100 WGS isolates, **47 R / 53 S**, HS1 tokens **S639F ×15 / S639Y ×13 /
+>    S639P ×8** (+ non-HS1 F635/D642/R1354/W691), each row carrying an SRA run accession + FKS1
+>    genotype + MIC in its Table 1. Built offline this session:
+>    - `openafr/concordance.py` — pure metrics engine (panel detection sensitivity/specificity,
+>      exact-token identity, per-token sensitivity, phenotype-anchored resistance-detection
+>      ceiling; Wilson CIs; unresolved excluded-not-guessed). 8 tests (`tests/test_concordance.py`).
+>    - `work/PREREGISTRATION_fks1_concordance.md` (frozen sha `da8e3827…`, `work/PREREG_fks1_concordance.sha256`)
+>      — metric + pass bar (**specificity ≥0.95 / lo ≥0.90; sensitivity ≥0.90 / lo ≥0.75;
+>      identity ≥0.95; resolved ≥80%**) + both-direction interpretation, all committed before grading.
+>    - `scripts/validate_fks1_concordance.py` — GCP-gated grader; reuses the EXACT `recall_fks1`
+>      orchestration, re-checks the prereg + fixture hashes, refuses to certify if either moved.
+>    **BLOCKER (the one honest gap):** the 100-row truth set must be transcribed by hand into
+>    `data/earlywarning/recaller_sanity/fks1_benchmark_100.tsv` (schema in the script header)
+>    and its hash pinned. PMC12323592 is **not open-access** — NCBI/Europe PMC full text is
+>    publisher-blocked and the HTML table is behind a CAPTCHA, and an LLM scrape produced a
+>    self-contradictory duplicate row (SRR21675882 labelled both S639P/R and −/S), so the rows
+>    CANNOT be auto-pulled — fabricating accessions would poison the validation. Get the table
+>    from the paper PDF (verify each SRR live against ENA `read_run`, Illumina/PAIRED/WGS),
+>    freeze the fixture hash, then run `validate_fks1_concordance.py` on the same GCP host as
+>    the prevalence fill (`work/RUNBOOK_fks1_run.md`). PASS → fold the measured accuracy into
+>    `work/RESULTS_fks1_prevalence.md`; FAIL → a named, reproducible caller defect that blocks
+>    promoting the track past detection-of-record.
+> 4. **T5 — the FKS1 structural so-what: still DEFERRED BY DESIGN**, not merely unbuilt.
 >    Echinocandins coordinate no metal; the CYP51 geometry moat does not transfer to a
 >    glucan synthase. Revisit only if a PI asks for it. The detection-only label is the
 >    honest scope, and it is now enforced through composition, rendering, and delivery.
