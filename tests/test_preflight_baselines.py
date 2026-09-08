@@ -28,9 +28,15 @@ def test_sha256_matches_the_pinned_value():
     assert pf._sha256(pf.ROOT / pf.PREREG) == want
 
 
-def test_pose_count_none_when_dir_absent_int_when_present():
-    assert pf._pose_count("work/screen2") is None            # gitignored / not regenerated
-    assert pf._pose_count("work") == 0                        # a real dir, no .pdbqt at top
+def test_pose_count_none_when_dir_absent_int_when_present(tmp_path, monkeypatch):
+    # Hermetic: a real working tree may carry gitignored top-level artifacts (e.g.
+    # work/receptor.pdbqt after prep_receptor.py), so build the cases under a throwaway ROOT.
+    monkeypatch.setattr(pf, "ROOT", tmp_path)
+    assert pf._pose_count("screen2") is None                 # absent dir -> None
+    (tmp_path / "poses").mkdir()
+    assert pf._pose_count("poses") == 0                       # real dir, no .pdbqt -> 0
+    (tmp_path / "poses" / "lig.pdbqt").write_text("")
+    assert pf._pose_count("poses") == 1                       # counts .pdbqt when present
 
 
 def test_check_frozen_sha_flags_a_mismatch(tmp_path, monkeypatch):

@@ -41,6 +41,8 @@ work/candidates/focus_ligands/
 work/candidates/dock_run.log
 work/candidates/human_control/*.pdbqt
 work/screen_verified/
+work/screen_verified_power/
+work/verified_power_ligands/
 work/screen_5FSA/
 work/screen_5V5Z/
 work/verified_ligands/
