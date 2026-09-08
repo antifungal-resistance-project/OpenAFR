@@ -1,15 +1,17 @@
 # Mechanism-anchored geometric rescoring on fungal CYP51: broad enrichment is robust, top-rank enrichment is not, and property-matched decoys explain why
 
 **Draft manuscript — OpenAFR / The Antifungal Resistance Project.** Assembled 2026-08-11,
-revised 2026-09-06, from ten pre-registered runs in this repository. Every number below is
+revised 2026-09-08, from eleven pre-registered runs in this repository. Every number below is
 traceable to a `work/RESULTS_*.md` file graded against a hash-frozen pre-registration; nothing
 here is a new analysis, and no result was re-graded for this writeup. The dated update banners
-above and §§4.3–4.5 fold in five later pre-registered results — a measured-inactive decoy set
+above and §§4.3–4.5 fold in six later pre-registered results — a measured-inactive decoy set
 (look #6), an ensemble receptor (looks #8–#9), a 2026-08-22 compound-curation finding that
-bounds resistance claims (§4.4/§6.9), a 2026-09-02 coordinator-identity caveat (§4.5), and a
+bounds resistance claims (§4.4/§6.9), a 2026-09-02 coordinator-identity caveat (§4.5), a
 2026-09-06 power run that widened the primary gate to a blind N = 300 and retired the n = 7
-caveat (look #10, §3.1/§6.1) — each graded against its own frozen hash and each re-grading
-nothing that preceded it.
+caveat (look #10, §3.1/§6.1), and a 2026-09-08 power run that widened the measured-inactive test
+to N = 300 and found the pooled AUC sub-bar, quantifying rather than discharging Limitation 2
+(look #11, §6.2) — each graded against its own frozen hash and each re-grading nothing that
+preceded it.
 
 
 ---
@@ -66,6 +68,24 @@ nothing that preceded it.
 > *unvalidated, not disproven*; the frozen criterion stands, and coordinator identity is reported
 > as a per-candidate flag. See new §4.5.
 > *(The PDF in this directory predates these updates.)*
+
+---
+
+> **UPDATE 2026-09-08 — look #11 powers the measured-inactive test: "Limitation 2 discharged"
+> (the 2026-08-23 banner) does NOT survive powering.** Look #6's measured-inactive pass was on
+> the same 7 held-out actives (AUC 0.716, CI 0.506–0.885, lower bound below the bar). Look #11
+> ([RESULTS_verified_power.md](RESULTS_verified_power.md), pre-reg sha `40b656a3…`) re-ran that
+> contrast with the active side widened 7 → **N = 300** — the same power move that retired
+> Limitation 1 — against the identical 279 measured inactives, protocol, criterion and seed.
+> Result: **pooled AUC 0.688, 95% CI 0.656–0.720** (permutation p < 0.0001). The signal is real
+> but **sub-bar**: the small-sample 0.716 was optimistic, and Limitation 2 is **quantified, not
+> discharged**. The powered decomposition is the same chemotype-vs-potency split, now tight:
+> **0.782 against non-azole measured inactives** (the product claim, reproducing look #10's 0.774
+> GCP→local) versus **0.622 against azole-bearing measured inactives** (real vs *failed* azoles,
+> below the bar, confirming the within-warhead ceiling of look #9). The 58%-azole benchmark drags
+> the pool between them. Net: the paper's core thesis — a *chemotype* ceiling, not a potency tool
+> — is strengthened; the standing "discharged" reading is retired. See §6 Limitation 2 and ledger
+> row 11.
 
 ---
 
@@ -475,6 +495,7 @@ Every look ever taken at the held-out data, in order, with its committed outcome
 | 8 | `RESULTS_ensemble.md` | 3-conformer ensemble receptor, within-class, n=7 held-out | `8041b38e…` | **PASS** (AUC 0.750) — *superseded by 9* |
 | 9 | `RESULTS_ensemble_confirm.md` | ensemble receptor, **independent N=200** azole actives | `7754050e…` | **FAIL** (AUC 0.682) |
 | 10 | `RESULTS_active_power.md` | run-1 gate, actives widened to **blind N=300** (power run) | `9327563a…` | **PASS** (AUC 0.750, CI 0.717–0.782) |
+| 11 | `RESULTS_verified_power.md` | look #6 vs measured inactives, actives widened to **N=300** (power run) | `40b656a3…` | **FAIL** (AUC 0.688, CI 0.656–0.720) |
 
 Four looks were taken at the original wild-type poses (1, 3, 4, 5). Each pre-registration bounded the
 number of subsequent attempts and pre-committed the failure conclusion; the reliability
@@ -507,13 +528,23 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
    estimate (0.750) is marginally below the n = 7 value (0.794); the honest headline is the tight
    interval, not the small-sample point estimate. (The *within-azole* n = 7 → N = 200 widening is a
    separate question and went the other way — see Limitation 3 and look #9.)
-2. **Decoys are presumed inactive, not verified.** Any true binder among the 348 depresses measured
-   performance; any systematic selection bias inflates it. This is the single largest caveat and the
-   subject of §4.1.
+2. **The primary decoys are presumed inactive, not verified** — but the criterion has now been
+   powered against *measured* non-inhibitors. Look #6 (`RESULTS_verified_inactives.md`) re-ran the
+   contrast against 279 compounds measured not to inhibit whole-cell *C. albicans*, and look #11
+   (`RESULTS_verified_power.md`) widened its active side 7 → **N = 300** — the same power move that
+   retired Limitation 1. The pooled result is **AUC 0.688, 95% CI 0.656–0.720** (permutation
+   p < 0.0001): the signal is real but **below the 0.70 bar**, so look #6's small-sample 0.716 does
+   not survive powering and this caveat is **quantified, not retired**. The sub-bar pooled number
+   is the chemotype-vs-potency split reasserting itself: against **non-azole** measured inactives
+   the criterion holds at **AUC 0.782** (the novel-chemotype product claim, reproducing look #10's
+   0.774), while against **azole-bearing** measured inactives it is **0.622** — it separates real
+   azoles from other chemotypes but not from *failed azole analogues*, and the 58%-azole benchmark
+   drags the pool between the two. CYP51-enzyme-confirmed (not merely whole-cell) inactives remain
+   the ideal test and the most useful next contribution (§4.1).
 3. **One decoy set for the rigid-pose looks.** The rigid-receptor ceiling is demonstrated *on that
-   set*; look #6 re-tested it against an independently constructed measured-inactive set (AUC 0.716)
-   and looks #8–#9 against an independent 200-azole active set, so the conclusion no longer rests on
-   a single decoy construction.
+   set*; look #6 re-tested it against an independently constructed measured-inactive set (AUC 0.716
+   at n = 7, powered to 0.688 [0.656, 0.720] at N = 300 in look #11) and looks #8–#9 against an
+   independent 200-azole active set, so the conclusion no longer rests on a single decoy construction.
 4. **Primarily one rigid receptor**, *C. albicans* 5TZ1, solved with the short ligand VT-1161. No
    induced fit for the main analyses; the posaconazole/itraconazole long-tail class is a known blind
    spot and the declared applicability domain is ≤ 45 heavy atoms. An experimental 3-conformer
