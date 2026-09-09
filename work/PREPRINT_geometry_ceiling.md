@@ -11,7 +11,9 @@ bounds resistance claims (§4.4/§6.9), a 2026-09-02 coordinator-identity caveat
 caveat (look #10, §3.1/§6.1), and a 2026-09-08 power run that widened the measured-inactive test
 to N = 300 and found the pooled AUC sub-bar, quantifying rather than discharging Limitation 2
 (look #11, §6.2) — each graded against its own frozen hash and each re-grading nothing that
-preceded it.
+preceded it. A 2026-09-09 data-availability audit (§4.1/§6.2) further establishes that the
+enzyme-confirmed-inactive test which would settle Limitation 2 is unbuildable on public data, so
+that caveat is structurally undischargeable rather than merely unaddressed.
 
 
 ---
@@ -86,6 +88,27 @@ preceded it.
 > the pool between them. Net: the paper's core thesis — a *chemotype* ceiling, not a potency tool
 > — is strengthened; the standing "discharged" reading is retired. See §6 Limitation 2 and ledger
 > row 11.
+
+---
+
+> **UPDATE 2026-09-09 — the §4.1 "clean exit" is audited and found UNBUILDABLE on public data.**
+> §4.1 and Limitation 2 name CYP51-*enzyme*-confirmed inactives (compounds measured not to inhibit
+> the enzyme, not merely the whole cell) as "the most useful next contribution anyone could make to
+> this benchmark". An exhaustive audit of the docked target — ChEMBL **CHEMBL1780**, *C. albicans*
+> CYP51 / UniProt P10613 — shows they do not exist at usable scale
+> ([RESULTS_enzyme_inactives_audit.md](RESULTS_enzyme_inactives_audit.md),
+> `scripts/audit_enzyme_inactives.py`). The whole target is **184 compounds**; property-matched
+> enzyme-confirmed non-inhibitors number **0** under a clean evidence rule and **≤6** under a
+> deliberately over-loose one — versus the ~O(100) a powered contrast needs. The reasons are
+> structural to the literature: IC50/Ki records (n = 44) are *all potent actives* (file-drawer bias,
+> no censored non-binders); the only non-inhibition signal lives in %-assays, 496 of which are
+> directionally-ambiguous per-sterol GC-MS composition readouts (a CYP51 inhibitor lowers ergosterol
+> but raises eburicol, so a low value is "active" or "inactive" depending on the sterol); **81% of
+> the "enzyme" target's records are actually cell-based**; and orthologue targets (T. cruzi, human,
+> …) are invalid as *C. albicans* non-inhibitors. Consequence: the 279 whole-cell measured-inactive
+> set (look #6/#11) is **the best set that exists**, so the powered **AUC 0.688** is the ceiling of
+> what public data can say — Limitation 2 is undischargeable by anyone absent new experimental
+> non-inhibitor measurement, not merely unaddressed here. See revised §4.1 and §6 Limitation 2.
 
 ---
 
@@ -375,9 +398,24 @@ This generalizes into a constraint on mechanism-based rescoring:
 
 The bind is real and has no computational escape. Non-matched decoys give an inflated, circular
 result; mechanism-matched decoys give a criterion that saturates at the top. The only clean exit is
-**experimentally confirmed inactives** — compounds measured not to inhibit — rather than
-computationally presumed ones. We do not have those; obtaining them for CYP51 is, in our view, the
-most useful next contribution anyone could make to this benchmark.
+**experimentally confirmed inactives** — compounds measured not to inhibit the enzyme — rather than
+computationally presumed or whole-cell-measured ones. **These do not exist at usable scale in public
+data, and we now show that as an audited fact rather than an aspiration.** An exhaustive count of the
+docked target (ChEMBL CHEMBL1780, *C. albicans* CYP51 / UniProt P10613;
+[RESULTS_enzyme_inactives_audit.md](RESULTS_enzyme_inactives_audit.md),
+`scripts/audit_enzyme_inactives.py`) finds the whole target is only 184 compounds and yields **0**
+property-matched enzyme-confirmed non-inhibitors under a clean evidence rule (**≤6** under a
+deliberately over-loose one), against the ~O(100) a powered contrast needs. Three structural reasons:
+the deposited IC50/Ki records (n = 44) are *all potent actives* — binding databases publish hits, not
+misses; the only non-inhibition signal lives in %-inhibition assays, of which the majority (496 rows)
+are directionally-ambiguous per-sterol GC-MS composition readouts that cannot be classified by value
+alone without fabricating labels; and 81% of even this "enzyme" target's records are cellular sterol
+assays, so it does not cleanly escape the permeability/efflux confound in the first place. Orthologue
+CYP51 targets (T. cruzi, human, A. fumigatus, …) cannot substitute — a compound that fails to inhibit
+a different species' enzyme is not a measured *C. albicans* non-inhibitor. The measured whole-cell
+inactive set of §4.1's follow-up (looks #6/#11) is therefore the best set that exists; obtaining a
+true enzyme-confirmed inactive set for CYP51 remains the most useful contribution anyone could make,
+but it requires **new wet-lab non-inhibitor measurement** — it is not recoverable by curation.
 
 ### 4.2 Practical recommendations
 
@@ -539,8 +577,14 @@ the previously published reliability numbers (0.830 / 0.00x / 5.63x / 4.23x / 0.
    the criterion holds at **AUC 0.782** (the novel-chemotype product claim, reproducing look #10's
    0.774), while against **azole-bearing** measured inactives it is **0.622** — it separates real
    azoles from other chemotypes but not from *failed azole analogues*, and the 58%-azole benchmark
-   drags the pool between the two. CYP51-enzyme-confirmed (not merely whole-cell) inactives remain
-   the ideal test and the most useful next contribution (§4.1).
+   drags the pool between the two. CYP51-enzyme-confirmed (not merely whole-cell) inactives would be
+   the ideal test — but an exhaustive audit of the docked target
+   ([RESULTS_enzyme_inactives_audit.md](RESULTS_enzyme_inactives_audit.md)) shows they do not exist
+   at usable scale in public data: ChEMBL CHEMBL1780 is 184 compounds, of which **0** clean (≤6
+   over-loose) survive property-matching, 81% of its records are cell-based, and every deposited
+   IC50/Ki is a potent active. So the whole-cell set here is the best available and this caveat is
+   **quantified but structurally undischargeable** absent new experimental non-inhibitor measurement,
+   not merely open (§4.1).
 3. **One decoy set for the rigid-pose looks.** The rigid-receptor ceiling is demonstrated *on that
    set*; look #6 re-tested it against an independently constructed measured-inactive set (AUC 0.716
    at n = 7, powered to 0.688 [0.656, 0.720] at N = 300 in look #11) and looks #8–#9 against an
