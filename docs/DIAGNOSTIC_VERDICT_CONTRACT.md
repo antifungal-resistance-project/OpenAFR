@@ -92,5 +92,19 @@ An isolate yields one verdict per drug-class it was typed for: **azole** (from E
 
 This spec, then: a `verdict` schema module + unit tests that convert the callers' existing
 token/resolution output into the object above, with the four-value enum and the RUO scope
-string enforced. #134 wires the callers into it; #135 fills the `UNCHARACTERIZED` structural
-best-guess; #137 validates the whole thing as concordance against the C. auris benchmarks.
+string enforced. #135 fills the `UNCHARACTERIZED` structural best-guess; #137 validates the
+whole thing as concordance against the C. auris benchmarks.
+
+## The one interpretation entrypoint (#134)
+
+`openafr/interpret.py` is the single genotype-to-verdict path: `interpret(gene, ...)` takes
+*raw* isolate input — a consensus `cds`, FKS1 `windows`, or a `variants` token list from any
+WGS / targeted panel — routes it through the existing re-callers (`recaller.py`,
+`fks1_caller.py`), and returns the verdict object above. It reuses the callers, never forks
+them, and adds only the wiring the schema needs: it turns a `ConsensusError`/`WindowError`
+into an `UNRESOLVED` verdict (a `ReferenceError` still propagates — a broken pinned reference
+is an environment fault, not an isolate property), re-derives `uncalled_panel` so a
+missing/refused FKS1 window can't leak out as `NO_KNOWN_MARKER`, and passes an ERG11
+`structural` pocket verdict straight through (the #135 hook). A bare variant list is taken as
+covering the panel positions unless `uncalled=[...]` declares a gap. `CYP51A` is recognised
+but refused — no caller exists for it yet (see `work/PREREGISTRATION_diagnostics_panel.md`).
