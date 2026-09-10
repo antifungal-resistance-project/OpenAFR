@@ -232,3 +232,68 @@ def estimate_signals(signals, receptor=mapping.DEFAULT_RECEPTOR,
     tokens = [s["mutation"] if isinstance(s, dict) else s for s in signals]
     verdicts = [mapping.map_mutation(t, residues, ligand_atoms, fe, cutoff) for t in tokens]
     return [estimate_fit_consequence(mv, residues, ligand_atoms, cutoff) for mv in verdicts]
+
+
+# --- Diagnostic hook (issue #135): the moat, at the verdict boundary ---------------------
+# A lookup-table resistance tool falls SILENT on a variant that is not in its table. This
+# engine does not: an uncharacterized (non-panel) ERG11 change is mapped into the modeled
+# azole pocket and gets a mechanism-based structural best-guess instead. The best-guess is
+# always CALIBRATED-LOW and flagged uncharacterized, so it can never be mistaken for a
+# measured resistance call; a variant we genuinely cannot place returns an honest null.
+
+def _render_hint(token):
+    """The exact make_pose_view / render_views commands that materialize the pocket view for
+    an uncharacterized variant -- the SAME tooling the C. auris port (#13) uses. Embedded as
+    a hint (PyMOL is out of the offline verdict path), mirroring how estimate_fit_consequence
+    embeds the dock command. None when the mutant cannot be built in the pinned env."""
+    return (f"python scripts/mutate_receptor.py {token} -o work/receptor_auris_{token}.pdb "
+            f"&& python scripts/make_pose_view.py <azole> "
+            f"--receptor work/receptor_auris_{token}.pdb "
+            f"&& bash scripts/render_views.sh work/views/{token}")
+
+
+def _best_guess_summary(mapped):
+    parts = [f"{e['token']} ({e['direction']}, structural evidence: {e['confidence']})"
+             for e in mapped]
+    return ("structural best-guess for uncharacterized variant(s) -- " + "; ".join(parts) +
+            "; low-confidence mechanism inference, NOT a resistance call")
+
+
+def diagnostic_best_guess(tokens, receptor=mapping.DEFAULT_RECEPTOR,
+                          ligand=mapping.DEFAULT_LIGAND, cutoff=mapping.CONTACT_CUTOFF):
+    """A mechanism-based structural best-guess for uncharacterized ERG11 variants (#135).
+
+    `tokens` -- the non-panel (uncharacterized) protein substitution tokens an isolate
+    carries. Maps each into the modeled azole pocket and estimates its fit consequence,
+    REUSING estimate_signals (map_mutation + estimate_fit_consequence) and, through it, the
+    C. auris port pipeline (#13) -- nothing here re-derives a structural call.
+
+    Returns the object the azole verdict's `structural` field carries, or None when NOT ONE
+    token can be placed in the modeled pocket (honest null -- we never fabricate a structural
+    call for a variant we genuinely cannot map). The object always declares:
+      confidence -- "low": this is a best-guess, NEVER a resistance call. Each variant's own
+                    structural evidence (measured/estimate/none) lives inside its entry.
+      flag       -- "uncharacterized": none of these is a known-resistance marker.
+    so a reader can never mistake a mechanism guess for a calibrated resistance verdict. Each
+    entry keeps its full estimate_fit_consequence readout; a `render_hint` (make_pose_view /
+    render_views) is attached for the buildable ones, None otherwise.
+    """
+    tokens = list(tokens or [])
+    if not tokens:
+        return None
+    estimates = estimate_signals(tokens, receptor=receptor, ligand=ligand, cutoff=cutoff)
+    mapped = [e for e in estimates if e.get("mappable")]
+    if not mapped:
+        return None                        # nothing structural to say -> honest null
+    for e in estimates:
+        e["render_hint"] = _render_hint(e["token"]) if e.get("buildable") else None
+    return {
+        "kind": "uncharacterized_best_guess",
+        "flag": "uncharacterized",
+        "confidence": "low",
+        "basis": ("modeled 5TZ1 CYP51 azole pocket (work/receptor_A.pdb + co-crystal "
+                  "work/ref_VT1.pdb) via the C. auris port pipeline (#13); mechanism-based "
+                  "best-guess, not a measured resistance determination"),
+        "summary": _best_guess_summary(mapped),
+        "variants": estimates,
+    }

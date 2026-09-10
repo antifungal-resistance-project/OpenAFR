@@ -130,6 +130,55 @@ def test_erg11_malformed_variant_token_is_refused():
         I.interpret("ERG11", variants=["Y132"])
 
 
+# --- ERG11 novel-variant structural best-guess (#135, the moat) --------------
+
+def test_erg11_uncharacterized_variant_gets_low_confidence_best_guess():
+    # A mappable non-panel variant must NOT fall silent: it carries a structural best-guess
+    # that is calibrated-LOW and explicitly flagged uncharacterized (never a resistance call).
+    out = I.interpret("ERG11", variants=["T123I"])
+    assert out["verdict"] == v.UNCHARACTERIZED_VARIANT
+    bg = out["structural"]
+    assert bg is not None
+    assert bg["confidence"] == "low"
+    assert bg["flag"] == "uncharacterized"
+    assert [x["token"] for x in bg["variants"]] == ["T123I"]
+    # The best-guess is a structural inference, never a probability/MIC/score.
+    blob = " ".join(str(v_).lower() for v_ in bg.values())
+    assert "prob" not in blob and "mic value" not in blob
+
+
+def test_erg11_unmappable_novel_variant_is_honest_null_not_faked():
+    # A variant we genuinely cannot place in the modeled pocket (residue far outside the
+    # modeled range) must NOT get a fabricated structural call: the verdict stays an explicit
+    # UNCHARACTERIZED_VARIANT, but structural is an honest null.
+    out = I.interpret("ERG11", variants=["Y9000F"])
+    assert out["verdict"] == v.UNCHARACTERIZED_VARIANT
+    assert out["called_tokens"] == [{"token": "Y9000F", "class": "uncharacterized"}]
+    assert out["structural"] is None
+
+
+def test_erg11_no_known_marker_carries_no_best_guess(erg11_ref):
+    ref_cds, _ = erg11_ref
+    out = I.interpret("ERG11", cds=ref_cds, reference=erg11_ref)
+    assert out["verdict"] == v.NO_KNOWN_MARKER
+    assert out["structural"] is None            # nothing uncharacterized to place
+
+
+def test_erg11_explicit_structural_overrides_best_guess():
+    pocket = {"kind": "caller_supplied", "reaches_iron": True}
+    out = I.interpret("ERG11", variants=["T123I"], structural=pocket)
+    assert out["structural"] == pocket          # explicit input is never overwritten
+
+
+def test_erg11_panel_hit_plus_novel_variant_still_gets_best_guess():
+    # A resistance marker AND an uncharacterized variant: the verdict is the resistance call,
+    # but the novel variant is still structurally characterized (we don't drop it).
+    out = I.interpret("ERG11", variants=["Y132F", "T123I"])
+    assert out["verdict"] == v.RESISTANCE_MARKER_DETECTED
+    assert out["structural"]["flag"] == "uncharacterized"
+    assert [x["token"] for x in out["structural"]["variants"]] == ["T123I"]
+
+
 # --- FKS1 / echinocandin: window + variant paths ----------------------------
 
 def test_fks1_wildtype_windows_is_no_known_marker(fks1_ref):
