@@ -120,7 +120,8 @@ no observed novel change is ever silently dropped. FKS1 never carries it (see be
 ## Out of scope for this contract (declared, not silently dropped)
 
 - **Calibrated probability / MIC value.** Deferred to #136; not emitted day one.
-- **Clinical actionability.** Every verdict is RUO; the go/no-go for a clinical claim is #139.
+- **Clinical actionability.** Every verdict is RUO; the go/no-go for a clinical claim is #139
+  (`docs/DIAGNOSTIC_GO_NO_GO.md`).
 - **Species identification.** The contract assumes the organism/gene is already typed; species
   ID is a separate upstream concern, not part of the verdict.
 - **Non-target resistance mechanisms** (efflux, ERG3, promoter/TR). Their existence is *why*
