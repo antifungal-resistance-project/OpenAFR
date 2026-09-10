@@ -9,11 +9,15 @@ docs/DIAGNOSTIC_VERDICT_CONTRACT.md and built by openafr/verdict.py (issue #133)
 It REUSES, never forks, the resistance early-warning callers:
   * ERG11 / azole        -> openafr/recaller.py  (call_substitutions)
   * FKS1  / echinocandin -> openafr/fks1_caller.py (call_windows / slice_windows_from_cds)
-and passes an ERG11 structural pocket verdict straight through to the verdict object where
-one is supplied (the openafr/structural.py hook that #135 will populate). Nothing here
+and, for an ERG11 azole verdict, populates the structural pocket best-guess (issue #135):
+an uncharacterized (non-panel) variant is mapped into the modeled azole pocket via
+openafr/structural.py and gets a calibrated-LOW, uncharacterized-flagged mechanism guess --
+so this engine does not fall silent on a novel variant the way a lookup table does -- while
+a caller-supplied structural verdict still passes straight through. Nothing here
 re-implements a caller; it only (a) picks the right caller for the gene, (b) accepts the
-handful of raw input shapes a real WGS/panel pipeline hands us, and (c) translates the
-callers' outputs -- and their honest hard-failures -- into the #133 schema.
+handful of raw input shapes a real WGS/panel pipeline hands us, (c) translates the
+callers' outputs -- and their honest hard-failures -- into the #133 schema, and (d) fills the
+structural best-guess for an uncharacterized ERG11 variant.
 
 What "wiring" means here, precisely
 -----------------------------------
@@ -42,11 +46,13 @@ there. When that assumption does not hold -- a targeted panel with a known cover
 a marker -- pass `uncalled=[...]` with those residue positions and they force UNRESOLVED at
 the panel, exactly as an uncalled codon does on the sequence path.
 
-Stdlib only. Delegates every actual base/codon decision to the pinned-reference callers.
+Stdlib only, offline. Delegates every base/codon decision to the pinned-reference callers and
+every pocket/structural decision to openafr/structural.py (checked-in modeled receptor).
 """
 import re
 
 from openafr import fks1_caller, recaller
+from openafr import structural as _structural
 from openafr.verdict import azole_verdict, echinocandin_verdict
 
 # A canonical protein point-substitution token, e.g. 'Y132F': wild-type, position, mutant.
@@ -130,6 +136,21 @@ def _one_input(cds, windows, variants):
     return supplied[0]
 
 
+def _erg11_structural(call, structural):
+    """Populate the ERG11 structural field with a mechanism-based best-guess for any
+    uncharacterized (non-panel) variant the isolate carries (#135) -- the moat: a lookup-table
+    tool falls silent on a novel variant, we map it into the pocket and emit a calibrated-low
+    structural best-guess instead. Left to `structural` when the caller supplied one
+    explicitly; None (honest null) when there is nothing uncharacterized to place."""
+    if structural is not None:
+        return structural
+    panel = set(call.get("panel_hits") or [])
+    uncharacterized = [t for t in (call.get("tokens") or []) if t not in panel]
+    if not uncharacterized:
+        return None
+    return _structural.diagnostic_best_guess(uncharacterized)
+
+
 def _interpret_erg11(kind, cds, variants, uncalled, structural, prov, reference):
     if kind == "windows":
         raise ValueError("windows= is FKS1-only; ERG11 takes a full-length cds= or variants=")
@@ -140,13 +161,15 @@ def _interpret_erg11(kind, cds, variants, uncalled, structural, prov, reference)
         except recaller.ConsensusError as e:
             # Honest hard-failure (frameshift/length): UNRESOLVED, reason carried, not a crash.
             return azole_verdict(unresolved_reason=str(e), provenance=prov)
-        return azole_verdict(call, structural=structural, provenance=prov)
+        return azole_verdict(call, structural=_erg11_structural(call, structural),
+                             provenance=prov)
 
     # variants: build the caller-shaped dict, honouring an explicit panel coverage gap.
     tokens, panel_hits = _normalize_variants(variants, recaller.is_panel_token)
     uncalled_panel = sorted(p for p in (uncalled or []) if p in recaller.RESISTANCE_PANEL)
     call = {"tokens": tokens, "panel_hits": panel_hits, "uncalled_panel": uncalled_panel}
-    return azole_verdict(call, structural=structural, provenance=prov)
+    return azole_verdict(call, structural=_erg11_structural(call, structural),
+                         provenance=prov)
 
 
 def _interpret_fks1(kind, cds, windows, variants, uncalled, prov, reference):
@@ -186,8 +209,9 @@ def interpret(gene, *, cds=None, windows=None, variants=None, uncalled=None,
     uncalled    optional residue positions NOT covered; only meaningful with variants=,
                 where panel residues among them force UNRESOLVED (declares a coverage gap a
                 bare variant list cannot).
-    structural  optional ERG11 pocket verdict passthrough (#135 / openafr/structural.py);
-                dropped for FKS1 by the verdict contract.
+    structural  optional ERG11 pocket verdict override; when omitted, an uncharacterized
+                ERG11 variant auto-gets a calibrated-low structural best-guess (#135 /
+                openafr/structural.py). Dropped for FKS1 by the verdict contract.
     provenance  optional extra provenance fields, layered over the auto-stamped reference
                 hash + panel positions.
     reference   optional pre-loaded (cds, protein) tuple handed to the caller (reuse/tests).

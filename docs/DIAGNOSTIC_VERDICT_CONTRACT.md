@@ -47,8 +47,8 @@ An isolate yields one verdict per drug-class it was typed for: **azole** (from E
    `recaller.py`). FKS1 HS1 panel: S639F, S639P, S639Y (`fks1_caller.py`).
 2. **`UNCHARACTERIZED_VARIANT`** — resolved, a non-synonymous change is present but **none** is a
    known-resistance panel token. This is the explicit **"I don't know"** verdict — surfaced, not
-   hidden. #135 attaches a mechanism-based structural best-guess for ERG11 here; the verdict
-   itself stays uncharacterized until a variant is promoted into the panel table.
+   hidden. #135 attaches a mechanism-based structural best-guess for ERG11 here (see below); the
+   verdict itself stays uncharacterized until a variant is promoted into the panel table.
 3. **`NO_KNOWN_MARKER`** — resolved, and only wild-type / no panel token in the resistance
    windows. **This is NOT a susceptibility call** (see the load-bearing rule below).
 4. **`UNRESOLVED`** — the window could not be called honestly (coverage gap, in-window indel
@@ -70,6 +70,44 @@ An isolate yields one verdict per drug-class it was typed for: **azole** (from E
 4. **`UNRESOLVED` is excluded, not negative.** Same "excluded not guessed" discipline as
    `concordance.evaluate` and `backtest.panel_prevalence`. A caller that honestly refuses to
    guess must never be scored as if it called wild-type.
+
+## The novel-variant structural best-guess (#135) — the moat
+
+A lookup-table concordance tool falls **silent** on a variant that is not in its table. This
+engine does not. When an ERG11 isolate carries an **uncharacterized** (non-panel) substitution,
+`interpret()` maps it into the modeled azole pocket (`openafr/structural.py`, reusing the C.
+auris port pipeline #13) and fills the verdict's `structural` field with a mechanism-based
+best-guess:
+
+```
+structural: {
+  kind:       "uncharacterized_best_guess",
+  flag:       "uncharacterized",         # never a known-resistance marker
+  confidence: "low",                     # CALIBRATED-LOW — a mechanism guess, never a call
+  basis:      <modeled-pocket + #13 provenance string>,
+  summary:    <one-line human read across the mapped variants>,
+  variants: [ <per-variant estimate_fit_consequence: evidence_class / confidence
+               (measured|estimate|none) / direction / fluconazole_fit_verdict / lost_contacts
+               / caveats / render_hint (make_pose_view + render_views, buildable only)> ]
+}
+```
+
+Three honesty rails hold here, matching `openafr/structural.py`:
+
+- **Calibrated-low, always.** The object's top-level `confidence` is `"low"` and the `flag` is
+  `"uncharacterized"`, so a best-guess can never be read as a measured resistance verdict. The
+  per-variant `confidence` (`measured`/`estimate`/`none`) is the *structural-evidence* tier, kept
+  separate inside each entry.
+- **A variant we genuinely cannot map → honest null.** If **no** uncharacterized token can be
+  placed in the modeled pocket (a promoter/tandem-repeat token like `TR34`, or a residue outside
+  the modeled range), `structural` is `null`. We never fabricate a structural call. This mirrors
+  the `verdict`-level UNRESOLVED discipline: refusing to guess is a first-class outcome.
+- **Caller-supplied structural wins.** An explicit `structural=` argument to `interpret()` is
+  never overwritten by the auto best-guess.
+
+The best-guess is attached wherever an uncharacterized ERG11 token is *observed* — including
+alongside a `RESISTANCE_MARKER_DETECTED` call (the novel co-variant is still characterized) — so
+no observed novel change is ever silently dropped. FKS1 never carries it (see below).
 
 ## Per-drug-class asymmetry (declared, not glossed)
 
@@ -104,7 +142,8 @@ WGS / targeted panel — routes it through the existing re-callers (`recaller.py
 them, and adds only the wiring the schema needs: it turns a `ConsensusError`/`WindowError`
 into an `UNRESOLVED` verdict (a `ReferenceError` still propagates — a broken pinned reference
 is an environment fault, not an isolate property), re-derives `uncalled_panel` so a
-missing/refused FKS1 window can't leak out as `NO_KNOWN_MARKER`, and passes an ERG11
-`structural` pocket verdict straight through (the #135 hook). A bare variant list is taken as
+missing/refused FKS1 window can't leak out as `NO_KNOWN_MARKER`, and fills the ERG11
+`structural` best-guess for an uncharacterized variant (#135, above) — or passes a
+caller-supplied `structural` verdict straight through. A bare variant list is taken as
 covering the panel positions unless `uncalled=[...]` declares a gap. `CYP51A` is recognised
 but refused — no caller exists for it yet (see `work/PREREGISTRATION_diagnostics_panel.md`).
