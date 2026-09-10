@@ -147,3 +147,26 @@ missing/refused FKS1 window can't leak out as `NO_KNOWN_MARKER`, and fills the E
 caller-supplied `structural` verdict straight through. A bare variant list is taken as
 covering the panel positions unless `uncalled=[...]` declares a gap. `CYP51A` is recognised
 but refused — no caller exists for it yet (see `work/PREREGISTRATION_diagnostics_panel.md`).
+
+## The RUO verdict report (#138)
+
+`openafr/report.py` renders one isolate's per-drug-class verdicts into a report a lab or a
+pipeline can consume — `render_json()` (machine-readable) and `render_markdown()` (human) off
+the same `build_report(isolate_id, verdicts, metadata=...)` dict. It **renders, never
+re-decides**: every categorical judgement was already frozen by `verdict.py`/`interpret.py`;
+the report only assembles them, attaches a plain-English `rationale` per verdict, and lays
+them out. It invents no new field — above all, no probability/score/MIC. Three guarantees,
+matching this contract:
+
+- **RUO / no-clinical-claim disclaimer baked in.** A standing top-level `disclaimer` (RUO
+  scope + the explicit "not a clinical determination, do not treat from this, absence of a
+  marker is not susceptibility") on every report, JSON and Markdown, before any per-class
+  block — never fine print. Verdicts whose `scope` disagrees are refused, not papered over.
+- **`UNCHARACTERIZED_VARIANT` surfaced, not buried.** Its own top-level `summary.uncharacterized`
+  list and a callout near the top of the Markdown (the #135 moat: the "I don't know" is seen
+  first, not discovered by reading down a table). The ERG11 structural best-guess renders
+  inline, flagged calibrated-**low**.
+- **`NO_KNOWN_MARKER` never rendered as "susceptible."** Its rationale spells out what was and
+  wasn't checked (named ERG11/FKS1 markers only; not efflux/ERG3/non-target), so it cannot be
+  read as a clinical "S" (rule 2). The day-one confidence model is stated as **categorical /
+  concordance-only — no calibrated probability** (#132; deferred to #136).
