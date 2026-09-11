@@ -1,0 +1,139 @@
+# FKS1 (echinocandin) concordance truth set -- 100 WGS C. auris isolates.
+# Truth = PMC12323592 (Misas et al., "A benchmark dataset for validating FKS1 mutations in
+#   Candida auris", Microbiol Spectr 2025; doi:10.1128/spectrum.03147-24). US-Gov public domain.
+# The pre-registered external benchmark for scripts/validate_fks1_concordance.py
+#   (prereg work/PREREGISTRATION_fks1_concordance.md, sha da8e3827...). This fixture's own
+#   SHA-256 is pinned in work/PREREG_fks1_concordance.sha256 and re-checked by the grader.
+#
+# PROVENANCE (2026-09-10). The paper IS open-access (an earlier note that it was paywalled/
+#   CAPTCHA-gated was wrong): Table 1 was extracted verbatim from the PMC HTML
+#   (https://pmc.ncbi.nlm.nih.gov/articles/PMC12323592/), one <table>, 100 clean 8-col rows
+#   -> .context/pmc12323592_table1_extracted.tsv. NOT an LLM scrape.
+# FIDELITY CHECK: the paper's per-isolate (S)/(R) column is reproduced 100/100 by the paper's
+#   own stated rule (CAS>=2 OR ANID>=4 OR MICA>=4 -> R). susceptibility below is that column.
+# ENA VERIFICATION: all 99 distinct run accessions confirmed live against the ENA read_run API
+#   = instrument_platform=ILLUMINA, library_layout=PAIRED, library_strategy=WGS,
+#   scientific_name=Candid[a|ozyma] auris (.context/ena_verify_all.json). Load-bearing: the
+#   orchestration aligns with `minimap2 -ax sr`; a non-Illumina run would misalign.
+#
+# expected_panel: the HS1 panel token(s) {S639F,S639P,S639Y} the caller must emit for this
+#   isolate, '-' if none. ONLY S639F/P/Y are caller-panel tokens; other FKS1 changes
+#   (D642Y, F635Y/C hs1; W691L/C, M690I hs3; R1354S hs2) are reported verbatim but NOT panel
+#   tokens -- they are the C2 marker-coverage ceiling and read as resistance-detection misses,
+#   by design. The verbatim paper mutation for every isolate is kept in `note` (paper_mut=...).
+# susceptibility: 'R'/'S' echinocandin phenotype anchor (the paper interpretation column).
+#
+# DECISION D1 (truth for de-novo-reclassified isolates): where the paper's reference pipeline
+#   read 'Undetermined' but a footnote gives a de-novo genotype, the de-novo genotype is truth.
+#   => B21247 expected_panel=S639F (footnote c). B19896 = F635C (footnote a; non-panel -> '-').
+#   B21978 empty-cell = M690I outside the detection region (footnote b; non-panel -> '-').
+# DECISION D2 (duplicated accession): SRR21675882 is listed by the paper against TWO isolates
+#   with opposite phenotypes (B15223 Clade IV S639P/R; B16328 Clade III wild-type/S) -- a
+#   genuine source defect. Both are KEPT for the record as '#'-commented rows at the end and
+#   are EXCLUDED from scoring (98 isolates scored). Do not uncomment without resolving the
+#   accession collision against the paper's supplement.
+#
+# Columns (tab-separated; '#'-comment lines are skipped by the grader):
+strain	clade	run_acc	expected_panel	susceptibility	note	citation
+B11098	I	SRR3883438	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.5,MICA=0.25;bioproject=PRJNA328792;sample=SAMN05379577;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11100	I	SRR28270965	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.5,MICA=0.25;bioproject=PRJNA722434;sample=SAMN40300160;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11118	I	SRR3883432	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.25;bioproject=PRJNA328792;sample=SAMN05379590;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11119	I	SRR3883433	-	S	paper_mut=none;MIC:CAS=0.12,ANID=0.25,MICA=0.125;bioproject=PRJNA328792;sample=SAMN05379591;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11200	I	SRR3883434	-	S	paper_mut=none;MIC:CAS=1,ANID=0.5,MICA=0.06;bioproject=PRJNA328792;sample=SAMN05379592;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11204	I	SRR28270964	-	S	paper_mut=none;MIC:CAS=0.03,ANID=0.25,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11205	I	SRR3883436	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.25,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11210	I	SRR3883442	-	S	paper_mut=none;MIC:CAS=0.03,ANID=0.5,MICA=0.125;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11211	I	SRR28270963	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=4,MICA=8;bioproject=PRJNA722434;sample=SAMN40300162;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11212	I	SRR3883443	-	S	paper_mut=none;MIC:CAS=0.5,ANID=1,MICA=1;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11213	I	SRR3883444	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.125;bioproject=PRJNA328792;sample=SAMN05379601;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11216	I	SRR3883447	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.25;bioproject=PRJNA328792;sample=SAMN05379604;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11219	I	SRR3883451	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=8,MICA=8;bioproject=PRJNA328792;sample=SAMN05379607;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11222	III	SRR3883454	-	S	paper_mut=none;MIC:CAS=0.5,ANID=1,MICA=1;bioproject=PRJNA328792;sample=SAMN05379610;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11226	III	SRR3883458	-	S	paper_mut=none;MIC:CAS=0.25,ANID=1,MICA=1;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11229	III	SRR3883462	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.5;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11243	IV	SRR3883464	-	S	paper_mut=none;MIC:CAS=0.5,ANID=1,MICA=0.5;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B11244	IV	SRR3883465	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.5,MICA=0.5;bioproject=PRJNA328792;sample=SAMN05379620;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B11842	IV	SRR7909141	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=1;bioproject=PRJNA493622;sample=SAMN10139552;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B12132	IV	SRR28270962	S639P	R	paper_mut=S639P (hs1);MIC:CAS=>16,ANID=4,MICA=4;bioproject=PRJNA722434;sample=SAMN40300163;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B12136	IV	SRR10461137	S639P	R	paper_mut=S639P (hs1);MIC:CAS=8,ANID=4,MICA=8;bioproject=PRJNA595978;sample=SAMN13294172;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B12143	IV	SRR28270961	S639P	R	paper_mut=S639P (hs1);MIC:CAS=>16,ANID=4,MICA=4;bioproject=PRJNA722434;sample=SAMN40300164;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B12663	I	SRR7909222	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=16,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B12666	I	SRR7909393	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=4,MICA=4;bioproject=PRJNA493622;sample=SAMN10139328;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B12688	I	SRR7909409	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=4,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B13463	II	SRR10461159	-	S	paper_mut=none;MIC:CAS=0.03,ANID=0.03,MICA=0.125;bioproject=PRJNA595978;sample=SAMN13294127;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13696	I	SRR7909346	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B13741	I	SRR26666770	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.25,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094235;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13743	I	SRR26666801	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.125,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094207;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13744	I	SRR26666769	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.06,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094236;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13863	I	SRR26666799	-	S	paper_mut=none;MIC:CAS=0.125,ANID=0.25,MICA=0.06;bioproject=PRJNA638416;sample=SAMN38094209;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13868	I	SRR26666790	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.25,MICA=0.06;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B13871	I	SRR26666777	-	S	paper_mut=none;MIC:CAS=0.125,ANID=0.125,MICA=0.06;bioproject=PRJNA638416;sample=SAMN38094229;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13885	I	SRR26666781	-	S	paper_mut=none;MIC:CAS=0.125,ANID=0.125,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094225;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13889	I	SRR26666789	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.5,MICA=0.125;bioproject=PRJNA638416;sample=SAMN38094218;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13893	I	SRR26666788	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.25,MICA=0.125;bioproject=PRJNA638416;sample=SAMN38094219;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13894	I	SRR26666787	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.25,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094220;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13897	I	SRR26666785	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.125,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094221;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13916	I	SRR10461157	S639F	R	paper_mut=S639F (hs1);MIC:CAS=4,ANID=4,MICA=4;bioproject=PRJNA595978;sample=SAMN13294125;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B13922	I	SRR26666765	S639P	R	paper_mut=S639P (hs1);MIC:CAS=4,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN38094240;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B14001	I	SRR28270960	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.06,MICA=0.125;bioproject=PRJNA722434;sample=SAMN40300165;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B14013	I	SRR26666809	-	S	paper_mut=none;MIC:CAS=0.125,ANID=0.125,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B14308	II	SRR10461147	-	S	paper_mut=none;MIC:CAS=0.03,ANID=0.06,MICA=0.06;bioproject=PRJNA595978;sample=SAMN13294115;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B18683	III	SRR14252431	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.12,MICA=0.12;bioproject=PRJNA722434;sample=SAMN18754594;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B18802	I	SRR26666763	S639P	R	paper_mut=S639P (hs1);MIC:CAS=>16,ANID=8,MICA=>8;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B18840	I	SRR26666756	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094198;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B18926	III	SRR12526252	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.5,MICA=1;bioproject=PRJNA638416;sample=SAMN15878075;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B19127	I	SRR26666797	-	S	paper_mut=none;MIC:CAS=0.12,ANID=0.12,MICA=0.12;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B19276	I	SRR26666798	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=2,MICA=2;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B19311	I	SRR26666786	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=4,MICA=8;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B19617	I	SRR26666796	-	R	paper_mut=W691L (hs3);MIC:CAS=>16,ANID=16,MICA=>8;bioproject=PRJNA638416;sample=SAMN38094211;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B19618	I	SRR26666776	-	R	paper_mut=W691L (hs3);MIC:CAS=>16,ANID=16,MICA=>8;bioproject=PRJNA638416;sample=SAMN38094230;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B19896	I	SRR26666784	-	R	paper_mut=Undetermined;footnote_a=F635C(HS1) by de-novo/MycoGene;footnote_d=MycoSNP could not determine at this position;MIC:CAS=1,ANID=2,MICA=4;bioproject=PRJNA638416;sample=SAMN38094222;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B19897	I	SRR26666762	-	R	paper_mut=F635Y (hs1);MIC:CAS=>16,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN38094242;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B19946	I	SRR26666779	S639F	R	paper_mut=S639F (hs1);MIC:CAS=>16,ANID=>16,MICA=8;bioproject=PRJNA638416;sample=SAMN38094227;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20034	I	SRR26666772	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=1,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN38094233;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20153	I	SRR26666803	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=8,ANID=8,MICA=8;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20249	I	SRR26666761	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20279	III	SRR23696720	-	S	paper_mut=none;MIC:CAS=0.06,ANID=0.25,MICA=0.12;bioproject=PRJNA638416;sample=SAMN33578692;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20308	I	SRR26666775	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN38094195;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20325	I	SRR26666783	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20326	I	SRR26666760	-	S	paper_mut=none;footnote_b=M690I(HS3) outside MycoSNP-nf region;MIC:CAS=0.25,ANID=0.5,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20464	I	SRR26666767	-	S	paper_mut=D642Y (hs1);MIC:CAS=0.5,ANID=2,MICA=1;bioproject=PRJNA638416;sample=SAMN38094238;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20537	III	SRR23696674	S639F	R	paper_mut=S639F (hs1);MIC:CAS=16,ANID=8,MICA=8;bioproject=PRJNA638416;sample=SAMN33578730;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20549	I	SRR26666755	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=2,MICA=2;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20592	I	SRR26666807	-	R	paper_mut=R1354S (hs2);MIC:CAS=2,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20665	IV	SRR23919790	S639F	R	paper_mut=S639F (hs1);MIC:CAS=1,ANID=4,MICA=8;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20666	IV	SRR23919789	S639F	R	paper_mut=S639F (hs1);MIC:CAS=1,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN33830140;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20673	I	SRR26666792	S639Y	S	paper_mut=S639Y (hs1);MIC:CAS=1,ANID=2,MICA=2;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20675	I	SRR26666773	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=8,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B20681	I	SRR23696667	-	S	paper_mut=D642Y (hs1);MIC:CAS=1,ANID=2,MICA=1;bioproject=PRJNA638416;sample=SAMN33578736;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20689	I	SRR23696668	-	S	paper_mut=D642Y (hs1);MIC:CAS=1,ANID=2,MICA=1;bioproject=PRJNA638416;sample=SAMN33578735;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20702	I	SRR23696701	-	S	paper_mut=D642Y (hs1);MIC:CAS=0.5,ANID=1,MICA=1;bioproject=PRJNA638416;sample=SAMN33578705;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20704	I	SRR23696697	-	S	paper_mut=D642Y (hs1);MIC:CAS=1,ANID=2,MICA=1;bioproject=PRJNA638416;sample=SAMN33578709;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20706	III	SRR23696698	S639F	R	paper_mut=S639F (hs1);MIC:CAS=16,ANID=16,MICA=>8;bioproject=PRJNA638416;sample=SAMN33578708;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20717	I	SRR23696691	-	R	paper_mut=D642Y (hs1);MIC:CAS=>16,ANID=4,MICA=2;bioproject=PRJNA638416;sample=SAMN33578714;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B20912	III	SRR26666791	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=8,MICA=8;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B21114	I	SRR26666780	-	R	paper_mut=D642Y (hs1);MIC:CAS=2,ANID=2,MICA=2;bioproject=PRJNA638416;sample=SAMN38094226;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B21247	I	SRR26666764	S639F	R	paper_mut=Undetermined;footnote_c=S639F(HS1) by de-novo/MycoGene;footnote_d=MycoSNP could not determine at this position;MIC:CAS=2,ANID=2,MICA=4;bioproject=PRJNA638416;sample=SAMN38094196;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B21248	III	SRR26666804	S639P	R	paper_mut=S639P (hs1);MIC:CAS=>16,ANID=2,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B21288	I	SRR26666757	-	R	paper_mut=F635C (hs1);MIC:CAS=8,ANID=4,MICA=>8;bioproject=PRJNA638416;sample=SAMN38094197;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B21293	I	SRR26666759	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=16,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B21526	I	SRR26666754	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=2,MICA=8;bioproject=PRJNA638416;sample=SAMN38094200;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B21918	I	SRR26666771	-	S	paper_mut=none;MIC:CAS=1,ANID=2,MICA=1;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B21922	III	SRR26666766	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B21964	IV	SRR26666758	S639F	R	paper_mut=S639F (hs1);MIC:CAS=2,ANID=2,MICA=4;bioproject=PRJNA638416;sample=SAMN38094246;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B21978	IV	SRR26666778	-	R	paper_mut=none;footnote_b=M690I(HS3) outside MycoSNP-nf region;MIC:CAS=>16,ANID=2,MICA=8;bioproject=PRJNA638416;sample=SAMN38094228;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22054	I	SRR26666802	S639F	R	paper_mut=S639F (hs1);MIC:CAS=1,ANID=4,MICA=4;bioproject=PRJNA638416;sample=SAMN38094206;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22244	I	SRR26666795	S639Y	R	paper_mut=S639Y (hs1);MIC:CAS=2,ANID=4,MICA=4;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B22353	I	SRR26666794	S639P	R	paper_mut=S639P (hs1);MIC:CAS=>16,ANID=4,MICA=8;bioproject=PRJNA638416;sample=SAMN38094213;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22372	IV	SRR26666806	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.25,MICA=0.25;bioproject=PRJNA638416;sample=SAMN38094202;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22403	III	SRR26666768	-	S	paper_mut=none;MIC:CAS=0.5,ANID=0.5,MICA=1;bioproject=PRJNA638416;sample=SAMN38094237;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22404	III	SRR26666800	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=1;bioproject=PRJNA638416;sample=SAMN38094208;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22405	III	SRR26666793	-	S	paper_mut=none;MIC:CAS=0.12,ANID=0.12,MICA=0.25;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B22581	III	SRR26666782	-	S	paper_mut=none;MIC:CAS=0.25,ANID=1,MICA=0.5;ena_verified=NOT_IN_PARTIAL_MINE	PMC12323592;doi:10.1128/spectrum.03147-24
+B22769	I	SRR26666774	-	R	paper_mut=W691C (hs3);MIC:CAS=>16,ANID=16,MICA=>8;bioproject=PRJNA638416;sample=SAMN38094231;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B22893	I	SRR26666805	S639F	R	paper_mut=S639F (hs1);MIC:CAS=>16,ANID=>16,MICA=>8;bioproject=PRJNA638416;sample=SAMN38094203;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+B8441	I	SRR10851769	-	S	paper_mut=none;MIC:CAS=0.25,ANID=0.5,MICA=0.5;bioproject=PRJNA595978;sample=SAMN13761842;ena_verified=ILLUMINA/WGS/PAIRED	PMC12323592;doi:10.1128/spectrum.03147-24
+#
+# --- EXCLUDED per DECISION D2: duplicated source accession SRR21675882 ---
+# B15223	IV	SRR21675882	S639P	R	paper_mut=S639P (hs1);MIC:CAS=8,ANID=2,MICA=4;bioproject=PRJNA638416;sample=SAMN30962646;ena_verified=ILLUMINA/WGS/PAIRED;DUPLICATE_ACCESSION_IN_SOURCE:excluded_from_scoring	PMC12323592;doi:10.1128/spectrum.03147-24
+# B16328	III	SRR21675882	-	S	paper_mut=none;MIC:CAS=0.125,ANID=0.25,MICA=0.125;bioproject=PRJNA638416;sample=SAMN30962646;ena_verified=ILLUMINA/WGS/PAIRED;DUPLICATE_ACCESSION_IN_SOURCE:excluded_from_scoring	PMC12323592;doi:10.1128/spectrum.03147-24
