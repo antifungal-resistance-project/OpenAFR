@@ -46,6 +46,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(HERE))
 from openafr import fks1_caller as F        # noqa: E402
 from openafr import concordance as cc        # noqa: E402
+from openafr import verdict as V              # noqa: E402  (--emit-accuracy-fixture harvest)
 from openafr import runlog                    # noqa: E402
 import recall_fks1 as orch                    # noqa: E402  (reads->window consensus + tool gate)
 
@@ -134,12 +135,62 @@ def _resolved(result):
     return True
 
 
+# --- #137 accuracy-fixture harvest (opt-in) ------------------------------------------------
+# The #137 verdict-accuracy grader (scripts/validate_diagnostic_accuracy.py) needs a paired
+# fixture whose `called_verdict` column is, per its prereg, "filled by the orchestration, NOT
+# hand-authored." That verdict is a deterministic function of THIS run's caller output -- so we
+# emit it from the same reads->call_windows pass, at ~zero marginal cost and no second download.
+# It cannot be reconstructed from the concordance runlog: build_verdict needs the full call
+# object (panel_hits + tokens + uncalled_panel; UNCHARACTERIZED_VARIANT depends on non-panel
+# tokens), while the runlog stores only the joined panel-hit string.
+ACCURACY_HEADER = ["isolate", "species", "run_acc", "gene", "drug_class",
+                   "called_verdict", "susceptibility", "note", "citation"]
+
+
+def _accuracy_row(strain, run_acc, result, susceptibility, citation):
+    """One #137 accuracy-fixture row (list, ACCURACY_HEADER order) for this isolate.
+
+    Pure: `result` is the openafr.fks1_caller.call_windows dict (None if the orchestration
+    failed). The verdict comes from openafr.verdict.echinocandin_verdict, exactly the production
+    genotype->verdict path, so it satisfies the 'filled by orchestration' rule."""
+    prov = {"source": "concordance-fks1", "run_acc": run_acc}
+    if result is None:
+        v = V.echinocandin_verdict(unresolved_reason="orchestration_failed", provenance=prov)
+        note = "harvested=concordance-fks1;orchestration_failed"
+    else:
+        v = V.echinocandin_verdict(call=result, provenance=prov)
+        hits = ",".join(sorted(result.get("panel_hits") or [])) or "-"
+        note = f"harvested=concordance-fks1;resolved={_resolved(result)};panel_hits={hits}"
+    return [strain, "Candida auris", run_acc, "FKS1", "echinocandin",
+            v["verdict"], (susceptibility or "").strip().upper(), note, (citation or "").strip()]
+
+
+def _write_accuracy_fixture(path, isolate_rows):
+    path = pathlib.Path(path)
+    lines = [
+        "# #137 verdict-accuracy fixture -- HARVESTED, not hand-authored: called_verdict is the",
+        "#   enum echinocandin_verdict() emitted from this host's reads->call_windows pass over",
+        "#   the SAME isolates as the FKS1 concordance run. susceptibility is copied verbatim from",
+        f"#   {os.path.basename(str(DEFAULT_FIXTURE))} (the frozen R/S truth). Assembled by",
+        "#   scripts/validate_fks1_concordance.py --emit-accuracy-fixture.",
+        "\t".join(ACCURACY_HEADER),
+    ]
+    for r in isolate_rows:
+        lines.append("\t".join(r))
+    path.write_text("\n".join(lines) + "\n")
+    return path
+
+
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--fixture", default=str(DEFAULT_FIXTURE))
     ap.add_argument("--limit", type=int, default=0, help="only run the first N rows")
     ap.add_argument("--keep-tmp", action="store_true")
+    ap.add_argument("--emit-accuracy-fixture", metavar="PATH", default=None,
+                    help="also write the #137 paired verdict/phenotype fixture from this same "
+                         "caller pass (harvest echinocandin_verdict per isolate). Run WITHOUT "
+                         "--limit to get the full panel.")
     ap.add_argument("--allow-hash-mismatch", action="store_true",
                     help="run anyway if integrity fails (prints UNCERTIFIED; for debugging)")
     args = ap.parse_args()
@@ -167,6 +218,7 @@ def main():
           f"{os.path.basename(F.DEFAULT_REFERENCE)}\n", file=sys.stderr)
 
     evals = []
+    accuracy_rows = []
     with runlog.record_run("concordance-fks1", reference_path=F.DEFAULT_REFERENCE,
                            tools=list(orch.TOOLS),
                            extra={"fixture": os.path.basename(str(fixture)),
@@ -203,6 +255,10 @@ def main():
             print(f"        called: {','.join(sorted(called)) or '(none)'}  "
                   f"resolved: {resolved}\n", file=sys.stderr)
 
+            if args.emit_accuracy_fixture:
+                accuracy_rows.append(_accuracy_row(
+                    strain, run_acc, result, row.get("susceptibility"), row.get("citation")))
+
         summary = cc.evaluate(evals)
         verdict, reasons = _verdict(summary, certified=ok)
         run.set(status=("ok" if verdict == "PASS" else "fail"),
@@ -214,6 +270,14 @@ def main():
     print("\npre-registered verdict: " + verdict)
     for r in reasons:
         print("  " + r)
+
+    if args.emit_accuracy_fixture:
+        out = _write_accuracy_fixture(args.emit_accuracy_fixture, accuracy_rows)
+        print(f"\n#137 accuracy fixture: wrote {len(accuracy_rows)} isolate(s) -> {out}")
+        print("freeze it, then run the accuracy grader:")
+        print(f"  shasum -a 256 {out} >> work/PREREG_diagnostic_accuracy.sha256")
+        print(f"  python scripts/validate_diagnostic_accuracy.py --fixture {out}")
+
     return 0 if verdict == "PASS" else 1
 
 
