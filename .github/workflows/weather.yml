@@ -1,0 +1,80 @@
+# Resistance weather report -- publish the public page (design: docs/designs/resistance-weather-report.md).
+#
+# A thin VIEW over the same early-warning output the c-auris-early-warning schedule acts
+# on: it composes the current alert result and renders one static page (openafr/weather.py
+# via scripts/render_weather.py), then deploys it to GitHub Pages. It commits nothing and
+# files nothing -- delivery.py already owns the digest/issue/no-op; this only publishes a
+# link you can send someone.
+#
+# Honest today-state: erg11 calls are pending the re-caller, so compose returns zero
+# alerts and the page shows the calm "watching since ..." state. It lights up automatically
+# once a real fill lands and delivery starts producing alerts -- same data, same source.
+#
+# The pocket images are pre-rendered out-of-band (PyMOL is out of the offline path) and
+# committed under docs/pockets/<token>.png; this workflow just copies them next to the page.
+#
+# ONE-TIME SETUP (repo owner): Settings -> Pages -> Build and deployment -> Source:
+# "GitHub Actions". Until then the deploy step no-ops with a clear error.
+name: resistance-weather-report
+
+on:
+  schedule:
+    - cron: "47 6 * * 1"   # 06:47 UTC Monday, after the early-warning delivery at 06:17
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - "openafr/weather.py"
+      - "scripts/render_weather.py"
+      - ".github/workflows/weather.yml"
+      - "docs/pockets/**"
+      - "data/earlywarning/digest/**"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: weather-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compute rolling baseline cut date
+        id: dates
+        run: |
+          echo "as_of=$(python3 -c "import datetime;print((datetime.date.today()-datetime.timedelta(days=180)).isoformat())")" >> "$GITHUB_OUTPUT"
+
+      - name: Render the page
+        run: |
+          # render_weather.py never crashes on a data hiccup -- it falls back to the
+          # watching page -- so a quiet or offline run still publishes a valid page.
+          python3 scripts/render_weather.py \
+            --as-of "${{ steps.dates.outputs.as_of }}" \
+            --window 180 \
+            --out site/index.html
+          # Ship the pre-rendered pocket images alongside the page, if any are committed.
+          if [ -d docs/pockets ]; then
+            mkdir -p site/pockets
+            cp -f docs/pockets/*.png site/pockets/ 2>/dev/null || true
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
