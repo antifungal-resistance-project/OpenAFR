@@ -224,8 +224,20 @@ after `validate_gate2.py` passes.
 >    redirection premise is now confirmed by DATA on both halves (azole no-headroom, FKS1
 >    headroom). Backtest against an external truth set is the only remaining sub-item, same as
 >    ERG11 step 2 (optional; the deliverable prevalence number is measured).
-> 3. **Validate the CALLER itself against the full external benchmark — ENGINE BUILT
->    2026-09-07, blocked on the truth-set transcription + a GCP run.** The prevalence number
+> 3. **Validate the CALLER itself against the full external benchmark — DONE 2026-09-20 (PASS,
+>    measured).** Ran the frozen concordance grader over all **98 PMC12323592 isolates** on a GCP
+>    e2-standard-4 (project `openafr-recaller-20260818`, us-central1-a, VM deleted after): integrity
+>    gate matched prereg `da8e3827…` + fixture `68eef59f…`, 98/98 resolved, panel confusion **TP=37
+>    TN=61 FP=0 FN=0** → sensitivity 100% [90.6,100], specificity 100% [94.1,100], exact-token
+>    identity 100%, per-token 16/16 S639F · 7/7 S639P · 14/14 S639Y — **pre-registered verdict
+>    PASS**. Resistance-detection ceiling (reported, not gated) 36/46 = 78.3% [64.4,87.7]. run_id
+>    `a8fdb3327ae1`, `data/earlywarning/runlog/concordance-fks1.jsonl`; result
+>    [`work/RESULTS_fks1_concordance.md`](work/RESULTS_fks1_concordance.md). The 4-strain-only caveat
+>    on the prevalence result is retired. The SAME pass harvested the #137 echinocandin
+>    verdict-accuracy fixture (`fks1_accuracy_98.tsv`); that grader then read **FAIL** (VME 10.0%
+>    [4.0,23.1] vs a ≤3% clinical bar) — a *coverage* ceiling, not a caller defect
+>    ([`work/RESULTS_diagnostic_accuracy.md`](work/RESULTS_diagnostic_accuracy.md),
+>    `docs/DIAGNOSTIC_GO_NO_GO.md` C2/Rung A). *(historical: engine built 2026-09-07)* The prevalence number
 >    (item 1) trusts a caller whose accuracy was only ever a 4-strain PASS/FAIL control
 >    (`recaller_sanity_fks1.py`). This sub-item turns that into a measured error rate — the
 >    same "widen n → measured CI" move that retired preprint Limitation #1 (active-power). The
