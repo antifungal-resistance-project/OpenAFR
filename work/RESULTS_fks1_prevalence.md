@@ -77,3 +77,14 @@ panel-tagged resistance calls. These 13 are honestly *reported but excluded* fro
    *prevalence*, not a structural verdict (TODOS v2 step 2, deferred by design). The three failed
    isolates are a per-isolate fetch/align issue, not a systematic one (well under the abort
    threshold), and the WT sanity control was clean, so the calls are trustworthy.
+4. **The caller's accuracy is now measured — the "4-strain sanity control only" caveat is
+   retired.** This prevalence trusted a caller whose error rate had only ever been a 4-strain
+   PASS/FAIL smoke test. The FKS1 concordance run
+   ([`RESULTS_fks1_concordance.md`](RESULTS_fks1_concordance.md), 2026-09-20) has since graded the
+   *same* orchestration against the 98-isolate PMC12323592 external benchmark and **PASSED** its
+   frozen bar: panel-detection sensitivity 100% [90.6, 100], specificity 100% [94.1, 100], exact-token
+   identity 100%, 98/98 resolved, zero false calls (TP=37 TN=61 FP=0 FN=0). So the S639F/P/Y counts
+   above rest on a caller whose token accuracy is measured and CI-bounded, not merely spot-checked.
+   (The concordance run also measures the resistance-detection *ceiling* — 36/46 = 78.3% of
+   phenotypically-resistant isolates carry an HS1 token an HS1 caller can flag — which bounds the
+   detection-only pipeline honestly and drives the separate #137 verdict-accuracy result.)

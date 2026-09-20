@@ -50,8 +50,12 @@ else. It does **not** cover efflux (TAC1/MRR1/CDR1), ERG3, promoter/tandem-repea
 non-target mechanisms. A resistant isolate whose mechanism is off-panel is a genuine miss the
 engine cannot and must not paper over, which is exactly why `NO_KNOWN_MARKER` is defined as
 "no *known marker*," never as a clinical S (contract rule 2).
-*Quantified, not retired:* the #137 accuracy run reports the very-major-error rate this ceiling
-drives as a measured mechanism-coverage number, not an assertion.
+*Quantified, not retired — now measured (2026-09-20):* the #137 echinocandin accuracy run
+(`work/RESULTS_diagnostic_accuracy.md`) reports the very-major-error rate this ceiling drives at
+**10.0% [4.0%, 23.1%]** — 4 of 40 phenotypically-resistant isolates carry off-panel (non-HS1)
+resistance the engine correctly declines to call. The FKS1 concordance run
+(`work/RESULTS_fks1_concordance.md`) separately certifies the caller's *tokens* as perfect, so this
+is a coverage ceiling, not a caller defect.
 
 **C3 — The validated organism is not the calibratable organism.** The re-callers and the
 structural port are *C. auris*-centric (5TZ1, [[openafr-auris-port]]). But the organism whose
@@ -60,13 +64,17 @@ public ERG11 data has the variant diversity and the susceptible isolates calibra
 pull toward *different organisms* — a tension that must be decided, not glossed, before any
 calibrated claim is made.
 
-**C4 — Accuracy is asserted-then-blocked, not yet measured.** The verdict-accuracy validation
-(#137, `work/PREREGISTRATION_diagnostic_accuracy.md`) is **built and frozen offline** but
-**blocked on paired genotype+phenotype data**: the echinocandin arm reuses the paywalled
-100-isolate PMC12323592 fixture (blocked on a verified manual transcription + a GCP run,
-[[fks1-caller-concordance]]); the azole arm has only 4 Lockhart clade strains and is
-**expected to read UNDERPOWERED** at MVP. Until those runs execute, the engine's real
-sensitivity/specificity and very-major/major-error rates are unknown.
+**C4 — Accuracy: echinocandin arm now MEASURED (and FAILs the clinical bar); azole arm still
+underpowered.** The verdict-accuracy validation (#137, `work/PREREGISTRATION_diagnostic_accuracy.md`)
+ran on 2026-09-20 for the echinocandin arm, off the fixture harvested by the FKS1 concordance pass
+(`work/RESULTS_diagnostic_accuracy.md`): scored 87 isolates (40 R / 47 S), **VME 10.0%
+[4.0%, 23.1%]**, ME 2.1%, categorical agreement 94.3%, abstention 11.2% — **FAIL** (VME point and
+Wilson upper both above bar; ME and abstention pass). The FAIL is C2's mechanism-coverage ceiling,
+not a caller error (the concordance run certified the tokens at 100%/100%/100%,
+`work/RESULTS_fks1_concordance.md`). The **azole/ERG11 arm** has only 4 Lockhart clade strains and
+**remains UNDERPOWERED**; **calibration (#136)** remains blocked on the non-public option-C panel.
+So the echinocandin error rate is now known and does not meet a diagnostic bar; the azole rate is
+still unmeasured.
 
 ---
 
@@ -103,8 +111,13 @@ is met**; meeting it is necessary, not sufficient, for the next.
 - GATE: the #137 run executes on a pinned paired-panel fixture and the drug class **PASSES** its
   frozen bar — very-major-error point ≤3% **and** Wilson upper ≤15%, major-error ≤5%,
   abstention ≤30%, with ≥15 scored isolates per phenotype arm.
-- Today: **NO-GO (blocked on data / underpowered).** The harness and bar are frozen; the run is
-  not yet runnable (C4).
+- Today: **NO-GO — echinocandin arm RAN and did not clear the bar (2026-09-20).** Scored 87
+  isolates (40 R / 47 S ≥15 each), VME **10.0% [4.0%, 23.1%]** (bar ≤3% / upper ≤15%) — FAIL; ME
+  2.1% and abstention 11.2% pass (`work/RESULTS_diagnostic_accuracy.md`). This is a *measured*
+  no-go driven by C2 marker coverage, not a blocked-on-data one — the caller itself passed
+  concordance at 100% (`work/RESULTS_fks1_concordance.md`). The **azole arm** stays NO-GO,
+  underpowered (4 clade strains). Lifting Rung A for echinocandin now requires **Rung C breadth**
+  (off-panel mechanisms), not more compute.
 
 **Rung B — Calibrated probability with measured reliability (unlocks: the probability field).**
 - GATE: the #136 calibration track executes on the option-C pooled panel and clears its frozen
@@ -141,9 +154,9 @@ paired fixture and a compute run — not on any new science.
 | # | Limitation | Status | What lifts it |
 |---|---|---|---|
 | C1 | No calibrated probability | **Carried** — deferred to #136; not a defect, a declared scope | Rung B: option-C panel + reliability PASS |
-| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Carried & to-be-quantified** | #137 VME as measured mechanism-coverage ceiling; Rung C for breadth |
+| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Quantified (2026-09-20)** — echinocandin VME 10.0% [4.0, 23.1] | Rung C for breadth (off-panel/efflux mechanisms) |
 | C3 | Validated organism ≠ calibratable organism | **Open decision** | Explicit intended-use call, or *C. albicans* caller/structure work |
-| C4 | Accuracy asserted, run blocked | **Blocked, not waived** | Rung A: transcribe fixture + GCP run of #137 (& FKS1 concordance) |
+| C4 | Accuracy: echinocandin measured (FAIL); azole underpowered | **Echinocandin measured & carried; azole still blocked** | Azole: larger paired *C. auris* ERG11 collection; echinocandin: Rung C breadth |
 
 The discipline mirrors the preprint: no limit is quietly dropped once stated; each is carried in
 this register with its unblock route until the evidence that lifts it actually lands.
@@ -152,8 +165,20 @@ this register with its unblock route until the evidence that lifts it actually l
 
 ## 6. What a "go" would require next (the single actionable item)
 
-The nearest, highest-value unlock is **Rung A**: execute the frozen #137 accuracy run. That
-needs exactly what the FKS1 concordance run needs — a **verified manual transcription** of the
-paired genotype+phenotype table (paywalled, not scrapable) into a hashed fixture, plus a **GCP
-run** of the caller→verdict path over it. Nothing in this doc's ceiling is lifted by more code;
-it is lifted by that data + compute. Until then the engine stands, honestly, at the RUO tier.
+**Update 2026-09-20 — Rung A has been run for echinocandin, and it changes the next move.** The
+#137 echinocandin accuracy run executed off the FKS1-concordance-harvested fixture and **did not
+clear the bar** (VME 10.0% [4.0, 23.1]; `work/RESULTS_diagnostic_accuracy.md`), while the caller
+itself **passed** concordance at 100% (`work/RESULTS_fks1_concordance.md`). The bottleneck is no
+longer compute or a caller — it is **marker coverage (Rung C)**: ~1 in 5 phenotypically-resistant
+isolates carry off-panel (non-HS1 / efflux) mechanisms this engine does not detect.
+
+So the nearest unlocks are now:
+- **Echinocandin:** a **Rung C** decision — either document a narrow-panel intended use that owns the
+  10% VME honestly, or extend coverage to the off-panel mechanisms (efflux / non-HS1 FKS1 hotspots).
+- **Azole/ERG11:** obtain a **larger paired *C. auris* ERG11 genotype+phenotype collection** (the
+  4-strain Lockhart set only supports a sanity control) to lift the azole arm past UNDERPOWERED.
+- **Calibration (#136):** unchanged — still blocked on the non-public option-C pooled *C. albicans*
+  panel.
+
+The engine stands, honestly, at the RUO tier. The echinocandin accuracy is now a *measured* ceiling,
+not an asserted one — which is the whole point of carrying limits rather than retiring them early.
