@@ -50,12 +50,18 @@ else. It does **not** cover efflux (TAC1/MRR1/CDR1), ERG3, promoter/tandem-repea
 non-target mechanisms. A resistant isolate whose mechanism is off-panel is a genuine miss the
 engine cannot and must not paper over, which is exactly why `NO_KNOWN_MARKER` is defined as
 "no *known marker*," never as a clinical S (contract rule 2).
-*Quantified, not retired — now measured (2026-09-20):* the #137 echinocandin accuracy run
-(`work/RESULTS_diagnostic_accuracy.md`) reports the very-major-error rate this ceiling drives at
-**10.0% [4.0%, 23.1%]** — 4 of 40 phenotypically-resistant isolates carry off-panel (non-HS1)
-resistance the engine correctly declines to call. The FKS1 concordance run
-(`work/RESULTS_fks1_concordance.md`) separately certifies the caller's *tokens* as perfect, so this
-is a coverage ceiling, not a caller defect.
+*Quantified, not retired — now measured (2026-09-20) and characterised (2026-09-20):* the #137
+echinocandin accuracy run (`work/RESULTS_diagnostic_accuracy.md`) reports the very-major-error rate
+this ceiling drives at **10.0% [4.0%, 23.1%]** — 4 of 40 phenotypically-resistant isolates the engine
+declines to call. The mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`,
+`scripts/characterize_coverage_ceiling.py`) shows the ceiling is **FKS1-hotspot-shaped, not efflux**:
+all 4 misses are FKS1 HS3 (3 × W691L/W691C; 1 × M690I unresolved even by the source paper), a hotspot
+the caller has **no window for** — not an off-target mechanism. The 11 abstentions are likewise
+mostly HS1 substitutions the caller already reads but does not panel-tag (9 × HS1 D642Y/F635, 1 × HS2
+R1354S). The FKS1 concordance run (`work/RESULTS_fks1_concordance.md`) separately certifies the
+caller's *tokens* as perfect, so this is a **tractable coverage gap**, not a caller defect: adding an
+HS3 window would project the VME to 1/40 = 2.5% [0.4, 12.9] (clears bar) — a projection, pending the
+caller change + a GCP re-measure, not a measured re-claim.
 
 **C3 — The validated organism is not the calibratable organism.** The re-callers and the
 structural port are *C. auris*-centric (5TZ1, [[openafr-auris-port]]). But the organism whose
@@ -116,8 +122,11 @@ is met**; meeting it is necessary, not sufficient, for the next.
   2.1% and abstention 11.2% pass (`work/RESULTS_diagnostic_accuracy.md`). This is a *measured*
   no-go driven by C2 marker coverage, not a blocked-on-data one — the caller itself passed
   concordance at 100% (`work/RESULTS_fks1_concordance.md`). The **azole arm** stays NO-GO,
-  underpowered (4 clade strains). Lifting Rung A for echinocandin now requires **Rung C breadth**
-  (off-panel mechanisms), not more compute.
+  underpowered (4 clade strains). Lifting Rung A for echinocandin now requires **Rung C breadth**,
+  and the mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows that
+  breadth is a *tractable FKS1-hotspot extension* (an HS3 window + an HS1/HS2 panel widening → VME
+  projected 1/40 = 2.5%), **not** an off-target/efflux mechanism build — so the unlock is a scoped
+  caller change plus a GCP re-measure, not new science.
 
 **Rung B — Calibrated probability with measured reliability (unlocks: the probability field).**
 - GATE: the #136 calibration track executes on the option-C pooled panel and clears its frozen
@@ -129,7 +138,15 @@ is met**; meeting it is necessary, not sufficient, for the next.
 - GATE: marker coverage and organism scope match the population the test would serve — either a
   documented decision that a narrow *C. auris* panel is the intended use, **or** the *C.
   albicans* / broader-mechanism work (efflux/ERG3/TR) that C2/C3 would require.
-- Today: **NO-GO (auris-only, HS1/ERG11-hotspot-only).**
+- Today: **NO-GO (auris-only, HS1/ERG11-hotspot-only).** *Decision informed (2026-09-20):* the
+  echinocandin coverage characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows the
+  measured VME is driven entirely by **FKS1 HS3 (W691) + un-tagged HS1 (D642Y/F635)**, not efflux —
+  so the evidence favours *extending the FKS1 panel* (HS3 window + HS1/HS2 panel widening, projected
+  VME 1/40 = 2.5%) over documenting a permanently narrow panel. That extension ripples into the
+  prevalence/emergence resolution semantics (`_FKS1_PANEL_WINDOWS`), the caller source strings, and
+  stored snapshots, so it is staged as its own pre-registered PR + GCP re-measure
+  (`work/PREREGISTRATION_diagnostic_accuracy_v2.md`), not yet executed. Efflux/ERG3/TR and *C.
+  albicans* breadth remain separately out of scope.
 
 **Rung D — Prospective clinical validation against phenotypic AST.**
 - GATE: a pre-registered *prospective* study (not the retrospective #137 benchmark) with
@@ -154,7 +171,7 @@ paired fixture and a compute run — not on any new science.
 | # | Limitation | Status | What lifts it |
 |---|---|---|---|
 | C1 | No calibrated probability | **Carried** — deferred to #136; not a defect, a declared scope | Rung B: option-C panel + reliability PASS |
-| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Quantified (2026-09-20)** — echinocandin VME 10.0% [4.0, 23.1] | Rung C for breadth (off-panel/efflux mechanisms) |
+| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Quantified + characterised (2026-09-20)** — echinocandin VME 10.0% [4.0, 23.1]; all 4 misses are FKS1 HS3 (W691/M690), not efflux | Rung C via a *tractable* FKS1-hotspot extension (HS3 window + HS1/HS2 panel widening → projected VME 2.5%); needs a caller PR + GCP re-measure |
 | C3 | Validated organism ≠ calibratable organism | **Open decision** | Explicit intended-use call, or *C. albicans* caller/structure work |
 | C4 | Accuracy: echinocandin measured (FAIL); azole underpowered | **Echinocandin measured & carried; azole still blocked** | Azole: larger paired *C. auris* ERG11 collection; echinocandin: Rung C breadth |
 
@@ -169,12 +186,24 @@ this register with its unblock route until the evidence that lifts it actually l
 #137 echinocandin accuracy run executed off the FKS1-concordance-harvested fixture and **did not
 clear the bar** (VME 10.0% [4.0, 23.1]; `work/RESULTS_diagnostic_accuracy.md`), while the caller
 itself **passed** concordance at 100% (`work/RESULTS_fks1_concordance.md`). The bottleneck is no
-longer compute or a caller — it is **marker coverage (Rung C)**: ~1 in 5 phenotypically-resistant
-isolates carry off-panel (non-HS1 / efflux) mechanisms this engine does not detect.
+longer compute or a caller — it is **marker coverage (Rung C)**.
+
+**Update 2026-09-20 (characterisation) — the coverage gap is tractable, not off-target.** The
+mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`,
+`scripts/characterize_coverage_ceiling.py`) shows the 4 VME misses are **all FKS1 HS3**
+(3 × W691L/W691C, 1 × M690I unresolved even by the source paper) — a hotspot the caller has no window
+for — and the 11 abstentions are mostly **HS1 substitutions the caller already reads but does not tag**
+(9 × D642Y/F635, 1 × HS2 R1354S). Adding an HS3 window projects the VME to **1/40 = 2.5% [0.4, 12.9]**
+(clears the bar); widening the HS1/HS2 panel additionally converts abstentions to detections. This is a
+*projection* pending a caller change + GCP re-measure, and the panel must be pinned from literature
+independent of this benchmark to avoid circularity.
 
 So the nearest unlocks are now:
-- **Echinocandin:** a **Rung C** decision — either document a narrow-panel intended use that owns the
-  10% VME honestly, or extend coverage to the off-panel mechanisms (efflux / non-HS1 FKS1 hotspots).
+- **Echinocandin:** the **Rung C** decision is informed — the evidence favours *extending the FKS1
+  panel* (an HS3 window + HS1/HS2 panel widening, pre-registered in
+  `work/PREREGISTRATION_diagnostic_accuracy_v2.md`) over documenting a permanently narrow panel, then
+  re-measuring on GCP. The extension is deferred to its own PR because it ripples into the
+  prevalence/emergence resolution semantics and stored snapshots.
 - **Azole/ERG11:** obtain a **larger paired *C. auris* ERG11 genotype+phenotype collection** (the
   4-strain Lockhart set only supports a sanity control) to lift the azole arm past UNDERPOWERED.
 - **Calibration (#136):** unchanged — still blocked on the non-public option-C pooled *C. albicans*
