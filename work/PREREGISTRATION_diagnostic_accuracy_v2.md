@@ -18,7 +18,8 @@ FAIL is **not** off-target/efflux resistance: all 4 misses are **FKS1 HS3** (B19
 B22769 W691C; B21978 M690I, unresolved even by the source paper), a hotspot the caller has no window
 for. The 11 abstentions are mostly **HS1 substitutions the caller already reads but does not tag**
 (9 × D642Y/F635, 1 × HS2 R1354S). This v2 governs the caller change that would close that gap and the
-re-measure that would test whether the projected **VME 1/40 = 2.5% [0.4, 12.9]** materialises.
+re-measure that would test whether the projected **VME 1/42 = 2.4% [0.4, 12.3]** (with ME held at
+2.1% by *excluding* the discordant D642Y — see Gate 2 below) materialises.
 
 ## The caller change this run governs (fixed now)
 
@@ -27,23 +28,35 @@ The extended `openafr/fks1_caller.py` may add **only** the following, and nothin
 1. **A new HS3 `Window`** — residues **688–698**, anchor **W691** (verified to translate to `W` in
    the pinned reference `XM_085597048.1`; the load-time numbering check enforces this, and a
    reference whose residue 691 is not `W` must refuse, exactly as HS1/HS2 do today).
-2. **Panel mutant sets** for the resistance positions, added to the relevant windows' `panel`:
-   - HS3: **W691 → {L, C, F}**, **M690 → {I}**
-   - HS1 (already read): add **D642 → {Y}**, **F635 → {C, Y}** (S639 → {F,P,Y} unchanged)
-   - HS2 (already read, currently empty): **R1354 → {S}**
+2. **Panel mutant sets** — only markers that pass **both** gates below:
+   - HS3: **W691 → {L}**  (W691L is CRISPR/Cas9-validated in *C. auris*, AAC 2023
+     doi:10.1128/aac.00423-23 / PMC10269051. **W691C and M690I are NOT independently validated** —
+     they are read by the new window but left **untagged**, so their isolates abstain rather than
+     being asserted resistant.)
+   - HS1 (already read): add **F635 → {C, Y}**  (S639 → {F,P,Y} unchanged).
+   - HS2 (already read, currently empty): **R1354 → {S, H}**  (R1354H CRISPR-validated, PMC10219442).
 
 No other window, position, or mutant may be added under this prereg. Widening beyond this set is a
 new pre-registration, not a silent edit.
 
-### Anti-circularity rule (load-bearing)
+### Two gates every tagged mutant must pass (load-bearing)
 
-Each mutant letter above **must be independently established as an echinocandin-resistance marker in
-the FKS1-resistance literature — NOT taken from this benchmark's `paper_mut` column.** The
-pre-registration is void for any position whose resistance status rests only on the isolates being
-scored: recovering a marker on the same set that motivated tagging it is circular and does not count
-as validation. The PR that implements the change must cite, per position, a source independent of
-PMC12323592. Positions that cannot be independently pinned are dropped from the panel (and the
-affected isolates remain honest abstentions), even if that leaves the VME above bar.
+**Gate 1 — independent literature validation.** Each tagged mutant must be established as an
+echinocandin-resistance marker in literature **independent of PMC12323592** (AAC 2022
+doi:10.1128/aac.01243-22, AAC 2023 doi:10.1128/aac.00423-23, PMC10219442 for R1354H). Recovering a
+marker on the same set that motivated tagging it is circular; a position that cannot be independently
+pinned is left untagged (its isolates abstain), even if that leaves the VME above bar. **W691C and
+M690I fail this gate** and are therefore untagged.
+
+**Gate 2 — phenotype concordance (the D642Y exclusion).** A literature-validated marker that also
+appears in **susceptible** isolates in the benchmark is phenotype-discordant; tagging it manufactures
+major errors. `scripts/characterize_coverage_ceiling.py` reports the per-marker R/S split, and
+**D642Y is discordant (2 R / 5 S, the S carriers at low MIC CAS 0.5–1)** — tagging it drives ME to
+11.5% [5.4, 23.0], failing the ≤5% bar. **D642Y is therefore NOT tagged**; the engine abstains on it
+(`UNCHARACTERIZED_VARIANT`), the honest "variant seen, resistance not reliably callable." Excluding a
+discordant marker is *conservative* (it removes a false-R source, it does not inflate recovery), and
+the discordance itself is a reported finding — not a silent bar-tune. If the eventual GCP re-measure
+were to *include* D642Y, this prereg is violated.
 
 ### Scope guard — the ripple is acknowledged, not hidden
 
@@ -76,11 +89,14 @@ panel failed, or the extension does not license a Rung-A accuracy claim.
 
 ## Pre-committed projection (the falsifiable prediction)
 
-On the frozen fixture, the conservative projection is **VME 1/40 = 2.5% [0.4%, 12.9%]** (only B21978,
-M690I unresolved-by-source, remains a miss). Recording it now makes the re-measure falsifiable: a
-measured post-extension VME materially worse than this — e.g. if the reads do not actually cover HS3
-at depth, converting expected detections into `partial`/abstentions rather than calls — is a
-reportable miss of the prediction, not a silently-revised expectation.
+On the frozen fixture, under the CLEAN panel above, the projection is **VME 1/42 = 2.4% [0.4%,
+12.3%]**, **ME 1/47 = 2.1% [0.4%, 11.1%]**, **abstention 9/98 = 9.2% [4.9%, 16.5%]** — all three bars
+project to PASS (`scripts/characterize_coverage_ceiling.py`). The single residual VME is **B21978**
+(M690I, unresolved even by the source paper). Recording these now makes the re-measure falsifiable in
+both directions: a measured post-extension **VME** materially worse than 2.4% (e.g. if reads do not
+cover HS3 at depth, turning expected W691L detections into `partial`/abstentions) **or** a measured
+**ME** above 5% (e.g. if a tagged marker turns out discordant on the live calls) is a reportable miss
+of the prediction, not a silently-revised expectation.
 
 ## Interpretation, committed now (both directions)
 

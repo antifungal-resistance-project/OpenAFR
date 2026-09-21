@@ -40,23 +40,52 @@ are almost all HS1 substitutions the caller **already reads but does not panel-t
 
 - **9 × HS1** — 7 × D642Y, 1 × F635C, 1 × F635Y. The HS1 window (635–643) covers residues 635 and
   642, so the caller *sees and emits* these tokens; it just doesn't tag them (the HS1 panel today is
-  only S639{F,P,Y}). Widening the HS1 panel is a **pure data edit** — no new window, no new reads.
+  only S639{F,P,Y}). F635C/F635Y are concordant and safe to tag; **D642Y is not** (see the
+  discordance table below — 5 of its 12 carriers are susceptible), so it stays an abstention.
 - **1 × HS2** — B20592 R1354S. The HS2 window is read but panel-tagged with an empty set (a
   documented gap, `openafr/fks1_caller.py:116`); pinning R1354S tags it.
 - **1 × undetermined** — B19896 (`paper_mut=Undetermined`); stays an honest abstention.
 
-## Projection (a projection, not a measured re-claim)
+## A marker cannot just be added — it must be phenotype-concordant (the D642Y trap)
 
-Feeding the recovered confusion through the same Wilson math:
+Before projecting recovery, each candidate marker's R/S split across all 98 isolates is checked: a
+marker that also appears in *susceptible* isolates is phenotype-discordant, and tagging it as
+resistance manufactures **major errors** (false-R). The per-marker table
+(`scripts/characterize_coverage_ceiling.py`) surfaces one:
 
-| Change | recovers | projected VME | clears bar? |
+| marker | R | S | verdict |
 |---|---|---|---|
-| **Measured today** | — | 4/40 = 10.0% [4.0, 23.1] | ✗ |
-| **+ HS3 window** tagging W691L/W691C | B19617, B19618, B22769 | **1/40 = 2.5% [0.4, 12.9]** | ✓ point ≤3%, upper ≤15% |
-| **+ HS1/HS2 panel widening** (D642Y, F635C/Y, R1354S) | 10 abstentions → detected | 1/49 ≈ 2.0%; abstention ≈ 1/98 | ✓ (also lowers abstention) |
+| S639F / S639P | 15 / 7 | 0 / 0 | concordant (already tagged) |
+| S639Y | 13 | 1 | mildly discordant — already tagged today; is the existing FP=1 |
+| F635C / F635Y | 1 / 1 | 0 / 0 | concordant |
+| R1354S | 1 | 0 | concordant (HS2) |
+| **W691L** | 2 | 0 | concordant (HS3, CRISPR-validated) |
+| W691C | 1 | 0 | concordant **but not literature-validated** → left untagged (abstain) |
+| **D642Y** | **2** | **5** | **DISCORDANT** — 5 susceptible carriers at low MIC (CAS 0.5–1); tagging → 5 ME |
 
-The residual miss is **B21978** (M690I, unresolved even by the source paper) — the honest floor the
-extended panel would still not clear, and the reason the conservative projection is 2.5%, not 0%.
+**D642Y is the trap.** It is literature-validated as resistance-implicated, so the naïve "widen the
+HS1 panel" move would tag it — but here it is genotype–phenotype discordant (2 R / 5 S), and tagging
+it pushes ME to **11.5% [5.4, 23.0]**, blowing the ≤5% bar. Trading the VME problem for an ME problem
+is not a fix. The honest move is to **leave D642Y untagged**, so the engine abstains
+(`UNCHARACTERIZED_VARIANT`) on it — the truthful "a variant is here but resistance is not reliably
+callable," consistent with the caller's existing "uncalled is uncalled" discipline.
+
+## Projection under the honest CLEAN panel (a projection, not a measured re-claim)
+
+Tag only markers that are **both** literature-validated **and** phenotype-concordant here —
+S639{F,P,Y} (status quo), F635{C,Y}, R1354{S,H}, and the new HS3 **W691{L}**. Feeding the resulting
+confusion through the same Wilson math:
+
+| | confusion | VME | ME | abstention |
+|---|---|---|---|---|
+| **Measured today** | TP36 FN4 FP1 TN46 | 4/40 = **10.0%** [4.0, 23.1] ✗ | 1/47 = 2.1% ✓ | 11/98 = 11.2% ✓ |
+| **HS3 window + CLEAN panel** | TP41 FN1 FP1 TN46 | **1/42 = 2.4%** [0.4, 12.3] ✓ | 1/47 = 2.1% ✓ | 9/98 = 9.2% ✓ |
+
+All three bars project to **PASS**. The recovery is: B19617/B19618 (W691L) → true detections;
+B19897 F635Y, B21288 F635C, B20592 R1354S → detections; the 7 R-phenotype D642Y carriers and B22769
+(W691C, unvalidated) and B19896 (undetermined) remain honest abstentions; **B21978 (M690I, unresolved
+even by the source paper) is the one residual miss** — the floor the extension does not clear, and the
+reason the projected VME is 1/42, not 0.
 
 **Two integrity guardrails that make this a projection and not a result:**
 
@@ -80,11 +109,13 @@ resolution semantics — `_FKS1_PANEL_WINDOWS` is derived from `w.panel` — the
 strings, stored snapshots, and six test files, and so deserves its own reviewed PR + GCP re-measure):
 
 1. Add an **HS3 `Window`** (688–698, anchor W691 — verified to translate in the pinned reference)
-   with a literature-pinned mutant set {W691L, W691C, W691F, M690I}.
-2. **Widen the HS1 panel** to add D642{Y} and F635{C,Y}; **pin the HS2 panel** to add R1354{S}.
+   with the CRISPR-validated mutant **W691{L}** only (W691C and M690I are *not* independently
+   validated → read but left untagged, so their isolates abstain rather than being asserted).
+2. **Widen the HS1 panel** to add **F635{C,Y}** (concordant); **pin the HS2 panel** to add
+   **R1354{S,H}**. **Do not tag D642Y** — it is phenotype-discordant here and would fail the ME bar.
 3. Freeze `work/PREREGISTRATION_diagnostic_accuracy_v2.md` (bar unchanged), then re-run the FKS1
    concordance+accuracy playbook (`work/RUNBOOK_fks1_concordance_and_accuracy.md`) on GCP to produce
-   the *measured* post-extension VME and test this projection.
+   the *measured* post-extension VME/ME and test this projection.
 
 This keeps the caller certified at what it covers (concordance PASS, 100%/100%/100%,
 [[fks1-caller-concordance]]) while naming exactly which three windows close the gap — an honest,

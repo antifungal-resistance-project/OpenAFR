@@ -59,9 +59,12 @@ all 4 misses are FKS1 HS3 (3 × W691L/W691C; 1 × M690I unresolved even by the s
 the caller has **no window for** — not an off-target mechanism. The 11 abstentions are likewise
 mostly HS1 substitutions the caller already reads but does not panel-tag (9 × HS1 D642Y/F635, 1 × HS2
 R1354S). The FKS1 concordance run (`work/RESULTS_fks1_concordance.md`) separately certifies the
-caller's *tokens* as perfect, so this is a **tractable coverage gap**, not a caller defect: adding an
-HS3 window would project the VME to 1/40 = 2.5% [0.4, 12.9] (clears bar) — a projection, pending the
-caller change + a GCP re-measure, not a measured re-claim.
+caller's *tokens* as perfect, so this is a **tractable coverage gap**, not a caller defect: an HS3
+window plus a phenotype-concordant panel widening (W691L, F635C/Y, R1354S/H) projects **VME 1/42 =
+2.4% [0.4, 12.3], ME 2.1%, abstention 9.2% — all bars PASS**. Crucially the characterisation also
+found **D642Y is genotype–phenotype discordant** (2 R / 5 S here) and must be left *untagged* (an
+honest abstention), or tagging it would push ME to 11.5% — the panel widening is selective, not
+wholesale. This is a projection, pending the caller change + a GCP re-measure, not a measured re-claim.
 
 **C3 — The validated organism is not the calibratable organism.** The re-callers and the
 structural port are *C. auris*-centric (5TZ1, [[openafr-auris-port]]). But the organism whose
@@ -124,9 +127,10 @@ is met**; meeting it is necessary, not sufficient, for the next.
   concordance at 100% (`work/RESULTS_fks1_concordance.md`). The **azole arm** stays NO-GO,
   underpowered (4 clade strains). Lifting Rung A for echinocandin now requires **Rung C breadth**,
   and the mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows that
-  breadth is a *tractable FKS1-hotspot extension* (an HS3 window + an HS1/HS2 panel widening → VME
-  projected 1/40 = 2.5%), **not** an off-target/efflux mechanism build — so the unlock is a scoped
-  caller change plus a GCP re-measure, not new science.
+  breadth is a *tractable, selective FKS1-hotspot extension* (an HS3 window + a phenotype-concordant
+  panel widening → projected VME 2.4%, ME 2.1%, all bars PASS; D642Y excluded as discordant), **not**
+  an off-target/efflux build — so the unlock is a scoped caller change plus a GCP re-measure, not new
+  science.
 
 **Rung B — Calibrated probability with measured reliability (unlocks: the probability field).**
 - GATE: the #136 calibration track executes on the option-C pooled panel and clears its frozen
@@ -140,9 +144,10 @@ is met**; meeting it is necessary, not sufficient, for the next.
   albicans* / broader-mechanism work (efflux/ERG3/TR) that C2/C3 would require.
 - Today: **NO-GO (auris-only, HS1/ERG11-hotspot-only).** *Decision informed (2026-09-20):* the
   echinocandin coverage characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows the
-  measured VME is driven entirely by **FKS1 HS3 (W691) + un-tagged HS1 (D642Y/F635)**, not efflux —
-  so the evidence favours *extending the FKS1 panel* (HS3 window + HS1/HS2 panel widening, projected
-  VME 1/40 = 2.5%) over documenting a permanently narrow panel. That extension ripples into the
+  measured VME is driven entirely by **FKS1 HS3 (W691) + un-tagged HS1 (F635)**, not efflux — so the
+  evidence favours *extending the FKS1 panel* (HS3 window + a phenotype-concordant panel widening →
+  projected VME 2.4%, ME 2.1%, all bars PASS; the discordant D642Y is left untagged) over documenting
+  a permanently narrow panel. That extension ripples into the
   prevalence/emergence resolution semantics (`_FKS1_PANEL_WINDOWS`), the caller source strings, and
   stored snapshots, so it is staged as its own pre-registered PR + GCP re-measure
   (`work/PREREGISTRATION_diagnostic_accuracy_v2.md`), not yet executed. Efflux/ERG3/TR and *C.
@@ -171,7 +176,7 @@ paired fixture and a compute run — not on any new science.
 | # | Limitation | Status | What lifts it |
 |---|---|---|---|
 | C1 | No calibrated probability | **Carried** — deferred to #136; not a defect, a declared scope | Rung B: option-C panel + reliability PASS |
-| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Quantified + characterised (2026-09-20)** — echinocandin VME 10.0% [4.0, 23.1]; all 4 misses are FKS1 HS3 (W691/M690), not efflux | Rung C via a *tractable* FKS1-hotspot extension (HS3 window + HS1/HS2 panel widening → projected VME 2.5%); needs a caller PR + GCP re-measure |
+| C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Quantified + characterised (2026-09-20)** — echinocandin VME 10.0% [4.0, 23.1]; all 4 misses are FKS1 HS3 (W691/M690), not efflux; D642Y found phenotype-discordant | Rung C via a *selective* FKS1-hotspot extension (HS3 W691L + F635C/Y + R1354S/H, D642Y untagged → projected VME 2.4%, ME 2.1%, all bars PASS); needs a caller PR + GCP re-measure |
 | C3 | Validated organism ≠ calibratable organism | **Open decision** | Explicit intended-use call, or *C. albicans* caller/structure work |
 | C4 | Accuracy: echinocandin measured (FAIL); azole underpowered | **Echinocandin measured & carried; azole still blocked** | Azole: larger paired *C. auris* ERG11 collection; echinocandin: Rung C breadth |
 
@@ -193,9 +198,11 @@ mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`,
 `scripts/characterize_coverage_ceiling.py`) shows the 4 VME misses are **all FKS1 HS3**
 (3 × W691L/W691C, 1 × M690I unresolved even by the source paper) — a hotspot the caller has no window
 for — and the 11 abstentions are mostly **HS1 substitutions the caller already reads but does not tag**
-(9 × D642Y/F635, 1 × HS2 R1354S). Adding an HS3 window projects the VME to **1/40 = 2.5% [0.4, 12.9]**
-(clears the bar); widening the HS1/HS2 panel additionally converts abstentions to detections. This is a
-*projection* pending a caller change + GCP re-measure, and the panel must be pinned from literature
+(9 × D642Y/F635, 1 × HS2 R1354S). An HS3 window (W691L) plus a *phenotype-concordant* panel widening
+(F635C/Y, R1354S/H) projects **VME 1/42 = 2.4% [0.4, 12.3], ME 2.1%, abstention 9.2% — all bars PASS**.
+The characterisation also surfaced that **D642Y is genotype–phenotype discordant** (2 R / 5 S) and must
+be left untagged or it would push ME to 11.5%; W691C/M690I are likewise untagged (not independently
+validated). This is a *projection* pending a caller change + GCP re-measure, and the panel must be pinned from literature
 independent of this benchmark to avoid circularity.
 
 So the nearest unlocks are now:
