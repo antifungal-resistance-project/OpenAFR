@@ -28,7 +28,8 @@ def _result(panel_hits=(), tokens=(), uncalled_panel=()):
         "panel_hits": list(panel_hits),
         "tokens": list(tokens),
         "uncalled_panel": list(uncalled_panel),
-        "windows": {"HS1": {"status": "called"}, "HS2": {"status": "called"}},
+        "windows": {"HS1": {"status": "called"}, "HS2": {"status": "called"},
+                    "HS3": {"status": "called"}},
     }
 
 

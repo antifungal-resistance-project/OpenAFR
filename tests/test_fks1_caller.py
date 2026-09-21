@@ -6,8 +6,10 @@ emits, so a silent mis-call here is a silent mis-call in the echinocandin alert:
   * the pinned reference translates to the window anchor residues (S639, R1354) -- the
     numbering check that makes an emitted 'S639F' mean residue 639,
   * a wild-type window emits NO call and is distinguishable from uncalled / missing,
-  * a real substitution in a window emits the right ABSOLUTE-position token; S639F/P/Y are
-    panel-tagged, an HS2 substitution is emitted but (by design) NOT tagged yet,
+  * a real substitution in a window emits the right ABSOLUTE-position token; validated,
+    phenotype-concordant markers (HS1 S639F/P/Y + F635C/Y, HS2 R1354S/H, HS3 W691L) are
+    panel-tagged, while non-panel letters -- and the deliberately-untagged D642Y (discordant)
+    and W691C (unvalidated) -- are emitted verbatim but NOT tagged (the engine abstains on them),
   * an ambiguous codon at a hot-spot is UNCALLED, never silently "wild type",
   * a frameshift/indel inside ONE window is REFUSED for that window without discarding the
     other (the whole point of windowing a 5.6 kb gene),
@@ -60,6 +62,8 @@ def test_reference_numbering_matches_window_anchors(ref):
     # and the conserved motifs are where they should be
     assert protein[634:643] == "FLTLSLRDP"      # HS1 residues 635-643
     assert protein[1349:1358] == "DWIRRYTLS"    # HS2 residues 1350-1358
+    assert protein[690] == "W"                  # residue 691 (HS3 anchor)
+    assert protein[687:698] == "TYMWYIICNCV"    # HS3 residues 688-698
 
 
 def test_reference_hash_mismatch_is_refused(tmp_path):
@@ -131,9 +135,10 @@ def test_wild_type_windows_emit_no_call(ref):
     assert res["tokens"] == []
     assert res["windows"]["HS1"]["status"] == "wild-type"
     assert res["windows"]["HS2"]["status"] == "wild-type"
+    assert res["windows"]["HS3"]["status"] == "wild-type"
     call, source = F.format_call(res)
     assert call == ""
-    assert source == "sra-fks1-recaller:HS1=wild-type,HS2=wild-type"
+    assert source == "sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type"
 
 
 # --- real substitutions -----------------------------------------------------
@@ -145,7 +150,7 @@ def test_s639f_is_called_and_panel_tagged(ref):
     assert res["panel_hits"] == ["S639F"]
     call, source = F.format_call(res)
     assert call == "S639F"
-    assert source == "sra-fks1-recaller:HS1=called,HS2=wild-type"
+    assert source == "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"
 
 
 @pytest.mark.parametrize("codon,letter", [("CCT", "P"), ("TAT", "Y")])
@@ -163,31 +168,78 @@ def test_s639_non_panel_letter_is_emitted_but_not_tagged(ref):
     assert res["panel_hits"] == []                      # verbatim, never asserted resistance
 
 
-def test_hs2_substitution_is_emitted_but_not_tagged(ref):
-    # R1354 sits in HS2, whose mutant letters are not yet panel-encoded -- so a real HS2
-    # substitution must be REPORTED (so emergence can see it) but NOT tagged as known.
+def test_hs2_r1354s_is_called_and_panel_tagged(ref):
+    # R1354S is now a pinned HS2 panel marker (literature-validated, phenotype-concordant), so it
+    # must be REPORTED and TAGGED. (R1354H is the other pinned HS2 letter.)
     mut = _mutate_codon(ref[0], 1354, "AGT")            # Arg -> Ser
     res = F.call_windows(_windows(mut), reference=ref)
     assert res["tokens"] == ["R1354S"]
-    assert res["panel_hits"] == []
+    assert res["panel_hits"] == ["R1354S"]
     call, source = F.format_call(res)
     assert call == "R1354S"
-    assert source == "sra-fks1-recaller:HS1=wild-type,HS2=called"
+    assert source == "sra-fks1-recaller:HS1=wild-type,HS2=called,HS3=wild-type"
+
+
+def test_hs2_non_panel_letter_is_emitted_but_not_tagged(ref):
+    # A non-panel HS2 letter (R1354G) is still emitted verbatim but NOT tagged.
+    mut = _mutate_codon(ref[0], 1354, "GGT")            # Arg -> Gly
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["tokens"] == ["R1354G"]
+    assert res["panel_hits"] == []
+
+
+def test_hs3_w691l_is_called_and_panel_tagged(ref):
+    # W691L is the CRISPR-validated HS3 marker the extension adds; it must be tagged.
+    mut = _mutate_codon(ref[0], 691, "TTG")             # Trp -> Leu
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["tokens"] == ["W691L"]
+    assert res["panel_hits"] == ["W691L"]
+    call, source = F.format_call(res)
+    assert call == "W691L"
+    assert source == "sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=called"
+
+
+def test_hs3_w691c_is_emitted_but_not_tagged(ref):
+    # W691C is NOT independently validated -> read, emitted, but deliberately untagged
+    # (the engine abstains rather than asserting resistance).
+    mut = _mutate_codon(ref[0], 691, "TGT")             # Trp -> Cys
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["tokens"] == ["W691C"]
+    assert res["panel_hits"] == []
+
+
+def test_hs1_f635c_is_called_and_panel_tagged(ref):
+    mut = _mutate_codon(ref[0], 635, "TGT")             # Phe -> Cys
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["tokens"] == ["F635C"]
+    assert res["panel_hits"] == ["F635C"]
+
+
+def test_hs1_d642y_is_emitted_but_deliberately_not_tagged(ref):
+    # D642Y is literature-validated resistance but genotype-phenotype DISCORDANT in the
+    # PMC12323592 benchmark -- tagging it would manufacture major errors. It is emitted
+    # verbatim but NOT tagged (an honest abstention). This lock guards against a future
+    # "just widen the panel" edit silently re-tagging it.
+    mut = _mutate_codon(ref[0], 642, "TAT")             # Asp -> Tyr
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["tokens"] == ["D642Y"]
+    assert res["panel_hits"] == []
+    assert not F.is_panel_token("D642Y")
 
 
 def test_non_panel_substitution_in_hs1_emitted_not_tagged(ref):
-    mut = _mutate_codon(ref[0], 635, "GGT")             # F635 -> Gly
+    mut = _mutate_codon(ref[0], 635, "GGT")             # F635 -> Gly (F635G: not in panel)
     res = F.call_windows(_windows(mut), reference=ref)
     assert res["tokens"] == ["F635G"]
     assert res["panel_hits"] == []
 
 
 def test_substitutions_across_windows_sort_by_position(ref):
-    mut = _mutate_codon(ref[0], 1354, "AGT")            # R1354S (HS2)
-    mut = _mutate_codon(mut, 639, "TTT")                # S639F (HS1)
+    mut = _mutate_codon(ref[0], 1354, "AGT")            # R1354S (HS2, panel)
+    mut = _mutate_codon(mut, 639, "TTT")                # S639F (HS1, panel)
     res = F.call_windows(_windows(mut), reference=ref)
     assert res["tokens"] == ["S639F", "R1354S"]         # position order across windows
-    assert res["panel_hits"] == ["S639F"]
+    assert res["panel_hits"] == ["S639F", "R1354S"]     # both are pinned markers now
 
 
 # --- honesty: uncalled != wild type -----------------------------------------
@@ -200,7 +252,7 @@ def test_ambiguous_codon_at_hotspot_is_uncalled_not_wild_type(ref):
     assert res["uncalled_panel"] == [639]
     call, source = F.format_call(res)
     assert call == ""
-    assert source == "sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type"
+    assert source == "sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type,HS3=wild-type"
 
 
 def test_gap_base_is_uncalled(ref):
@@ -264,6 +316,7 @@ def test_slice_windows_have_expected_lengths(ref):
     wins = _windows(ref[0])
     assert len(wins["HS1"]) == F.FKS1_WINDOWS["HS1"].nt_len == 27
     assert len(wins["HS2"]) == F.FKS1_WINDOWS["HS2"].nt_len == 27
+    assert len(wins["HS3"]) == F.FKS1_WINDOWS["HS3"].nt_len == 33   # residues 688-698
 
 
 # --- is_panel_token ---------------------------------------------------------
@@ -272,12 +325,19 @@ def test_is_panel_token_tags_the_known_panel():
     assert F.is_panel_token("S639F")
     assert F.is_panel_token("S639P")
     assert F.is_panel_token("S639Y")
+    assert F.is_panel_token("F635C")       # HS1, added
+    assert F.is_panel_token("F635Y")       # HS1, added
+    assert F.is_panel_token("R1354S")      # HS2, pinned
+    assert F.is_panel_token("R1354H")      # HS2, pinned
+    assert F.is_panel_token("W691L")       # HS3, added
 
 
 def test_is_panel_token_rejects_non_panel_and_junk():
     assert not F.is_panel_token("S639T")   # panel residue, non-panel mutant letter
-    assert not F.is_panel_token("R1354S")  # HS2 reported but not yet panel-tagged
-    assert not F.is_panel_token("F635G")   # non-panel residue
+    assert not F.is_panel_token("D642Y")   # validated but DISCORDANT -> deliberately untagged
+    assert not F.is_panel_token("W691C")   # HS3 residue, non-validated mutant letter
+    assert not F.is_panel_token("R1354G")  # HS2 residue, non-panel mutant letter
+    assert not F.is_panel_token("F635G")   # panel residue, non-panel mutant letter
     assert not F.is_panel_token("S639")    # not a substitution token
     assert not F.is_panel_token("")
     assert not F.is_panel_token(None)

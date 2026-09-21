@@ -203,7 +203,7 @@ def interpret(gene, *, cds=None, windows=None, variants=None, uncalled=None,
     Exactly one raw input:
       cds       consensus nucleotide CDS. ERG11: full-length, in-frame. FKS1: full-length
                 CDS (the fragile length-exact bridge; prefer windows= when available).
-      windows   FKS1 only -- {window_name: consensus_nt} for the hot-spots (HS1/HS2).
+      windows   FKS1 only -- {window_name: consensus_nt} for the hot-spots (HS1/HS2/HS3).
       variants  an iterable of protein substitution tokens (e.g. ['Y132F', 'T123I']) from a
                 variant caller / targeted panel.
     uncalled    optional residue positions NOT covered; only meaningful with variants=,
