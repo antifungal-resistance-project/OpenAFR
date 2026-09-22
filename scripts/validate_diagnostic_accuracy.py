@@ -46,6 +46,12 @@ from openafr import accuracy as ac        # noqa: E402
 
 PREREG = ROOT / "work" / "PREREGISTRATION_diagnostic_accuracy.md"
 PINS = ROOT / "work" / "PREREG_diagnostic_accuracy.sha256"
+# v2 amends v1 for the FKS1 panel extension (#137): v1's metric/bar definitions are inherited
+# verbatim (so v1 stays the authoritative source of the bar below), while v2 governs the
+# re-measure and commits this grader to re-checking the v2 prereg sha + the re-harvested
+# fixture. Both docs and both pins files are consulted; see _check_integrity.
+PREREG_V2 = ROOT / "work" / "PREREGISTRATION_diagnostic_accuracy_v2.md"
+PINS_V2 = ROOT / "work" / "PREREG_diagnostic_accuracy_v2.sha256"
 
 # Pre-committed pass bar (work/PREREGISTRATION_diagnostic_accuracy.md, frozen 2026-09-10).
 BAR = {
@@ -63,16 +69,22 @@ def _sha256(path):
 
 
 def _check_integrity(fixture):
-    """Re-check the frozen prereg hash and that the accuracy fixture exists + is pinned."""
+    """Re-check the frozen prereg hash(es) and that the accuracy fixture exists + is pinned.
+
+    Reads pins from both the v1 and v2 pins files (a fixture may be pinned in either). The v1
+    prereg is required; the v2 prereg is verified whenever present (the v2 re-measure commits
+    this grader to re-checking it -- work/PREREGISTRATION_diagnostic_accuracy_v2.md).
+    """
     msgs, ok = [], True
     pinned = {}
-    if PINS.exists():
-        for line in PINS.read_text().splitlines():
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            digest, _, name = line.partition("  ")
-            pinned[name.strip()] = digest.strip()
+    for pf in (PINS, PINS_V2):
+        if pf.exists():
+            for line in pf.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                digest, _, name = line.partition("  ")
+                pinned[name.strip()] = digest.strip()
     rel = os.path.relpath(PREREG, ROOT)
     want, got = pinned.get(rel), (_sha256(PREREG) if PREREG.exists() else None)
     if got is None:
@@ -81,6 +93,16 @@ def _check_integrity(fixture):
         ok = False; msgs.append(f"HASH MOVED: {rel}\n    frozen {want}\n    now    {got}")
     else:
         msgs.append(f"ok: {rel} matches frozen hash")
+    if PREREG_V2.exists():
+        relv2 = os.path.relpath(PREREG_V2, ROOT)
+        wantv2, gotv2 = pinned.get(relv2), _sha256(PREREG_V2)
+        if wantv2 is None:
+            ok = False; msgs.append(f"UNPINNED: {relv2} has no frozen hash in either pins file")
+        elif wantv2 != gotv2:
+            ok = False
+            msgs.append(f"HASH MOVED: {relv2}\n    frozen {wantv2}\n    now    {gotv2}")
+        else:
+            msgs.append(f"ok: {relv2} matches frozen hash")
     if fixture is None:
         ok = False
         msgs.append("BLOCKED: no accuracy fixture given. A paired genotype+phenotype panel "
@@ -94,8 +116,9 @@ def _check_integrity(fixture):
         frel = os.path.relpath(fixture, ROOT)
         fwant, fgot = pinned.get(frel), _sha256(fixture)
         if fwant is None:
-            ok = False; msgs.append(f"UNPINNED: {frel} has no frozen hash in {PINS.name} "
-                                    f"(freeze it: `shasum -a 256 {frel} >> {PINS.name}`)")
+            ok = False; msgs.append(f"UNPINNED: {frel} has no frozen hash in {PINS.name} or "
+                                    f"{PINS_V2.name} (freeze it: `shasum -a 256 {frel} >> "
+                                    f"{PINS_V2.name}`)")
         elif fwant != fgot:
             ok = False; msgs.append(f"HASH MOVED: {frel}\n    frozen {fwant}\n    now    {fgot}")
         else:

@@ -14,6 +14,39 @@ Both are gated on the **same** reads→consensus→`call_windows` pass over the 
 Linux/x86 + `fasterq-dump`/`minimap2`/`samtools≥1.13` + multi-GB SRA workload). Running that pass
 **once** and harvesting its output feeds both graders — so this is one cloud session, not two.
 
+## v2 RE-MEASURE — the current task (FKS1 HS3 panel extension, #154 landed)
+
+> The v1 pass below already ran (2026-09-20): concordance PASSed, but the #137 echinocandin arm
+> **FAILed** (VME 4/40 = 10.0%). PR #154 then extended the caller with an HS3 window + widened
+> HS1/HS2 tags, exactly as frozen in `work/PREREGISTRATION_diagnostic_accuracy_v2.md` (sha in
+> `work/PREREG_diagnostic_accuracy_v2.sha256`), and characterised the FAIL as pure marker coverage —
+> so this is a **re-run of the same one pass on `main` at/after #154**, testing the pre-committed
+> projection **VME 1/40 = 2.5% [0.4, 12.9]**. Follow sections 0–A–B–C below, with these deltas:
+
+1. **Fixture path — do NOT overwrite the v1 fixture.** The v2 prereg requires the v1 fixture
+   (`fks1_accuracy_98.tsv`, frozen FAIL, still consumed by `scripts/characterize_coverage_ceiling.py`)
+   to be preserved. Re-harvest to a **new** path:
+   ```bash
+   python scripts/validate_fks1_concordance.py \
+       --emit-accuracy-fixture data/earlywarning/recaller_sanity/fks1_accuracy_98_v2.tsv
+   ```
+2. **Pin into the v2 file.** Freeze the re-harvested fixture in `PREREG_diagnostic_accuracy_v2.sha256`
+   (NOT the v1 file). The grader now reads pins from **both** files and re-checks the v2 prereg sha,
+   so the exact freeze command the emit step prints already targets the v2 file for a `_v2` fixture:
+   ```bash
+   shasum -a 256 data/earlywarning/recaller_sanity/fks1_accuracy_98_v2.tsv \
+     >> work/PREREG_diagnostic_accuracy_v2.sha256
+   ```
+3. **Grade the v2 fixture.** `python scripts/validate_diagnostic_accuracy.py --fixture
+   data/earlywarning/recaller_sanity/fks1_accuracy_98_v2.tsv` — same frozen bar (inherited verbatim
+   from v1). Report PASS/FAIL/UNDERPOWERED per the v2 prereg's committed interpretation (both
+   directions), and which isolates, if any, stayed missed (coverage vs. mechanism).
+4. **Concordance must still PASS.** The new HS3 window must not regress HS1/HS2 token concordance —
+   confirm the concordance verdict from the same pass is still PASS before trusting the accuracy arm.
+
+Everything else (host setup §0, the reads→caller pass §A, the abstention/UNRESOLVED handling §C) is
+unchanged. The v1 commands in §A–C stay as the historical record of the FAIL.
+
 ## Offline pre-flight — already green (2026-09-17, this workspace)
 
 Verified locally before renting the box, on `origin/main` merged with the #146 branch
