@@ -219,11 +219,20 @@ def test_fks1_refused_hs1_window_forces_unresolved(fks1_ref):
     assert "639" in out["resolution_note"]
 
 
-def test_fks1_missing_hs2_does_not_force_unresolved(fks1_ref):
-    # HS2 carries no panel markers, so its absence creates no known-marker uncertainty.
+def test_fks1_missing_panel_window_is_unresolved(fks1_ref):
+    # HS2 now carries pinned markers (R1354S/H), so its absence means the panel cannot be fully
+    # assessed -- the honest verdict is UNRESOLVED, never a false NO_KNOWN_MARKER. (Same for HS3.)
     ref_cds, _ = fks1_ref
     windows = fks1_caller.slice_windows_from_cds(ref_cds)
     windows.pop("HS2")
+    out = I.interpret("FKS1", windows=windows, reference=fks1_ref)
+    assert out["verdict"] == v.UNRESOLVED
+
+
+def test_fks1_all_windows_wild_type_is_no_known_marker(fks1_ref):
+    # With every panel window covered wild-type, the verdict is a true NO_KNOWN_MARKER.
+    ref_cds, _ = fks1_ref
+    windows = fks1_caller.slice_windows_from_cds(ref_cds)
     out = I.interpret("FKS1", windows=windows, reference=fks1_ref)
     assert out["verdict"] == v.NO_KNOWN_MARKER
 

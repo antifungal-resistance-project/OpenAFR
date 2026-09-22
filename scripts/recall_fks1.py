@@ -27,8 +27,8 @@ Two boundaries, deliberately separated (same split as the ERG11 re-caller)
 The one departure from the ERG11 orchestration: WINDOWED consensus
 ------------------------------------------------------------------
 ERG11 builds ONE whole-CDS consensus and refuses anything whose length != reference. FKS1 is
-~5.6 kb (1888 aa) and all echinocandin resistance lives in two short hot-spots (HS1 ~S639,
-HS2 ~R1354). Building one 5.6 kb consensus makes the length-exact frame contract fragile --
+~5.6 kb (1888 aa) and all echinocandin resistance lives in a few short hot-spots (HS1 ~S639,
+HS2 ~R1354, HS3 ~W691). Building one 5.6 kb consensus makes the length-exact frame contract fragile --
 a single low-coverage indel anywhere would discard an isolate whose hot-spots were perfectly
 covered. So `recall` emits ONE consensus PER hot-spot region (`samtools consensus -r`), in
 reference coordinates: an indel in one window's reads is refused for that window alone and
