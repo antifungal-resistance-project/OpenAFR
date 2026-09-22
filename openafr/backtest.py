@@ -340,20 +340,22 @@ def panel_prevalence(records):
 # ------------------------ echinocandin (FKS1) event frequency (v2) ----------------------
 # The FKS1 analog of panel_prevalence, and the number the FKS1/v2 track exists to produce:
 # once an FKS1 `fill` has populated fks1_call, what fraction of the isolates the caller could
-# RESOLVE at the FKS1 panel carry a known echinocandin-resistance substitution (S639F/P/Y).
+# RESOLVE at the FKS1 panel carry a known echinocandin-resistance substitution (HS1 F635C/Y,
+# S639F/P/Y, D642Y; HS2 R1354S; HS3 M690I, W691L).
 # Where ERG11 carries ONE status per isolate, FKS1's source is per-window
-# (sra-fks1-recaller:HS1=...,HS2=...) because the two hot-spots are called independently -- so
-# resolution is judged over the panel-bearing window(s) only.
+# (sra-fks1-recaller:HS1=...,HS2=...,HS3=...) because the hot-spots are called independently --
+# so resolution is judged over the panel-bearing windows only.
 
 _FKS1_SOURCE_PREFIX = "sra-fks1-recaller:"
 # The windows that carry a known-resistance panel position -- the ones whose coverage decides
-# whether the panel is assessable. Derived from the caller so it can never drift (today: HS1;
-# HS2 becomes panel-bearing the moment its mutant set is pinned, with no change here).
+# whether the panel is assessable. Derived from the caller so it can never drift (today all
+# three windows -- HS1, HS2, HS3 -- are panel-bearing after the #137 v2 panel extension; a
+# snapshot whose source lacks a window is judged partial for that window, never assumed clear).
 _FKS1_PANEL_WINDOWS = tuple(name for name, w in fks1_caller.FKS1_WINDOWS.items() if w.panel)
 
 
 def _fks1_window_statuses(source):
-    """Parse a `sra-fks1-recaller:HS1=<st>,HS2=<st>` source into {window: base_status}.
+    """Parse a `sra-fks1-recaller:HS1=<st>,HS2=<st>,HS3=<st>` source into {window: base_status}.
 
     The base status strips any parenthetical detail (`partial(uncalled:639)` -> `partial`).
     Returns {} for a non-FKS1-recaller source (pending / empty / other) OR a whole-isolate

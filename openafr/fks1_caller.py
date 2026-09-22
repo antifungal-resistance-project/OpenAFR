@@ -16,8 +16,9 @@ The one design change from the ERG11 re-caller: WINDOWED, not whole-CDS
 -----------------------------------------------------------------------
 ERG11 is a compact 1575 nt CDS, so recaller.py builds a full-length in-frame consensus and
 refuses anything whose length != reference (frameshift = refused, not guessed). FKS1 is a
-~5.6 kb gene (1888 aa); all echinocandin resistance lives in two short, conserved hot-spot
-windows (HS1 around S639, HS2 around R1354). Calling the whole gene buys nothing clinically
+~5.6 kb gene (1888 aa); all echinocandin resistance lives in short, conserved hot-spot
+windows (HS1 around S639, HS2 around R1354, and a presumptive HS3 around W691). Calling the
+whole gene buys nothing clinically
 and makes the length-exact frame contract fragile across 5.6 kb -- one low-coverage indel
 anywhere would discard an isolate whose hot-spots were perfectly covered. So this caller
 operates PER WINDOW: each hot-spot is validated and called independently, and a frameshift
@@ -38,10 +39,12 @@ The honesty constraints (same bar as recaller.py, applied per window)
    length and in frame; a length mismatch (an indel inside the window) is refused for that
    window with the reason -- never forced into a frame, never fatal to the other window.
 4. WE TAG THE PANEL, WE DO NOT INVENT NOVELTY. Every non-synonymous difference in a window
-   is emitted verbatim. Known-resistance panel substitutions (S639F/P/Y) are TAGGED; the
-   HS2 window is reported but not yet panel-tagged (its mutant letters await a literature
-   pin -- a documented gap, not a silent drop), so HS2 substitutions are emitted untagged
-   and it is emergence's job to decide which are novel/rising.
+   is emitted verbatim. Known-resistance panel substitutions -- HS1 F635C/Y, S639F/P/Y,
+   D642Y; HS2 R1354S; HS3 M690I, W691L -- are TAGGED, each independently literature-pinned
+   (see FKS1_WINDOWS). A substitution in a window that is NOT on the panel (e.g. W691C,
+   whose only report is the benchmark itself) is still emitted verbatim but left UNtagged --
+   it is emergence's job to decide which untagged changes are novel/rising, never the
+   caller's to invent a resistance claim the literature does not independently support.
 
 Stdlib only. Operates on the reference FASTA and on per-window consensus nucleotide strings.
 """
@@ -105,15 +108,34 @@ class Window:
         return ref_prot[self.start_res - 1: self.end_res]
 
 
-# The two echinocandin-resistance hot-spots, numbered against XM_085597048.1 and VERIFIED
-# by translation (PROVENANCE.md):
-#   HS1  residues 635-643  FLTLSLRDP  -- panel S639F/S639P/S639Y (the dominant C. auris call)
-#   HS2  residues 1350-1358 DWIRRYTLS -- anchor R1354; mutant letters NOT yet panel-encoded
-#     (reported verbatim/untagged until a literature pin fixes the HS2 mutant set -- see
-#      constraint 4). Widening the panel is a data edit here, no code change downstream.
+# The three echinocandin-resistance hot-spots, numbered against XM_085597048.1 and VERIFIED
+# by translation (PROVENANCE.md; the load-time numbering check enforces the anchor letters,
+# and every panel wild-type letter below was confirmed against the pinned reference):
+#   HS1  residues 635-643  FLTLSLRDP  -- anchor S639; panel F635{C,Y}, S639{F,P,Y}, D642{Y}
+#   HS2  residues 1350-1358 DWIRRYTLS -- anchor R1354; panel R1354{S}
+#   HS3  residues 688-698   ...M690,W691... -- anchor W691; panel M690{I}, W691{L}
+#     (a presumptive third hot-spot ~48 aa downstream of HS1; added under the #137 v2 prereg
+#      to close the measured echinocandin coverage gap, work/RESULTS_diagnostic_coverage_ceiling.md.)
+#
+# Every panel mutant letter is independently pinned to the FKS1-resistance literature, NOT to
+# the PMC12323592 benchmark this panel is scored against (the anti-circularity rule,
+# work/PREREGISTRATION_diagnostic_accuracy_v2.md). Primary source: CDC EID 2026;32(5)
+# "Updated Genomic Epidemiologic Description of Candida (Candidozyma) auris, United States"
+# (article 25-0760), which reports F635C/Y, S639F/P/Y, D642Y (HS1); R1354S (HS2); M690I, W691L
+# (a presumptive HS3) in echinocandin-resistant US surveillance isolates -- a collection
+# distinct from the benchmark's SRA reads. W691L is additionally mechanistically confirmed by
+# CRISPR (Jacobs et al., AAC 2023, aac.00423-23 / PMC10269051). Two letters the v2 prereg
+# listed as CANDIDATES were DROPPED for want of an independent pin:
+#   - W691F: reported in no source -> dropped.
+#   - W691C: reported ONLY in the benchmark itself (PMC12323592, isolate SRR26666774) ->
+#     tagging it would be circular, so it is emitted verbatim/untagged. The affected isolate
+#     (B22769) therefore stays an honest UNCHARACTERIZED_VARIANT abstention -- exactly the
+#     prereg's "dropped positions remain honest abstentions" outcome.
 FKS1_WINDOWS = {
-    "HS1": Window("HS1", 635, 643, 639, "S", {639: ("S", {"F", "P", "Y"})}),
-    "HS2": Window("HS2", 1350, 1358, 1354, "R", {}),
+    "HS1": Window("HS1", 635, 643, 639, "S",
+                  {635: ("F", {"C", "Y"}), 639: ("S", {"F", "P", "Y"}), 642: ("D", {"Y"})}),
+    "HS2": Window("HS2", 1350, 1358, 1354, "R", {1354: ("R", {"S"})}),
+    "HS3": Window("HS3", 688, 698, 691, "W", {690: ("M", {"I"}), 691: ("W", {"L"})}),
 }
 
 # Flat position -> (wt, mutant-letters) panel across all windows, for is_panel_token and
@@ -349,12 +371,12 @@ def format_call(result):
     - fks1_call is the comma-joined token string ('S639F' or 'S639F,R1354S'), '' if none.
     - resistance_source records HOW and how completely EACH window was called, so an empty
       call is never ambiguous between 'sequenced, wild type' and 'could not sequence':
-        sra-fks1-recaller:HS1=wild-type,HS2=wild-type   -- both windows covered, no change
-        sra-fks1-recaller:HS1=called,HS2=wild-type      -- a substitution in HS1
-        sra-fks1-recaller:HS1=partial(uncalled:639),... -- a hot-spot residue uncalled
-        sra-fks1-recaller:HS1=refused(...),HS2=...       -- an indel inside a window
-        sra-fks1-recaller:HS1=missing,HS2=...            -- no consensus for that window
-    Per-window status (not ERG11's single status) because FKS1 has two independent windows.
+        sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type -- all covered, no change
+        sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type    -- a substitution in HS1
+        sra-fks1-recaller:HS1=partial(uncalled:639),...  -- a hot-spot residue uncalled
+        sra-fks1-recaller:HS1=refused(...),HS2=...,HS3=...  -- an indel inside a window
+        sra-fks1-recaller:HS1=missing,HS2=...,HS3=...       -- no consensus for that window
+    Per-window status (not ERG11's single status) because FKS1 has three independent windows.
     """
     call = ",".join(result["tokens"])
     parts = []

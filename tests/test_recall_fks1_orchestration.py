@@ -166,7 +166,8 @@ def test_reads_to_window_consensus_issues_per_window_pipeline(script, tmp_path, 
     cons = [c for c in calls if c[0] == "samtools" and c[1] == "consensus"]
     assert len(cons) == len(F.FKS1_WINDOWS)
     regions = {c[c.index("-r") + 1] for c in cons}
-    assert regions == {"XM_085597048.1:1903-1929", "XM_085597048.1:4048-4074"}
+    assert regions == {"XM_085597048.1:1903-1929", "XM_085597048.1:4048-4074",
+                       "XM_085597048.1:2062-2094"}   # HS1, HS2, HS3 (688-698)
     for c in cons:
         assert "-a" in c
         assert c[c.index("--min-depth") + 1] == "7"
@@ -197,12 +198,13 @@ def test_recall_one_maps_window_seqs_to_call(script, monkeypatch):
     window_seqs = {
         "HS1": F.FKS1_WINDOWS["HS1"].nt_slice(mutated),
         "HS2": F.FKS1_WINDOWS["HS2"].nt_slice(ref_cds),
+        "HS3": F.FKS1_WINDOWS["HS3"].nt_slice(ref_cds),
     }
     monkeypatch.setattr(script, "reads_to_window_consensus",
                         lambda *a, **k: window_seqs)
     call, source = script._recall_one("SRR1", reference, F.DEFAULT_REFERENCE)
     assert call == "S639F"
-    assert source == "sra-fks1-recaller:HS1=called,HS2=wild-type"
+    assert source == "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"
 
 
 def test_recall_one_marks_tool_failure_failed(script, monkeypatch):
@@ -233,7 +235,7 @@ def test_cmd_call_from_full_cds(script, tmp_path, capsys):
     assert rc == 0
     out = capsys.readouterr().out
     assert "call:   S639F" in out
-    assert "sra-fks1-recaller:HS1=called,HS2=wild-type" in out
+    assert "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type" in out
 
 
 def test_cmd_call_from_per_window_fasta(script, tmp_path, capsys):
@@ -274,7 +276,7 @@ def test_cmd_recall_logs_and_reports(script, monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(F, "load_reference", lambda *a, **k: ("CDS", "PROT"))
     monkeypatch.setattr(runlog, "DEFAULT_LOG_DIR", tmp_path / "runlog")
     monkeypatch.setattr(script, "_recall_one",
-                        lambda *a, **k: ("S639F", "sra-fks1-recaller:HS1=called,HS2=wild-type"))
+                        lambda *a, **k: ("S639F", "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"))
     args = argparse.Namespace(run_acc="SRR42", keep_tmp=False)
     rc = script.cmd_recall(args)
     assert rc == 0
@@ -338,9 +340,9 @@ def test_cmd_prevalence_reports_frequency_after_a_fill(script, tmp_path, capsys)
     p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "SRR2")])
     records = _ew.read_snapshot(p)
     records[0]["fks1_call"] = "S639F"
-    records[0]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=called,HS2=wild-type"
+    records[0]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"
     records[1]["fks1_call"] = ""
-    records[1]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=wild-type,HS2=wild-type"
+    records[1]["fks1_resistance_source"] = "sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type"
     _ew.write_snapshot(p, records)
     assert script.cmd_prevalence(argparse.Namespace(snapshot=str(p))) == 0
     out = capsys.readouterr().out
@@ -355,7 +357,7 @@ def test_cmd_fill_marks_calls_and_logs(script, monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(runlog, "DEFAULT_LOG_DIR", tmp_path / "runlog")
     monkeypatch.setattr(script, "_recall_one",
                         lambda *a, **k: ("S639F",
-                                         "sra-fks1-recaller:HS1=called,HS2=wild-type"))
+                                         "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"))
     p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "")])
     args = argparse.Namespace(snapshot=str(p), limit=0, random=False, seed=0,
                               dry_run=False)

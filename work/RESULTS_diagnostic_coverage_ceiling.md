@@ -89,3 +89,27 @@ strings, stored snapshots, and six test files, and so deserves its own reviewed 
 This keeps the caller certified at what it covers (concordance PASS, 100%/100%/100%,
 [[fks1-caller-concordance]]) while naming exactly which three windows close the gap — an honest,
 tractable Rung C path rather than an off-target dead end. [[diagnostic-accuracy-track]]
+
+## Implementation update (panel extension landed offline; measured re-claim still pending GCP)
+
+The caller change governed by `work/PREREGISTRATION_diagnostic_accuracy_v2.md` is now implemented in
+`openafr/fks1_caller.py`: an HS3 `Window` (688–698, anchor W691) plus widened HS1/HS2 panels. Running
+the frozen prereg's **anti-circularity rule** against the literature moved two candidate letters:
+
+- **Kept (each independently pinned, NOT from the PMC12323592 benchmark):** HS1 **F635C/Y, D642Y**;
+  HS2 **R1354S**; HS3 **M690I, W691L**. Primary independent source: CDC EID 2026;32(5) article 25-0760
+  ("Updated Genomic Epidemiologic Description of *Candida (Candidozyma) auris*, United States"), a US
+  surveillance collection distinct from the benchmark's SRA reads; W691L additionally CRISPR-confirmed
+  (Jacobs et al., AAC 2023, aac.00423-23 / PMC10269051).
+- **Dropped:** **W691F** (reported in no source) and **W691C** (its *only* report is the benchmark
+  itself, PMC12323592 isolate SRR26666774 → tagging it would be circular). W691C is still emitted
+  *verbatim but untagged*, so its benchmark isolate (B22769) leaves the VME numerator as an honest
+  `UNCHARACTERIZED_VARIANT` abstention rather than a `NO_KNOWN_MARKER` miss. The projection is therefore
+  unchanged (**VME 1/40 = 2.5%**, residual = B21978 M690I, whose reads under-cover HS3).
+
+This also flips the FKS1 resolution contract: `backtest._FKS1_PANEL_WINDOWS` now spans **all three**
+windows, so an isolate is "resolved" only when HS1+HS2+HS3 are each called/wild-type (a snapshot whose
+source predates HS3 is judged `partial`, never assumed clear). The offline test suite is green; the
+**measured** post-extension VME still requires the GCP re-download/re-call under the v2 prereg, so
+`RESULTS_diagnostic_accuracy.md`'s 10% and the go/no-go Rung-A verdict are deliberately **untouched**
+until that run lands.

@@ -28,7 +28,8 @@ def _result(panel_hits=(), tokens=(), uncalled_panel=()):
         "panel_hits": list(panel_hits),
         "tokens": list(tokens),
         "uncalled_panel": list(uncalled_panel),
-        "windows": {"HS1": {"status": "called"}, "HS2": {"status": "called"}},
+        "windows": {"HS1": {"status": "called"}, "HS2": {"status": "called"},
+                    "HS3": {"status": "called"}},
     }
 
 
@@ -59,8 +60,9 @@ def test_wild_type_no_known_marker():
 
 def test_non_panel_token_is_uncharacterized():
     s = _load_script()
-    # D642Y is in the HS1 window but not a panel (639) residue: reported, not tagged.
-    d = _row_dict(s._accuracy_row("B20717", "SRRx", _result(tokens=["D642Y"]), "R", "c"), s)
+    # W691C is emitted verbatim in the HS3 window but is NOT panel-tagged (dropped for
+    # circularity -- its only report is the benchmark itself): reported, not tagged.
+    d = _row_dict(s._accuracy_row("B20717", "SRRx", _result(tokens=["W691C"]), "R", "c"), s)
     assert d["called_verdict"] == V.UNCHARACTERIZED_VARIANT
 
 
