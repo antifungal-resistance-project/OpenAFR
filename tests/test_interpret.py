@@ -219,13 +219,23 @@ def test_fks1_refused_hs1_window_forces_unresolved(fks1_ref):
     assert "639" in out["resolution_note"]
 
 
-def test_fks1_missing_hs2_does_not_force_unresolved(fks1_ref):
-    # HS2 carries no panel markers, so its absence creates no known-marker uncertainty.
+def test_fks1_missing_hs2_forces_unresolved(fks1_ref):
+    # HS2 now carries a panel marker (R1354S, literature-pinned), so its absence leaves a
+    # known-resistance position unassessed -- an honest UNRESOLVED, not NO_KNOWN_MARKER.
     ref_cds, _ = fks1_ref
     windows = fks1_caller.slice_windows_from_cds(ref_cds)
     windows.pop("HS2")
     out = I.interpret("FKS1", windows=windows, reference=fks1_ref)
-    assert out["verdict"] == v.NO_KNOWN_MARKER
+    assert out["verdict"] == v.UNRESOLVED
+
+
+def test_fks1_missing_hs3_forces_unresolved(fks1_ref):
+    # HS3 (M690I, W691L) is panel-bearing too, so its absence is likewise UNRESOLVED.
+    ref_cds, _ = fks1_ref
+    windows = fks1_caller.slice_windows_from_cds(ref_cds)
+    windows.pop("HS3")
+    out = I.interpret("FKS1", windows=windows, reference=fks1_ref)
+    assert out["verdict"] == v.UNRESOLVED
 
 
 def test_fks1_unanchorable_cds_becomes_unresolved(fks1_ref):

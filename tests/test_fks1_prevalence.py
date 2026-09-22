@@ -2,8 +2,9 @@
 
 The FKS1 analog of the azole panel_prevalence, with the same honesty contract:
   * only isolates whose FKS1 panel could be RESOLVED enter the denominator,
-  * per-window statuses (HS1=..., HS2=...) are classified over the panel-bearing
-    window(s) only -- a partial/refused/missing HS1 is excluded, never counted negative,
+  * per-window statuses (HS1=..., HS2=..., HS3=...) are classified over the panel-bearing
+    windows -- all three now carry markers, so a partial/refused/missing panel window is
+    excluded, never counted negative,
   * panel positivity is decided from the tokens via fks1_caller.is_panel_token, so an
     isolate called only for a clade/non-panel SNP is resolved-but-negative,
   * an un-filled snapshot reports 0 resolved / event_frequency None -- NOT MEASURED YET,
@@ -20,14 +21,17 @@ def _rec(key, fks1_call, source, run="SRR9"):
 
 def test_resolution_buckets_over_panel_window():
     b = bt._fks1_resolution_bucket
-    assert b("sra-fks1-recaller:HS1=called,HS2=wild-type") == "resolved"
-    assert b("sra-fks1-recaller:HS1=wild-type,HS2=wild-type") == "resolved"
-    # HS2 uncalled does NOT block resolution: the panel lives in HS1 only
-    assert b("sra-fks1-recaller:HS1=called,HS2=missing") == "resolved"
-    # a partial/missing/refused HS1 (the panel window) is not resolved
-    assert b("sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type") == "partial"
-    assert b("sra-fks1-recaller:HS1=missing,HS2=wild-type") == "partial"
-    assert b("sra-fks1-recaller:HS1=refused(indel),HS2=wild-type") == "failed"
+    assert b("sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type") == "resolved"
+    assert b("sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type") == "resolved"
+    # all three windows now carry panel markers, so an uncalled/missing panel window blocks
+    # resolution -- HS2 or HS3 missing is no longer "resolved" the way it was pre-extension
+    assert b("sra-fks1-recaller:HS1=called,HS2=missing,HS3=wild-type") == "partial"
+    assert b("sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=missing") == "partial"
+    # a partial/missing/refused panel window is not resolved
+    assert b("sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type,HS3=wild-type") == "partial"
+    assert b("sra-fks1-recaller:HS1=missing,HS2=wild-type,HS3=wild-type") == "partial"
+    assert b("sra-fks1-recaller:HS1=refused(indel),HS2=wild-type,HS3=wild-type") == "failed"
+    assert b("sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=refused(indel)") == "failed"
     # whole-isolate failure (no per-window part) and pending states
     assert b("sra-fks1-recaller:failed(no reads)") == "failed"
     assert b("pending:sra-fks1-recaller") == "pending"
@@ -37,11 +41,11 @@ def test_resolution_buckets_over_panel_window():
 
 def test_prevalence_counts_only_resolved_and_reads_panel_from_tokens():
     records = [
-        _rec("A", "S639F", "sra-fks1-recaller:HS1=called,HS2=wild-type"),   # panel-positive
-        _rec("B", "S639P", "sra-fks1-recaller:HS1=called,HS2=wild-type"),   # panel-positive
-        _rec("C", "", "sra-fks1-recaller:HS1=wild-type,HS2=wild-type"),     # resolved, negative
-        _rec("D", "D642E", "sra-fks1-recaller:HS1=called,HS2=wild-type"),   # resolved, non-panel
-        _rec("E", "", "sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type"),  # partial
+        _rec("A", "S639F", "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"),  # panel-positive
+        _rec("B", "S639P", "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"),  # panel-positive
+        _rec("C", "", "sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type"),    # resolved, negative
+        _rec("D", "D642E", "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"),  # resolved, non-panel (D642E != D642Y)
+        _rec("E", "", "sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type,HS3=wild-type"),  # partial
         _rec("F", "", "sra-fks1-recaller:failed(align)"),                   # failed
         _rec("G", "", "pending:sra-fks1-recaller"),                         # pending
     ]

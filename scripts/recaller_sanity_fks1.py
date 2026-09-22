@@ -122,7 +122,7 @@ def _evaluate(expected, result):
 
 
 def _covered(result):
-    """Coverage across all windows, e.g. '18/18 residues' (sum over the two hot-spots)."""
+    """Coverage across all windows, e.g. '29/29 residues' (sum over the three hot-spots)."""
     cov = sum(w["n_covered"] for w in result["windows"].values())
     tot = sum(w["n_residues"] for w in result["windows"].values())
     return f"{cov}/{tot} residues"
