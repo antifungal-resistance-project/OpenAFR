@@ -52,6 +52,10 @@ PINS = ROOT / "work" / "PREREG_diagnostic_accuracy.sha256"
 # fixture. Both docs and both pins files are consulted; see _check_integrity.
 PREREG_V2 = ROOT / "work" / "PREREGISTRATION_diagnostic_accuracy_v2.md"
 PINS_V2 = ROOT / "work" / "PREREG_diagnostic_accuracy_v2.sha256"
+# v3 adds a high-PPV panel TIER (no new markers): a low-PPV-only call abstains instead of
+# over-calling (work/PREREGISTRATION_diagnostic_accuracy_v3.md). Verified whenever present.
+PREREG_V3 = ROOT / "work" / "PREREGISTRATION_diagnostic_accuracy_v3.md"
+PINS_V3 = ROOT / "work" / "PREREG_diagnostic_accuracy_v3.sha256"
 
 # Pre-committed pass bar (work/PREREGISTRATION_diagnostic_accuracy.md, frozen 2026-09-10).
 BAR = {
@@ -77,7 +81,7 @@ def _check_integrity(fixture):
     """
     msgs, ok = [], True
     pinned = {}
-    for pf in (PINS, PINS_V2):
+    for pf in (PINS, PINS_V2, PINS_V3):
         if pf.exists():
             for line in pf.read_text().splitlines():
                 line = line.strip()
@@ -93,16 +97,17 @@ def _check_integrity(fixture):
         ok = False; msgs.append(f"HASH MOVED: {rel}\n    frozen {want}\n    now    {got}")
     else:
         msgs.append(f"ok: {rel} matches frozen hash")
-    if PREREG_V2.exists():
-        relv2 = os.path.relpath(PREREG_V2, ROOT)
-        wantv2, gotv2 = pinned.get(relv2), _sha256(PREREG_V2)
-        if wantv2 is None:
-            ok = False; msgs.append(f"UNPINNED: {relv2} has no frozen hash in either pins file")
-        elif wantv2 != gotv2:
-            ok = False
-            msgs.append(f"HASH MOVED: {relv2}\n    frozen {wantv2}\n    now    {gotv2}")
-        else:
-            msgs.append(f"ok: {relv2} matches frozen hash")
+    for prereg in (PREREG_V2, PREREG_V3):
+        if prereg.exists():
+            relp = os.path.relpath(prereg, ROOT)
+            wantp, gotp = pinned.get(relp), _sha256(prereg)
+            if wantp is None:
+                ok = False; msgs.append(f"UNPINNED: {relp} has no frozen hash in any pins file")
+            elif wantp != gotp:
+                ok = False
+                msgs.append(f"HASH MOVED: {relp}\n    frozen {wantp}\n    now    {gotp}")
+            else:
+                msgs.append(f"ok: {relp} matches frozen hash")
     if fixture is None:
         ok = False
         msgs.append("BLOCKED: no accuracy fixture given. A paired genotype+phenotype panel "
