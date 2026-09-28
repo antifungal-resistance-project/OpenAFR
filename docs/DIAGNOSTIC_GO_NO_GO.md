@@ -70,17 +70,20 @@ public ERG11 data has the variant diversity and the susceptible isolates calibra
 pull toward *different organisms* — a tension that must be decided, not glossed, before any
 calibrated claim is made.
 
-**C4 — Accuracy: echinocandin arm now MEASURED (and FAILs the clinical bar); azole arm still
-underpowered.** The verdict-accuracy validation (#137, `work/PREREGISTRATION_diagnostic_accuracy.md`)
-ran on 2026-09-20 for the echinocandin arm, off the fixture harvested by the FKS1 concordance pass
-(`work/RESULTS_diagnostic_accuracy.md`): scored 87 isolates (40 R / 47 S), **VME 10.0%
-[4.0%, 23.1%]**, ME 2.1%, categorical agreement 94.3%, abstention 11.2% — **FAIL** (VME point and
-Wilson upper both above bar; ME and abstention pass). The FAIL is C2's mechanism-coverage ceiling,
-not a caller error (the concordance run certified the tokens at 100%/100%/100%,
-`work/RESULTS_fks1_concordance.md`). The **azole/ERG11 arm** has only 4 Lockhart clade strains and
-**remains UNDERPOWERED**; **calibration (#136)** remains blocked on the non-public option-C panel.
-So the echinocandin error rate is now known and does not meet a diagnostic bar; the azole rate is
-still unmeasured.
+**C4 — Accuracy: echinocandin arm MEASURED TWICE (both FAIL, on opposite axes); azole arm still
+underpowered.** The verdict-accuracy validation (#137) ran first on 2026-09-20 for the v1 narrow
+S639 panel — scored 87 (40 R / 47 S), **VME 10.0% [4.0, 23.1]**, ME 2.1% — **FAIL** on
+under-detection. PR #154 then extended the caller (HS3 window + widened HS1/HS2), pre-registering a
+falsifiable VME projection of 2.5% (`work/PREREGISTRATION_diagnostic_accuracy_v2.md`). The v2 GCP
+re-measure (2026-09-24, `work/RESULTS_diagnostic_accuracy.md`) confirmed the projection — **VME
+collapsed to 0.0% [0.0, 7.9], sensitivity 100%** — but the failure mode **flipped**: scored 97
+(45 R / 52 S), **ME 13.5% [6.7, 25.3]** (bar ≤5%) — **FAIL** on over-calling. The over-call is a
+**biological ceiling, not a coverage gap**: 5 of 7 major errors are **D642Y**, whose carriers split
+2 R / 5 S in this cohort (~29% PPV); the benchmark's own expert panel scores D642Y as wild-type, and
+no FKS1-genotype panel clears both the VME and ME bars simultaneously. The **azole/ERG11 arm** has
+only 4 Lockhart clade strains and **remains UNDERPOWERED**; **calibration (#136)** remains blocked on
+the non-public option-C panel. So the echinocandin error rate is now known from both directions and
+does not meet a diagnostic bar; the azole rate is still unmeasured.
 
 ---
 
@@ -117,16 +120,17 @@ is met**; meeting it is necessary, not sufficient, for the next.
 - GATE: the #137 run executes on a pinned paired-panel fixture and the drug class **PASSES** its
   frozen bar — very-major-error point ≤3% **and** Wilson upper ≤15%, major-error ≤5%,
   abstention ≤30%, with ≥15 scored isolates per phenotype arm.
-- Today: **NO-GO — echinocandin arm RAN and did not clear the bar (2026-09-20).** Scored 87
-  isolates (40 R / 47 S ≥15 each), VME **10.0% [4.0%, 23.1%]** (bar ≤3% / upper ≤15%) — FAIL; ME
-  2.1% and abstention 11.2% pass (`work/RESULTS_diagnostic_accuracy.md`). This is a *measured*
-  no-go driven by C2 marker coverage, not a blocked-on-data one — the caller itself passed
-  concordance at 100% (`work/RESULTS_fks1_concordance.md`). The **azole arm** stays NO-GO,
-  underpowered (4 clade strains). Lifting Rung A for echinocandin now requires **Rung C breadth**,
-  and the mechanism characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows that
-  breadth is a *tractable FKS1-hotspot extension* (an HS3 window + an HS1/HS2 panel widening → VME
-  projected 1/40 = 2.5%), **not** an off-target/efflux mechanism build — so the unlock is a scoped
-  caller change plus a GCP re-measure, not new science.
+- Today: **NO-GO — echinocandin arm RAN TWICE and cleared neither bar (v1 2026-09-20, v2
+  2026-09-24).** v1 (narrow S639 panel): VME **10.0% [4.0, 23.1]** — FAIL on under-detection. v2
+  (HS3 + widened HS1/HS2, #154): the pre-registered VME projection held — **VME 0.0% [0.0, 7.9],
+  sensitivity 100%** — but **ME rose to 13.5% [6.7, 25.3]** (bar ≤5%), FAIL on over-calling
+  (`work/RESULTS_diagnostic_accuracy.md`). The v2 FAIL is **not** fixable by more markers: it is a
+  genotype↔phenotype ceiling — D642Y (5 of 7 major errors) splits 2 R / 5 S, so tagging it over-calls
+  and dropping it re-opens VME (4.4%). No FKS1-genotype panel clears both bars on this cohort. The
+  **azole arm** stays NO-GO, underpowered (4 clade strains). Lifting Rung A for echinocandin would now
+  require a **re-scoped intended-use claim** (detection-only over validated high-PPV markers — the
+  S639/W691 core — explicitly excluding low-PPV positions like D642Y), which is a **new
+  pre-registration**, not a further panel tweak.
 
 **Rung B — Calibrated probability with measured reliability (unlocks: the probability field).**
 - GATE: the #136 calibration track executes on the option-C pooled panel and clears its frozen
@@ -138,15 +142,17 @@ is met**; meeting it is necessary, not sufficient, for the next.
 - GATE: marker coverage and organism scope match the population the test would serve — either a
   documented decision that a narrow *C. auris* panel is the intended use, **or** the *C.
   albicans* / broader-mechanism work (efflux/ERG3/TR) that C2/C3 would require.
-- Today: **NO-GO (auris-only, HS1/ERG11-hotspot-only).** *Decision informed (2026-09-20):* the
-  echinocandin coverage characterisation (`work/RESULTS_diagnostic_coverage_ceiling.md`) shows the
-  measured VME is driven entirely by **FKS1 HS3 (W691) + un-tagged HS1 (D642Y/F635)**, not efflux —
-  so the evidence favours *extending the FKS1 panel* (HS3 window + HS1/HS2 panel widening, projected
-  VME 1/40 = 2.5%) over documenting a permanently narrow panel. That extension ripples into the
-  prevalence/emergence resolution semantics (`_FKS1_PANEL_WINDOWS`), the caller source strings, and
-  stored snapshots, so it is staged as its own pre-registered PR + GCP re-measure
-  (`work/PREREGISTRATION_diagnostic_accuracy_v2.md`), not yet executed. Efflux/ERG3/TR and *C.
-  albicans* breadth remain separately out of scope.
+- Today: **NO-GO (auris-only, HS1/ERG11-hotspot-only).** *Decision now EXECUTED and re-informed
+  (2026-09-24):* the panel extension the coverage characterisation recommended
+  (`work/RESULTS_diagnostic_coverage_ceiling.md`) was pre-registered
+  (`work/PREREGISTRATION_diagnostic_accuracy_v2.md`), built (#154), and GCP re-measured. It **worked
+  for detection** (VME 10% → 0%, W691L/M690I misses recovered) but **revealed a new ceiling**: the
+  widened HS1 panel over-calls (ME 13.5%), because **D642Y is not a reliable resistance marker** here
+  (2 R / 5 S; the benchmark's expert panel excludes it) — see `work/RESULTS_diagnostic_accuracy.md`.
+  The lesson reframes Rung C: breadth is no longer the binding constraint for echinocandin —
+  **marker PPV / genotype↔phenotype discordance** is. The forward path is a *re-scoped, high-PPV*
+  panel claim (S639/W691 core, excluding D642Y), pre-registered fresh — not further widening.
+  Efflux/ERG3/TR and *C. albicans* breadth remain separately out of scope.
 
 **Rung D — Prospective clinical validation against phenotypic AST.**
 - GATE: a pre-registered *prospective* study (not the retrospective #137 benchmark) with

@@ -273,9 +273,13 @@ def main():
 
     if args.emit_accuracy_fixture:
         out = _write_accuracy_fixture(args.emit_accuracy_fixture, accuracy_rows)
+        # A re-harvested v2 fixture (panel-extension re-measure, #137) pins into the v2 file so
+        # the v1 fixture's frozen FAIL hash stays untouched; the v1 harvest pins into the v1 file.
+        pins = ("work/PREREG_diagnostic_accuracy_v2.sha256" if "_v2" in os.path.basename(str(out))
+                else "work/PREREG_diagnostic_accuracy.sha256")
         print(f"\n#137 accuracy fixture: wrote {len(accuracy_rows)} isolate(s) -> {out}")
         print("freeze it, then run the accuracy grader:")
-        print(f"  shasum -a 256 {out} >> work/PREREG_diagnostic_accuracy.sha256")
+        print(f"  shasum -a 256 {out} >> {pins}")
         print(f"  python scripts/validate_diagnostic_accuracy.py --fixture {out}")
 
     return 0 if verdict == "PASS" else 1

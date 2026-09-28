@@ -18,6 +18,85 @@ orchestration, not hand-authored**, per the prereg rule); `susceptibility` copie
 frozen concordance truth. **Code:** `openafr/accuracy.py`, `scripts/validate_diagnostic_accuracy.py`.
 Both integrity hashes matched at run time.
 
+> **UPDATE 2026-09-24 — a v2 re-measure (below) supersedes the panel this v1 result scored.** The v1
+> section that follows the v2 block is preserved verbatim as the auditable prior. Read v2 first.
+
+---
+
+# v2 re-measure — FKS1 HS3 + widened HS1/HS2 panel (#154), measured
+
+**What changed.** The v1 FAIL was traced to marker coverage (all 4 very-major misses were FKS1 **HS3**,
+a hotspot the caller had no window for). PR #154 added an HS3 window (anchor W691) and widened the
+HS1/HS2 panel tags, exactly as frozen in `work/PREREGISTRATION_diagnostic_accuracy_v2.md`
+(sha `014094c6…`), with a **pre-committed falsifiable projection of VME 1/40 = 2.5% [0.4, 12.9]**. A
+fresh GCP reads→caller pass over the same 98-isolate PMC12323592 benchmark re-harvested the paired
+fixture (`data/earlywarning/recaller_sanity/fks1_accuracy_98_v2.tsv`, sha `a7c5056f…`, pinned in
+`work/PREREG_diagnostic_accuracy_v2.sha256`; the v1 fixture is preserved un-overwritten). Both prereg
+hashes and the re-harvested fixture hash matched at grade time.
+
+## Headline — the projection held, but the failure mode flipped: FAIL on major error
+
+> Scored **97** isolates (**45 R / 52 S**); 1 abstained, 0 unresolved, 0 no-phenotype — all excluded.
+> Confusion (R/S × call): **TP=45 FN=0 FP=7 TN=45**.
+
+| Metric | Value | Wilson 95% | Bar | Verdict | v1 → v2 |
+|---|---|---|---|---|---|
+| **Very-major error** (missed R) | **0/45 = 0.0%** | [0.0%, 7.9%] | point ≤3% **and** upper ≤15% | ✓ | 10.0% → **0.0%** |
+| **Major error** (false R) | **7/52 = 13.5%** | [6.7%, 25.3%] | ≤5% | ✗ **BELOW BAR** | 2.1% → **13.5%** |
+| Sensitivity (= 1 − VME) | 45/45 = 100.0% | [92.1%, 100%] | — | — | 90.0% → 100% |
+| Specificity (= 1 − ME) | 45/52 = 86.5% | [74.7%, 93.3%] | — | — | 97.9% → 86.5% |
+| Categorical agreement | 90/97 = 92.8% | [85.8%, 96.5%] | — | — | 94.3% → 92.8% |
+| Abstention (uncharacterised) | 1/98 = 1.0% | [0.2%, 5.6%] | ≤30% | ✓ | 11.2% → 1.0% |
+
+**Pre-registered verdict: FAIL** — but on the *opposite* axis from v1. The HS3 extension did exactly
+what the projection predicted: **VME collapsed 10% → 0%** (the two W691L misses B19617/B19618 and the
+M690I miss B21978 are now correctly detected; the pre-committed VME projection of 2.5% materialised,
+in fact better). But the widened HS1 panel over-calls: **ME rose 2.1% → 13.5%**, above the ≤5% bar.
+
+## What it means — D642Y is not a reliable resistance marker in this cohort (a biological ceiling)
+
+The 7 major errors are **genotype-correct but phenotype-discordant** — the caller read each genome
+right; the tagged position just does not predict the phenotype:
+
+- **5 of 7 are D642Y** (B20464, B20681, B20689, B20702, B20704), all phenotypically **susceptible**.
+  Across the whole benchmark, D642Y carriers split **2 R / 5 S** — a ~29% positive predictive value.
+  There is **no genotype rule that wins**: tag D642Y and you get 5 major errors; drop it and its 2
+  resistant carriers (B20717, B21114, which carry *only* D642Y) become very-major misses (VME → 4.4%,
+  which also fails). Genotype alone cannot separate D642Y's R from S carriers.
+- **1 M690I** (B20326, S) — the same HS3 position that recovered a true VME miss (B21978, R) also
+  over-calls one susceptible carrier: M690I splits 1 R / 1 S here.
+- **1 S639Y** (B20673, S) — a single discordant carrier of an otherwise-reliable core marker (every
+  other S639F/P/Y isolate is R); irreducible genotype↔phenotype noise, not a panel defect.
+
+**Convergent, independent falsification of D642Y.** The v2 anti-circularity rule pinned D642Y to
+literature *independent* of this benchmark (CDC EID 25-0760). The benchmark then independently rejects
+it on **two** axes: (a) its expert `expected_panel` column lists **`-` (wild-type)** for every D642Y
+carrier — the authors do not count D642Y as a resistance panel marker — and (b) 5/7 carriers are
+phenotypically susceptible. This is the anti-circularity discipline working as designed: an
+independently-pinned marker, tested against held-out truth, failed.
+
+**Concordance footnote (not a regression of existing calls).** Graded against the *narrow* S639-only
+`expected_panel`, the v2 caller's token specificity drops to 75.4% (15 FP) — but every one of those
+"FP" is a v2-*new* marker (D642Y/F635/W691L/R1354S/M690I) that the benchmark's narrow panel scores as
+`-`; **all 36 original S639 calls remain 100% concordant**. The v2 caller is a broader panel than the
+concordance truth set, so that specificity number reflects truth-set scope, not a broken call. The
+clinically meaningful judgment is the **phenotype** arm above.
+
+## Bottom line for the clinical gate
+
+Rung A stays a **measured NO-GO** for echinocandin — but the reason has moved from *under-detection*
+(v1 VME) to *over-calling* (v2 ME), and the over-call is a **biological ceiling, not a coverage gap**:
+on this cohort no FKS1-genotype panel clears both the VME and ME bars simultaneously, because D642Y
+(and, weakly, M690I) carriers are phenotypically split. More markers cannot fix this; it is the limit
+of a genotype→verdict engine against phenotype for these positions. The honest intended-use claim
+narrows accordingly (detection-only over *validated, high-PPV* markers — i.e. the S639/W691 core —
+explicitly excluding low-PPV positions like D642Y), which is a **new pre-registration**, not a silent
+panel edit.
+
+---
+
+# v1 (superseded) — narrow S639-only panel
+
 ## Headline — echinocandin arm FAILs the clinical VME bar
 
 > Scored **87** isolates (**40 R / 47 S**); 11 abstained (`UNCHARACTERIZED_VARIANT`), 0 unresolved,
