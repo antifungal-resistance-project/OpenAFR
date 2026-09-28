@@ -54,16 +54,22 @@ _GENE = {
 }
 
 
-def _classify(panel_hits, tokens, uncalled_panel):
+def _classify(detected_hits, tokens, uncalled_panel):
     """The four-value decision, in precedence order.
+
+    `detected_hits` is the set of panel hits that are HIGH-PPV enough to DETECT resistance --
+    for FKS1 (#137 v3) that is the caller's `core_panel_hits` (low-PPV positions like D642Y/M690I
+    are excluded so they abstain rather than over-call); for ERG11 it is simply `panel_hits`
+    (no PPV tier is defined there, so every panel hit detects).
 
     A positive marker wins even if other positions were uncalled (a detected S639F is a
     detected S639F). Otherwise an uncalled *panel* residue forces UNRESOLVED -- we cannot
     complete the marker check, so we must not emit NO_KNOWN_MARKER (rule 4). Only when every
     panel residue was confidently read do we distinguish an uncharacterized non-synonymous
-    change (rule 3) from a clean no-marker result (rule 2).
+    change (rule 3, which now also absorbs a low-PPV-only panel call) from a clean no-marker
+    result (rule 2).
     """
-    if panel_hits:
+    if detected_hits:
         return RESISTANCE_MARKER_DETECTED
     if uncalled_panel:
         return UNRESOLVED
@@ -119,16 +125,28 @@ def build_verdict(gene, call=None, unresolved_reason=None, structural=None,
     uncalled_panel = list(call.get("uncalled_panel") or [])
     panel_set = set(panel_hits)
 
-    verdict = _classify(panel_hits, tokens, uncalled_panel)
+    # PPV tier (#137 v3): when the caller reports `core_panel_hits` (FKS1), only those high-PPV
+    # hits DETECT resistance; a panel hit that is present but not core is low-PPV and abstains.
+    # ERG11 exposes no such key, so every panel hit detects (backward-compatible).
+    has_tier = "core_panel_hits" in call
+    detected_hits = list(call.get("core_panel_hits") or []) if has_tier else panel_hits
+    core_set = set(detected_hits)
 
-    # called_tokens surfaces every non-synonymous change verbatim, each tagged known vs
-    # uncharacterized -- populated even when the overall verdict is UNRESOLVED, so a reader
-    # sees what WAS observed alongside the honest "a panel position could not be read".
-    called_tokens = [
-        {"token": t,
-         "class": "known_resistance" if t in panel_set else "uncharacterized"}
-        for t in tokens
-    ]
+    verdict = _classify(detected_hits, tokens, uncalled_panel)
+
+    # called_tokens surfaces every non-synonymous change verbatim, each tagged by class --
+    # populated even when the overall verdict is UNRESOLVED, so a reader sees what WAS observed
+    # alongside the honest "a panel position could not be read". A panel hit that is known but
+    # LOW-PPV (v3, e.g. D642Y) is labelled 'known_low_ppv' so the reader sees it was recognised
+    # and deliberately not read as resistance -- never silently dropped.
+    def _class(t):
+        if t in core_set:
+            return "known_resistance"
+        if t in panel_set:
+            return "known_low_ppv" if has_tier else "known_resistance"
+        return "uncharacterized"
+
+    called_tokens = [{"token": t, "class": _class(t)} for t in tokens]
 
     if verdict == UNRESOLVED:
         pos = "+".join(str(p) for p in uncalled_panel)

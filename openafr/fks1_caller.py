@@ -146,6 +146,55 @@ RESISTANCE_PANEL = {
     for pos, entry in w.panel.items()
 }
 
+# --- PPV tier (#137 v3) -----------------------------------------------------------------
+# The panel above says WHICH substitutions are known FKS1 changes; it does NOT say how well
+# each one PREDICTS the phenotype. The v2 accuracy re-measure (work/RESULTS_diagnostic_accuracy.md)
+# found two panel positions that are known-but-LOW-PPV -- carriers split R/S rather than tracking
+# resistance -- so tagging them as RESISTANCE_MARKER_DETECTED over-calls (major-error 13.5%, the v2
+# FAIL). v3 splits the panel into two PPV tiers so the verdict can DETECT the high-PPV core and
+# honestly ABSTAIN (UNCHARACTERIZED_VARIANT) on the low-PPV positions rather than over-call them.
+#
+# The tiering is pinned to sources INDEPENDENT of the PMC12323592 benchmark it is scored against
+# (the same anti-circularity rule as the panel itself; work/PREREGISTRATION_diagnostic_accuracy_v3.md):
+#   - D642Y: the CDC EID 25-0760 collection reports it in HS1, but the PMC12323592 authors' own
+#     expert panel scores D642Y carriers as `-` (wild-type) -- an independent expert judgement that
+#     it is not a resistance-defining marker -- so it enters the LOW-PPV tier.
+#   - M690I: an HS3 change reported as phenotype-uncertain (a single / unresolved association in the
+#     source literature, not an established resistance marker), so it too is LOW-PPV.
+# Every other panel substitution (F635C/Y, S639F/P/Y HS1; R1354S HS2; W691L HS3) is a canonical
+# echinocandin-resistance hotspot substitution with consistent R association (Perlin FKS1 HS1;
+# W691L CRISPR-confirmed, AAC 2023 aac.00423-23) and stays in the CORE tier.
+#
+# Tokens are still emitted and panel-tagged EXACTLY as before (is_panel_token unchanged, so
+# prevalence/emergence counts are untouched); only the verdict DISPOSITION of a low-PPV-only call
+# changes, and only in openafr/verdict.py.
+LOW_PPV_PANEL = {642: {"Y"}, 690: {"I"}}
+
+
+def panel_tier(token):
+    """PPV tier of a panel token: 'core' | 'low_ppv', or None if it is not a panel token.
+
+    'core'    -- a high-PPV resistance marker; drives RESISTANCE_MARKER_DETECTED.
+    'low_ppv' -- a known-but-low-PPV position (D642Y, M690I); the verdict layer treats a
+                 low-PPV-only call as UNCHARACTERIZED_VARIANT (honest abstain), never as
+                 detected resistance. See LOW_PPV_PANEL for the independent pinning.
+    """
+    m = _TOKEN_RE.match((token or "").strip())
+    if not m:
+        return None
+    wt, pos, mut = m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+    entry = RESISTANCE_PANEL.get(pos)
+    if not (entry and wt == entry[0] and mut in entry[1]):
+        return None
+    if mut in LOW_PPV_PANEL.get(pos, set()):
+        return "low_ppv"
+    return "core"
+
+
+def is_core_panel_token(token):
+    """True if `token` is a CORE-tier (high-PPV) panel substitution (see panel_tier)."""
+    return panel_tier(token) == "core"
+
 
 class ReferenceError(ValueError):
     """The reference sequence is missing, malformed, or fails its numbering check."""
@@ -280,7 +329,7 @@ def call_window(window, consensus_window_nt, reference=None):
             f"({window.start_res}-{window.end_res}) -- indel in window, out of scope"
         )
     iso_win = translate(seq)
-    tokens, panel_hits, uncalled = [], [], []
+    tokens, panel_hits, core_panel_hits, uncalled = [], [], [], []
     n_covered = 0
     for i, (r, o) in enumerate(zip(ref_win, iso_win)):
         pos = window.start_res + i
@@ -295,6 +344,8 @@ def call_window(window, consensus_window_nt, reference=None):
         entry = window.panel.get(pos)
         if entry and r == entry[0] and o in entry[1]:
             panel_hits.append(tok)
+            if is_core_panel_token(tok):   # high-PPV tier -> drives RESISTANCE_MARKER_DETECTED
+                core_panel_hits.append(tok)
 
     if uncalled:
         status = "partial"
@@ -304,6 +355,7 @@ def call_window(window, consensus_window_nt, reference=None):
         status = "wild-type"
     return {
         "status": status, "tokens": tokens, "panel_hits": panel_hits,
+        "core_panel_hits": core_panel_hits,
         "uncalled_positions": uncalled, "refused": None,
         "n_covered": n_covered, "n_residues": window.n_residues,
     }
@@ -326,16 +378,18 @@ def call_windows(window_seqs, reference=None):
         if name not in window_seqs or window_seqs.get(name) is None:
             windows[name] = {
                 "status": "missing", "tokens": [], "panel_hits": [],
+                "core_panel_hits": [],
                 "uncalled_positions": [], "refused": None,
                 "n_covered": 0, "n_residues": w.n_residues,
             }
         else:
             windows[name] = call_window(w, window_seqs[name], reference=reference)
 
-    tokens, panel_hits, uncalled_panel = [], [], []
+    tokens, panel_hits, core_panel_hits, uncalled_panel = [], [], [], []
     for name, res in windows.items():
         tokens.extend(res["tokens"])
         panel_hits.extend(res["panel_hits"])
+        core_panel_hits.extend(res.get("core_panel_hits") or [])
         for p in res["uncalled_positions"]:
             if p in RESISTANCE_PANEL:
                 uncalled_panel.append(p)
@@ -343,6 +397,7 @@ def call_windows(window_seqs, reference=None):
     return {
         "tokens": sorted(tokens, key=key),
         "panel_hits": sorted(panel_hits, key=key),
+        "core_panel_hits": sorted(core_panel_hits, key=key),
         "uncalled_panel": sorted(uncalled_panel),
         "windows": windows,
     }

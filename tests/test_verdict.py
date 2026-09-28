@@ -114,3 +114,47 @@ def test_unknown_gene_rejected():
         pass
     else:
         raise AssertionError("expected ValueError for unknown gene")
+
+
+# --- PPV tier: FKS1 v3 (#137) -------------------------------------------------
+# When the FKS1 caller reports `core_panel_hits`, only those high-PPV hits DETECT resistance;
+# a panel hit that is present but not core (D642Y, M690I) abstains rather than over-calls.
+
+def _fks1_call(tokens=(), panel_hits=(), core_panel_hits=(), uncalled_panel=()):
+    return {"tokens": list(tokens), "panel_hits": list(panel_hits),
+            "core_panel_hits": list(core_panel_hits), "uncalled_panel": list(uncalled_panel)}
+
+
+def test_core_panel_hit_detects_resistance():
+    out = v.echinocandin_verdict(
+        _fks1_call(tokens=["S639F"], panel_hits=["S639F"], core_panel_hits=["S639F"]))
+    assert out["verdict"] == v.RESISTANCE_MARKER_DETECTED
+    assert out["called_tokens"] == [{"token": "S639F", "class": "known_resistance"}]
+
+
+def test_low_ppv_only_hit_abstains_not_detects():
+    # D642Y is a tagged panel hit but low-PPV -> UNCHARACTERIZED_VARIANT (honest abstain),
+    # NOT resistance-detected and NOT a susceptibility claim. The token is still surfaced,
+    # labelled 'known_low_ppv' so the reader sees it was recognised and deliberately not read
+    # as resistance.
+    out = v.echinocandin_verdict(
+        _fks1_call(tokens=["D642Y"], panel_hits=["D642Y"], core_panel_hits=[]))
+    assert out["verdict"] == v.UNCHARACTERIZED_VARIANT
+    assert out["called_tokens"] == [{"token": "D642Y", "class": "known_low_ppv"}]
+
+
+def test_core_plus_low_ppv_still_detects():
+    # A carrier of both a core marker and a low-PPV position still detects resistance.
+    out = v.echinocandin_verdict(
+        _fks1_call(tokens=["S639F", "D642Y"], panel_hits=["S639F", "D642Y"],
+                   core_panel_hits=["S639F"]))
+    assert out["verdict"] == v.RESISTANCE_MARKER_DETECTED
+    classes = {ct["token"]: ct["class"] for ct in out["called_tokens"]}
+    assert classes == {"S639F": "known_resistance", "D642Y": "known_low_ppv"}
+
+
+def test_erg11_has_no_tier_every_panel_hit_detects():
+    # ERG11 exposes no core_panel_hits key -> backward-compatible: every panel hit detects.
+    out = v.azole_verdict(_call(tokens=["Y132F"], panel_hits=["Y132F"]))
+    assert out["verdict"] == v.RESISTANCE_MARKER_DETECTED
+    assert out["called_tokens"] == [{"token": "Y132F", "class": "known_resistance"}]

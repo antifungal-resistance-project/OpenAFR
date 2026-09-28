@@ -30,6 +30,8 @@ An isolate yields one verdict per drug-class it was typed for: **azole** (from E
   called_tokens: [                                     # verbatim, non-synonymous only
     { token: "Y132F", class: "known_resistance" },
     { token: "T123I", class: "uncharacterized" },      # the honest "I don't know" slot (#135)
+    { token: "D642Y", class: "known_low_ppv" },        # FKS1: recognised but low-PPV (#137 v3);
+                                                       #   abstains, never read as resistance
     ...
   ],
   verdict:         <one of the four enum values below>,
@@ -42,13 +44,17 @@ An isolate yields one verdict per drug-class it was typed for: **azole** (from E
 
 ## The verdict enum (exactly four values — categorical, never a probability)
 
-1. **`RESISTANCE_MARKER_DETECTED`** — resolved, and ≥1 `called_token` is a **known-resistance
+1. **`RESISTANCE_MARKER_DETECTED`** — resolved, and ≥1 `called_token` is a **high-PPV known-resistance
    panel** substitution. ERG11 panel: V125A, F126L, Y132F, K143R (`RESISTANCE_PANEL` in
-   `recaller.py`). FKS1 HS1 panel: S639F, S639P, S639Y (`fks1_caller.py`).
+   `recaller.py`). FKS1 **core (high-PPV)** panel: F635C/Y, S639F/P/Y (HS1); R1354S (HS2); W691L (HS3)
+   (`fks1_caller.py`; see the PPV tier below).
 2. **`UNCHARACTERIZED_VARIANT`** — resolved, a non-synonymous change is present but **none** is a
-   known-resistance panel token. This is the explicit **"I don't know"** verdict — surfaced, not
-   hidden. #135 attaches a mechanism-based structural best-guess for ERG11 here (see below); the
-   verdict itself stays uncharacterized until a variant is promoted into the panel table.
+   high-PPV known-resistance panel token. This is the explicit **"I don't know"** verdict — surfaced,
+   not hidden. #135 attaches a mechanism-based structural best-guess for ERG11 here. It **also** absorbs
+   a FKS1 call whose only panel hit is a **low-PPV** position (#137 v3): D642Y and M690I are recognised
+   FKS1 changes whose carriers split R/S, so they abstain here (`class: "known_low_ppv"`) rather than
+   over-call resistance — an independently-pinned tiering (the benchmark's expert panel scores D642Y
+   wild-type), measured to clear the accuracy bar in `work/RESULTS_diagnostic_accuracy.md` (v3).
 3. **`NO_KNOWN_MARKER`** — resolved, and only wild-type / no panel token in the resistance
    windows. **This is NOT a susceptibility call** (see the load-bearing rule below).
 4. **`UNRESOLVED`** — the window could not be called honestly (coverage gap, in-window indel

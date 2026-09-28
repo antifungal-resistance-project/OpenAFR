@@ -226,6 +226,41 @@ def test_non_panel_substitution_in_hs1_emitted_not_tagged(ref):
     assert res["panel_hits"] == []
 
 
+# --- PPV tier (#137 v3) -----------------------------------------------------
+
+def test_panel_tier_splits_core_from_low_ppv():
+    # Core high-PPV markers across the windows.
+    for tok in ("F635C", "F635Y", "S639F", "S639P", "S639Y", "R1354S", "W691L"):
+        assert F.panel_tier(tok) == "core", tok
+        assert F.is_core_panel_token(tok)
+    # The two known-but-low-PPV positions demoted in v3 (independent of the benchmark).
+    for tok in ("D642Y", "M690I"):
+        assert F.panel_tier(tok) == "low_ppv", tok
+        assert F.is_panel_token(tok)            # still a tagged panel token (prevalence intact)
+        assert not F.is_core_panel_token(tok)   # but not high-PPV -> abstains at the verdict layer
+    # Non-panel changes have no tier at all.
+    assert F.panel_tier("F635G") is None
+    assert F.panel_tier("W691C") is None
+
+
+def test_core_panel_hits_excludes_low_ppv(ref):
+    # A core hit is both a panel hit AND a core hit.
+    mut = _mutate_codon(ref[0], 639, "TTT")             # S639F
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["panel_hits"] == ["S639F"]
+    assert res["core_panel_hits"] == ["S639F"]
+    # D642Y is a panel hit but NOT a core hit -> it will abstain, not detect.
+    mut = _mutate_codon(ref[0], 642, "TAT")             # D642Y
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["panel_hits"] == ["D642Y"]
+    assert res["core_panel_hits"] == []
+    # M690I likewise: tagged, but low-PPV.
+    mut = _mutate_codon(ref[0], 690, "ATT")             # M690I
+    res = F.call_windows(_windows(mut), reference=ref)
+    assert res["panel_hits"] == ["M690I"]
+    assert res["core_panel_hits"] == []
+
+
 def test_substitutions_across_windows_sort_by_position(ref):
     mut = _mutate_codon(ref[0], 1354, "AGT")            # R1354S (HS2)
     mut = _mutate_codon(mut, 639, "TTT")                # S639F (HS1)
