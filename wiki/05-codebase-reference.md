@@ -6,8 +6,9 @@ fit, read the pipeline deep dives ([track 1](03-drug-discovery-pipeline.md),
 
 *The repo has grown a lot: track 1 now has a whole **candidate-confidence layer** (a stack of
 per-candidate axes fused into an A/B/C dossier) and a **battery of pre-registered validation
-gates** beyond the original run-2 holdout; track 2 now has the ERG11 re-caller **built and run**
-plus a parallel **FKS1/echinocandin detection** track. This page is the current inventory.*
+gates** beyond the original run-2 holdout; track 2 now has both re-callers **built, run, and
+certified** plus a **genotype→verdict diagnostics engine** layered on top. This page is the
+current inventory.*
 
 ---
 
@@ -30,7 +31,7 @@ injectable `opener` in the library) and are honestly labelled as untested-in-CI.
 
 ---
 
-## `openafr/` — the library (28 modules)
+## `openafr/` — the library (35 modules)
 
 ### Shared core
 
@@ -74,6 +75,24 @@ injectable `opener` in the library) and are honestly labelled as untested-in-CI.
 | `recaller.py` | 2 | **ERG11 re-caller core:** consensus CDS → substitution tokens. Deterministic, hash-pinned B8441 reference, four honesty constraints. (The reads→consensus half lives in `scripts/recall_erg11.py`.) |
 | `fks1_caller.py` | 2 | **FKS1 re-caller core** (v2): *windowed* consensus → echinocandin-resistance tokens (HS1 ≈ S639, HS2 ≈ R1354). Detection-only; same honesty bar as `recaller.py`, applied per hot-spot window. |
 | `runlog.py` | 2 | Append-only provenance log for the re-callers' un-reproducible tool/network runs. Best-effort; never breaks the run. |
+
+### Track 2 — the genotype→verdict diagnostics engine
+
+A layer over the certified callers: it turns a typed genotype into one **categorical resistance
+verdict per drug-class** (`RESISTANCE_MARKER_DETECTED` / `UNCHARACTERIZED_VARIANT` /
+`NO_KNOWN_MARKER` / `UNRESOLVED`), RUO (research-use-only), never a probability. The contract is
+`docs/DIAGNOSTIC_VERDICT_CONTRACT.md`; the clinical-path decision doc is
+`docs/DIAGNOSTIC_GO_NO_GO.md`.
+
+| File | What it is |
+|---|---|
+| `interpret.py` | **The single genotype→verdict entrypoint.** `interpret(gene, …)` takes raw input (consensus CDS / FKS1 windows / a variant token list), routes it through the callers, and returns the verdict object. Turns a caller refusal into `UNRESOLVED`; fills the ERG11 structural best-guess. |
+| `verdict.py` | The **verdict contract**: maps caller token/resolution output to the four-value enum, tags high-PPV vs low-PPV panel hits, stamps the RUO scope string. Concordance-only — no probability field. |
+| `concordance.py` | Grades caller tokens against an **external truth set** (`concordance.evaluate`): the certification vs the 98-genome PMC12323592 benchmark. Excluded-not-guessed discipline. |
+| `accuracy.py` | Grades **verdicts against measured phenotype** in CLSI error terms (very-major / major error) vs a pre-registration frozen before any isolate was scored. |
+| `calibration.py` | The **calibrated-probability track** — still blocked on non-public data. No probability enters the verdict until this produces a measured, held-out reliability. |
+| `report.py` | Renders one isolate's verdicts to `render_json()` / `render_markdown()`. **Renders, never re-decides**; bakes in the RUO no-clinical-claim disclaimer; surfaces the "I don't know" verdict up top. |
+| `weather.py` | The **resistance weather report**: a public day-0 page summarising the surveillance feed. Rendered by `scripts/render_weather.py`, published by `.github/workflows/weather.yml`. |
 
 ## `scripts/` — the entry points
 
@@ -165,15 +184,25 @@ injectable `opener` in the library) and are honestly labelled as untested-in-CI.
 | `deliver_alert.py` | Delivery CLI (`demo`, `--markdown`, `--gene {erg11,fks1}` with its own digest/state). |
 | `backtest_earlywarning.py` | Backtest CLI: `mechanism`, `replay`, `prevalence`, plus the H1 arrival budget. |
 | `recall_erg11.py` | ERG11 re-caller CLI. `call` = deterministic. `plan` = offline preflight. `recall`/`fill` = reads→consensus orchestration (external binaries). **Run: n=199 representative fill, 80.4% azole event frequency.** |
-| `recall_fks1.py` | FKS1 re-caller CLI (v2): windowed `call`/`recall`/`fill`/`prevalence`, tool-gated like ERG11. Prevalence still "NOT MEASURED YET" (awaiting a real fill). |
+| `recall_fks1.py` | FKS1 re-caller CLI: windowed `call`/`recall`/`fill`/`prevalence`, tool-gated like ERG11. **Run: echinocandin event frequency 2.3%; caller certified 100% token-accurate vs the 98-genome PMC12323592 benchmark.** |
 | `recaller_sanity.py` / `recaller_sanity_fks1.py` | Sanity-run each re-caller against a fixed published known-genotype truth set (positive controls). |
 | `cloud_recaller_setup.sh` | Provision a fresh Linux/x86_64 host with the bioconda toolchain for the re-callers' real runs. |
 | `README_recaller_sanity.md` | Notes for the sanity run. |
 
+### Track 2 — the diagnostics engine's validators
+
+| Script | Grades |
+|---|---|
+| `validate_fks1_concordance.py` | The FKS1 caller's tokens vs the 98-genome PMC12323592 truth set — the certification (100% sensitivity/specificity/identity). |
+| `validate_diagnostic_accuracy.py` | The engine's **verdicts** vs measured echinocandin phenotype, in very-major / major error terms, against a frozen pre-registration. The echinocandin arm PASSES (VME 0%, ME 2.2%). |
+| `harvest_diagnostic_accuracy_v3.py` | Builds the v3 genotype+phenotype accuracy fixture (the PPV-tier panel) the validator grades against. |
+| `validate_calibration.py` | The (still-blocked) calibrated-probability gate — no probability is emitted until it produces a measured, held-out reliability. |
+| `render_weather.py` | Renders the public resistance weather report from the surveillance feed (published by `.github/workflows/weather.yml`). |
+
 ## `tests/`
 
 Every test is a **known-answer** test — it locks a specific numeric or structural output so a
-change that alters behavior fails loudly. 60 test files. Highlights, by area:
+change that alters behavior fails loudly. ~69 test files. Highlights, by area:
 
 | Area | Tests |
 |---|---|
@@ -184,10 +213,11 @@ change that alters behavior fails loudly. 60 test files. Highlights, by area:
 | Confidence axes | `test_admet.py`, `test_synth.py`, `test_cyp_offtarget.py`, `test_precedent.py`, `test_check_precedent.py`, `test_filedrawer.py`, `test_candidate_stereo.py`, `test_candidate_protomer.py`, `test_candidate_ensemble.py`, `test_pose_convergence.py`, `test_candidate_resistance.py`, `test_scorecard.py`, `test_shortlist_confidence.py`, `test_coordinator.py`, `test_dossier.py`, `test_repro.py` |
 | Track 2 | `test_earlywarning_snapshot.py`, `test_emergence.py`, `test_mapping.py`, `test_structural.py`, `test_alert.py`, `test_delivery.py`, `test_backtest.py`, `test_recaller.py`, `test_recall_orchestration.py`, `test_recall_preflight.py`, `test_recall_fill_logging.py`, `test_runlog.py` |
 | FKS1 (v2) | `test_fks1_caller.py`, `test_fks1_alert.py`, `test_fks1_delivery.py`, `test_fks1_prevalence.py`, `test_recall_fks1_orchestration.py` |
+| Diagnostics engine | `test_interpret.py`, `test_verdict.py`, `test_concordance.py`, `test_accuracy.py`, `test_accuracy_harvest.py`, `test_accuracy_harvest_v3.py`, `test_calibration.py`, `test_report.py`, `test_weather.py` |
 
-CI runs three workflows (`.github/workflows/`): `tests.yml` (with a coverage gate — the openafr
-core sits at ~97%), `repro.yml` (the drift harness), and `earlywarning.yml` (the scheduled
-surveillance run).
+CI runs four workflows (`.github/workflows/`): `tests.yml` (with a coverage gate — the openafr
+core sits at ~97%), `repro.yml` (the drift harness), `earlywarning.yml` (the scheduled
+surveillance run), and `weather.yml` (publishes the resistance weather report).
 
 ## `data/`
 
@@ -226,6 +256,8 @@ project's credibility:
   - `RESULTS_candidate_shortlist.md` — the worked repurposing shortlist; `RESULTS_repro.md` — the drift harness.
   - `RESULTS_auris_Y132F.md` — the only `measured` structural verdict (track 2).
   - `RESULTS_prevalence.md` — **the measured azole event frequency (80.4%)**, the number track 2 was gated on; `RESULTS_backtest.md` — the pre-registered credibility test.
+  - `RESULTS_fks1_prevalence.md` — the measured **echinocandin event frequency (2.3%)**; `RESULTS_fks1_concordance.md` — the FKS1 caller **certified** vs the 98-genome benchmark.
+  - `RESULTS_diagnostic_accuracy.md` — the diagnostics engine's echinocandin **verdict accuracy** (VME 0%, ME 2.2%, PASS); `PREPRINT_diagnostics_engine.md` — the full writeup, including the v1/v2 FAILs.
   - `RESULTS_earlywarning_spike.md` — the "NCBI has no resistance calls" discovery.
 - **Runbooks / methods / spec:** `RUNBOOK_recaller_run.md`, `RUNBOOK_fks1_run.md`,
   `RUNBOOK_baselines_multi.md`, `METHODS_file_drawer.md`, `SPEC_candidate_dossier.md`,

@@ -68,11 +68,11 @@ how easy it is to fool yourself in this field.
   works on held-out known drugs              Reuses Track 1's structural model of
   before trusting it.                        the pocket to give each mutation a
                                              "structural so-what."
-  STATUS: validated core; product now        STATUS: full scaffold built & tested;
-  scoped to novel-chemotype triage; a         ERG11 re-caller BUILT & RUN (80.4%
-  candidate-confidence/dossier layer on       azole event frequency). That baseline
-  top. Needs a wet-lab partner (the one       redirected the track to a parallel
-  critical open dependency).                  FKS1/echinocandin DETECTION track.
+  STATUS: validated core; product now        STATUS: scaffold built & tested; both
+  scoped to novel-chemotype triage; a         re-callers RUN & CERTIFIED — now a
+  candidate-confidence/dossier layer on       genotype→verdict engine whose echino-
+  top. Needs a wet-lab partner (the one       candin arm PASSES a pre-registered
+  critical open dependency).                  clinical-accuracy bar (VME 0%).
 ```
 
 ### Track 1 — Drug discovery (the validated one)
@@ -111,7 +111,7 @@ layer** (precedent, ADMET, human-CYP liability, coordinator identity, … → an
 
 → Full code-level walkthrough: **[The Drug-Discovery Pipeline](03-drug-discovery-pipeline.md)**
 
-### Track 2 — Early-warning surveillance (built, honestly blocked)
+### Track 2 — Early-warning surveillance + a genotype→verdict engine
 
 A second pipeline watches **NCBI Pathogen Detection** (a public feed of pathogen genome
 metadata) for *C. auris* isolates, and tries to flag *emerging* azole-resistance mutations
@@ -129,14 +129,21 @@ load-bearing discovery:
 > `AMR_genotypes` field is empty for all ~29,000 isolates.
 
 So the resistance signal has to be **manufactured by this project**, from the raw reads, via
-an **ERG11 re-caller** (reads → resistance mutation call). That re-caller is now **built and
-run**: a representative sample was re-called on a real NCBI snapshot, measuring the number the
-track was gated on — the **azole event frequency = 80.4%** (Wilson 95% CI 74.3–85.3%). That
-result *redirected* the track: with azole resistance near-saturated at baseline, azole
-*emergence* is a weak early-warning signal, so a parallel **FKS1/echinocandin detection track**
-was built (honestly detection-only — echinocandins coordinate no metal, so the CYP51 structural
-moat does not transfer). Fully *validating* a warning still needs a wet-lab-anchored backtest
-truth set, so nothing over-claims — but the machinery works and the deliverable is measured.
+**re-callers** (reads → resistance mutation call). Both are now **built, run, and certified**:
+
+- **ERG11 (azole)** measured an **azole event frequency of 80.4%** (Wilson 95% CI 74.3–85.3%) —
+  near-saturated, which makes azole *emergence* a weak early-warning signal and *redirected* the
+  track to echinocandins.
+- **FKS1 (echinocandin)** measured a **2.3% event frequency** (the useful, non-saturated regime)
+  and is **certified 100% token-accurate** against a published 98-genome benchmark.
+
+With trustworthy callers, they were wrapped into a **genotype→verdict diagnostics engine** — a
+typed genotype in, one categorical resistance verdict per drug-class out, RUO (research use
+only). Its **echinocandin arm clears a pre-registered clinical-accuracy bar** (very-major error
+0%, major error 2.2%, at a declared 10.2% abstention). The azole arm remains underpowered and a
+calibrated-probability layer is blocked on non-public data — both carried as declared limits, not
+glossed. The FKS1 side claims no structural verdict (echinocandins coordinate no metal, so the
+CYP51 moat does not transfer).
 
 → Full code-level walkthrough: **[The Early-Warning Pipeline](04-early-warning-pipeline.md)**
 
@@ -235,11 +242,13 @@ These patterns show up in *both* tracks. Recognizing them makes every file easie
   validated as a *drug* until someone puts candidates on real fungus. A high rank is a
   hypothesis for a wet lab, never a hit.
 
-- **Track 2:** the whole scaffold is built and tested, and the **ERG11 re-caller has been run**
-  (80.4% azole event frequency measured). That baseline redirected the track to a parallel
-  **FKS1/echinocandin detection** effort. What remains open: a real FKS1 `fill` (same
-  Linux/x86 + bioinformatics-tools wall) and a wet-lab-anchored backtest truth set for a fully
-  validated warning. See [TODOS.md](../TODOS.md) for the exact run order.
+- **Track 2:** the whole scaffold is built and tested; **both re-callers have been run and
+  certified** (ERG11 80.4% / FKS1 2.3% event frequency; FKS1 100% token-accurate vs a published
+  benchmark), and they now feed a **genotype→verdict diagnostics engine** whose echinocandin arm
+  **passes a pre-registered clinical-accuracy bar** (VME 0%, ME 2.2%). What remains open: the
+  azole verdict arm is underpowered, and the calibrated-probability track is blocked on the
+  absence of a public paired genotype+MIC collection. See [TODOS.md](../TODOS.md) for the run
+  order.
 
 ---
 

@@ -108,19 +108,23 @@ for emerging *C. auris* azole-resistance mutations and give each flagged mutatio
 watches resistance evolve against the drugs we have. The structural verdict is what keeps it
 from being a bare novelty feed — it reuses track 1's moat rather than starting a new one.
 
-**Honest status — scaffold complete, re-caller run, track redirected.** The full chain
-(snapshot → emergence → mapping → structural so-what → alert → scheduled delivery) is built,
+**Honest status — scaffold built, both re-callers run, now a genotype→verdict engine.** The full
+chain (snapshot → emergence → mapping → structural so-what → alert → scheduled delivery) is built,
 tested, and pulls real NCBI data. The killer finding still holds: **NCBI runs no AMR pipeline on
 *C. auris*** — it's a metadata + genome-pointer feed, not a resistance feed — so the resistance
-signal must be manufactured by *us* from SRA reads, via an **ERG11 re-caller**. That re-caller
-has now been **built and run** on a representative real sample, measuring the number the track
-was gated on: the **azole event frequency = 80.4%** (Wilson 95% CI 74.3–85.3%, n=199;
-[work/RESULTS_prevalence.md](work/RESULTS_prevalence.md)). That result *redirected* the track:
-azole resistance is near-saturated at baseline, so azole *emergence* is a weak early-warning
-signal — and a parallel **FKS1/echinocandin detection track** was built (honestly detection-only;
-echinocandins coordinate no metal, so the CYP51 structural moat does not transfer). Fully
-*validating* a warning still needs a wet-lab-anchored backtest truth set, so nothing over-claims
-— but the scaffold is real, the deliverable is measured, and the gaps are named precisely.
+signal must be manufactured by *us* from SRA reads, via re-callers. The **ERG11 re-caller** was
+run on a representative real sample and measured the **azole event frequency = 80.4%** (Wilson
+95% CI 74.3–85.3%, n=199; [work/RESULTS_prevalence.md](work/RESULTS_prevalence.md)) — near-saturated,
+which makes azole *emergence* a weak early-warning signal and *redirected* the track to
+echinocandins. The **FKS1 re-caller** was then run and certified: **echinocandin event frequency
+2.3%** (the useful, non-saturated regime) and **token-accuracy 100%** against a published 98-genome
+benchmark. With trustworthy callers, they were wrapped into a **genotype→verdict diagnostics
+engine** — a typed genotype in, one categorical resistance verdict per drug-class out, RUO
+(research-use-only). Its **echinocandin arm clears a pre-registered clinical-accuracy bar**
+(very-major error 0%, major error 2.2%, at a declared 10.2% abstention). The azole arm remains
+underpowered and a calibrated-probability layer is blocked on non-public data — both carried as
+declared limits, not glossed. Echinocandins coordinate no metal, so the CYP51 structural moat
+does not transfer and the FKS1 side claims no structural verdict.
 
 ## Foundation scope — diagnostics and the rest of resistance?
 
@@ -136,17 +140,23 @@ echinocandins coordinate no metal, so the CYP51 structural moat does not transfe
   Spreading a small effort across both before either has a validated result or a partner
   is how good projects stall.
 - **So:** let the *mission* be broad (all of antifungal resistance); keep the *active
-  project* narrow until it reaches (a) a validated wet-lab hit or (b) a wet-lab
-  collaborator. Diagnostics becomes the natural *second* project afterward.
+  project* narrow, adding only work that reuses the competency we already have. The
+  **genotype→verdict diagnostics engine** is exactly that kind of adjacency: it is a
+  *computational interpretation layer* over the certified re-callers — genotype in, categorical
+  RUO verdict out — not a wet assay, not a cleared test. It opened **no** new competency (no
+  bench, no regulatory), which is why it was in scope; the wet-lab/clinical diagnostic (an LDT,
+  clinical validation, regulatory) remains the natural *later* project, gated on a partner.
 - **Bridge:** discovery and diagnostics share a natural partner — a clinical/mycology wet
   lab. The relationship that tests your candidates could be the one that later opens the
   diagnostics work. Sequential, not competing.
-- **Where the early-warning track fits:** surveillance (the second track above) is the one
-  adjacency taken on before a validated hit, defensible *because it reuses track 1's structural
-  moat* rather than opening a new competency — not the diagnostics expansion this section
-  cautions against. It has taken on exactly **one** data-justified widening: **FKS1/echinocandin
-  detection**, opened only *after* the ERG11 re-caller measured an ~80% azole baseline that makes
-  azole emergence a weak signal. That FKS1 half is kept honest as **detection-only** — no
-  structural verdict, since echinocandins coordinate no metal and the moat does not transfer.
-  Everything past that (a structural FKS1 verdict, TAC1B/ERG3, diagnostics) stays out of scope
-  until the current work is validated (see [TODOS.md](TODOS.md)).
+- **Where the early-warning track fits:** surveillance (the second track above) is the
+  adjacency taken on before a validated drug hit, defensible *because it reuses existing
+  competency* — the same callers, the same honesty discipline — rather than opening a wet-lab or
+  regulatory competency. Its data-justified widenings, in order: **FKS1/echinocandin detection**
+  (opened only *after* the ERG11 re-caller measured an ~80% azole baseline that makes azole
+  emergence a weak signal), then the **genotype→verdict engine** layered on the certified
+  callers. The FKS1 side stays honest as detection-only — no structural verdict, since
+  echinocandins coordinate no metal and the moat does not transfer. Everything past that (a
+  structural FKS1 verdict, TAC1B/ERG3 coverage, and any *clinical* diagnostic — an LDT,
+  regulatory validation) stays out of scope until the current work is validated (see
+  [TODOS.md](TODOS.md)).
