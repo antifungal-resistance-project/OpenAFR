@@ -419,6 +419,19 @@ state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/RE
 `test_emergence`, `test_mapping`, `test_structural`, `test_alert`, `test_delivery`,
 `test_backtest`).
 
+> **Update — the FKS1 fill is measured and the callers are now a resistance-interpretation
+> engine.** The echinocandin event frequency is measured at 2.3% (Wilson 95% CI 1.2–4.1%,
+> low and non-saturated, [work/RESULTS_fks1_prevalence.md](work/RESULTS_fks1_prevalence.md)),
+> and the FKS1 caller is certified token-accurate against the 98-isolate PMC12323592 benchmark
+> (sensitivity/specificity/identity all 100%,
+> [work/RESULTS_fks1_concordance.md](work/RESULTS_fks1_concordance.md)). The callers were then
+> wrapped into a genotype→verdict **diagnostics engine** whose echinocandin *verdict accuracy*
+> now PASSES a pre-registered clinical bar under a narrowed high-PPV detection claim (very-major
+> error 0%, major error 2.2%). The full write-up — including the v1 under-detection FAIL and v2
+> over-calling FAIL that preceded it — is
+> [work/PREPRINT_diagnostics_engine.md](work/PREPRINT_diagnostics_engine.md); the clinical-path
+> decision doc is [docs/DIAGNOSTIC_GO_NO_GO.md](docs/DIAGNOSTIC_GO_NO_GO.md).
+
 ### Try it without NCBI
 
 Each stage has a synthetic `demo` mode so a fresh clone can see the chain fire end to end
