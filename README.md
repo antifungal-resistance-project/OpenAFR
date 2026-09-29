@@ -12,9 +12,11 @@ The repo now holds **two tracks** against the same pathogen and enzyme:
 
 1. **Drug discovery** (the original, validated track) — the geometry-over-docking-score
    triage tool described immediately below.
-2. **Genomic early-warning surveillance** (a newer, honestly-incomplete track) — watching
-   NCBI for emerging *C. auris* azole-resistance mutations and giving each one a structural
-   verdict. See [Second track: genomic early-warning surveillance](#second-track-genomic-early-warning-surveillance).
+2. **Genomic early-warning surveillance** (a newer track) — watching NCBI for emerging
+   *C. auris* resistance mutations, and interpreting an isolate's genotype into a categorical
+   resistance verdict (a genotype→verdict diagnostics engine whose echinocandin arm now clears a
+   pre-registered clinical-accuracy bar). See
+   [Second track: genomic early-warning surveillance](#second-track-genomic-early-warning-surveillance).
 
 Everything from here to that section is about track 1.
 
@@ -64,7 +66,8 @@ conda run -n openafr python scripts/score_molecule.py \
 validated actives' iron-bound band (2.47–2.88 Å). If you see that, the whole pipeline works on
 your machine. To score without docking (triage only, runs anywhere), add `--triage-only`; the
 tool also prints the exact commands to finish a run if `vina`/`obabel` are missing, and never
-fakes a number.
+fakes a number. (The whole front door was itself dogfooded end-to-end on the known azoles —
+[`work/RESULTS_frontdoor_dogfood.md`](work/RESULTS_frontdoor_dogfood.md).)
 
 You can pass a whole library instead of `--smiles`: a `SMILES<TAB>name` file as the first
 argument. Add `--json` to get one machine-readable object on stdout (human text goes to
@@ -236,39 +239,6 @@ every PR (`.github/workflows/repro.yml`) and is documented in
 trees are gitignored and take hours); the harness guarantees nothing that does *not* require
 docking can drift unnoticed.
 
-## Score your own molecule
-
-One command takes a SMILES string through the whole validated pipeline — applicability triage
-→ ligand prep → docking → the nitrogen-to-iron geometry read — and prints an honest verdict.
-No cloud VM: the docking tools (`vina`, `openbabel`) install locally from `environment.yml` on
-Apple Silicon and Linux alike.
-
-```bash
-conda activate openafr
-python scripts/prep_receptor.py                      # once: build work/receptor.pdbqt (gitignored)
-
-# a single molecule (this is voriconazole):
-python scripts/score_molecule.py \
-  --smiles "C[C@@H](C1=NC=NC=C1F)[C@](CN2C=NC=N2)(C3=C(C=C(C=C3)F)F)O" --name voriconazole
-
-# or a whole library file of `SMILES<TAB>name` rows:
-python scripts/score_molecule.py candidates.smi
-
-# just the triage (no docking, runs anywhere rdkit is installed):
-python scripts/score_molecule.py --smiles "<SMILES>" --triage-only
-```
-
-Two honest gates are load-bearing. **(1)** Only molecules the triage puts *inside* the validated
-envelope (in-envelope-novel / near-known) are docked; anything out-of-scope, out-of-domain, or
-unparseable is reported and stopped, never docked — the method makes no claim there. **(2)** If
-the docking tools or a prepared receptor are absent, the geometry read is reported `PENDING`
-with the exact command to finish it; a number is never invented or silently skipped.
-
-Read every geometry readout as a **hypothesis for a wet lab, never a hit**: reaching the iron
-like the validated actives is necessary but *not* sufficient (property-matched decoys reach it
-too — the decoy ceiling), and the durable validated metric is AUC ≈ 0.79. The pipeline was run
-end-to-end on known azoles as a sanity check — see [`work/RESULTS_frontdoor_dogfood.md`](work/RESULTS_frontdoor_dogfood.md).
-
 ## Design notes worth knowing
 
 Two traps this pipeline is explicitly built to avoid, both documented in `work/`:
@@ -368,7 +338,7 @@ published surveillance record — then attaches a **structural so-what** (does f
 still fit the pocket if this spreads?) to each flag. Track 1 finds new drugs; track 2
 watches the enemy evolve against the drugs we have.
 
-### Honest status: scaffold complete, re-caller run, track redirected to FKS1
+### Honest status: scaffold built, both re-callers run, now a genotype→verdict engine
 
 The whole chain is **built, tested, and pulls real NCBI data.** The load-bearing finding, from
 the initial spike ([work/RESULTS_earlywarning_spike.md](work/RESULTS_earlywarning_spike.md)),
@@ -390,11 +360,20 @@ That measurement **redirected the track**. With ~4 of 5 sequenced isolates alrea
 known azole-resistance mutation, azole resistance is near-saturated at baseline, so azole
 *emergence* is a weak early-warning signal — you'd be flagging what is already the norm. The
 genuinely dynamic emergence axis is **echinocandin (FKS1) resistance**, so a parallel **FKS1
-detection track** was built (v2), honestly **detection-only**: echinocandins coordinate no
-metal, so the CYP51/heme-iron structural moat does not transfer, and no structural verdict is
-claimed for FKS1. What *remains* open: a real FKS1 `fill` (same Linux/x86 + bioinformatics-tools
-wall) to measure the echinocandin event frequency, and a wet-lab-anchored backtest truth set for
-a fully *validated* warning. The arrival budget already clears the bar (median 97-day lag from
+track** was built. Echinocandins coordinate no metal, so the CYP51/heme-iron structural moat
+does not transfer — the FKS1 side claims no structural verdict — but its two open numbers have
+since been *measured*:
+
+- **Echinocandin event frequency = 10/443 = 2.3%** (Wilson 95% CI 1.2–4.1%,
+  [work/RESULTS_fks1_prevalence.md](work/RESULTS_fks1_prevalence.md)) — low and non-saturated,
+  the useful regime for surveillance, and the mirror of the near-saturated azole baseline.
+- The FKS1 caller is **certified token-accurate** against a published 98-genome external
+  benchmark (PMC12323592): detection sensitivity and specificity both 100%, exact-token
+  identity 100%, 98/98 resolved, zero false calls
+  ([work/RESULTS_fks1_concordance.md](work/RESULTS_fks1_concordance.md)).
+
+With the callers trustworthy, they were wrapped into a **genotype→verdict diagnostics engine**
+(see the next subsection). The arrival budget already clears the bar (median 97-day lag from
 sample collection to NCBI visibility), and the detector mechanism is proven (fed synthetic calls
 it fires hundreds of days early — [work/RESULTS_backtest.md](work/RESULTS_backtest.md)).
 
@@ -410,7 +389,7 @@ it fires hundreds of days early — [work/RESULTS_backtest.md](work/RESULTS_back
 | delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | delivers only on genuine new news; per-gene digest/state; `.github/workflows/earlywarning.yml` runs it |
 | backtest / validation | `openafr/backtest.py` | `scripts/backtest_earlywarning.py` | the pre-registered credibility test for the whole track |
 | ERG11 re-caller (**run**) | `openafr/recaller.py` | `scripts/recall_erg11.py` | reads → azole call; measured 80.4% event frequency |
-| FKS1 re-caller (v2, **detection-only**) | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin call; windowed hot-spots; no structural verdict |
+| FKS1 re-caller (**run, certified**) | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin call; windowed hot-spots (HS1/HS2/HS3); 2.3% event frequency; no structural verdict |
 
 The initial feasibility probe is `scripts/probe_ncbi_auris.py`. Persistence and delivery
 state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/README.md)
@@ -419,18 +398,50 @@ state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/RE
 `test_emergence`, `test_mapping`, `test_structural`, `test_alert`, `test_delivery`,
 `test_backtest`).
 
-> **Update — the FKS1 fill is measured and the callers are now a resistance-interpretation
-> engine.** The echinocandin event frequency is measured at 2.3% (Wilson 95% CI 1.2–4.1%,
-> low and non-saturated, [work/RESULTS_fks1_prevalence.md](work/RESULTS_fks1_prevalence.md)),
-> and the FKS1 caller is certified token-accurate against the 98-isolate PMC12323592 benchmark
-> (sensitivity/specificity/identity all 100%,
-> [work/RESULTS_fks1_concordance.md](work/RESULTS_fks1_concordance.md)). The callers were then
-> wrapped into a genotype→verdict **diagnostics engine** whose echinocandin *verdict accuracy*
-> now PASSES a pre-registered clinical bar under a narrowed high-PPV detection claim (very-major
-> error 0%, major error 2.2%). The full write-up — including the v1 under-detection FAIL and v2
-> over-calling FAIL that preceded it — is
-> [work/PREPRINT_diagnostics_engine.md](work/PREPRINT_diagnostics_engine.md); the clinical-path
-> decision doc is [docs/DIAGNOSTIC_GO_NO_GO.md](docs/DIAGNOSTIC_GO_NO_GO.md).
+### From callers to a genotype→verdict diagnostics engine
+
+The two re-callers answer "*what mutations does this isolate carry?*". The **diagnostics
+engine** answers the question a lab actually asks — "*what does that genotype mean for the
+drugs?*" — by turning a typed *C. auris* genotype into one **categorical verdict per
+drug-class**, and refusing to invent anything it can't back. Its honest boundary *is* the
+product: it says exactly which markers it did and did not check.
+
+Every verdict is one of four values (full spec in
+[docs/DIAGNOSTIC_VERDICT_CONTRACT.md](docs/DIAGNOSTIC_VERDICT_CONTRACT.md)):
+
+- **`RESISTANCE_MARKER_DETECTED`** — a known, high-PPV resistance mutation is present. (**PPV**,
+  positive predictive value: of the isolates carrying this marker, the fraction that really are
+  resistant — a high-PPV marker is one you can trust.)
+- **`UNCHARACTERIZED_VARIANT`** — a real change is present but it isn't a trusted resistance
+  marker. The explicit "I don't know" verdict — surfaced, never hidden. For ERG11 it carries a
+  mechanism-based structural best-guess (flagged *calibrated-low*).
+- **`NO_KNOWN_MARKER`** — only wild-type in the checked windows. **This is not a susceptibility
+  call** — the engine checks named ERG11/FKS1 markers only, not efflux or other mechanisms.
+- **`UNRESOLVED`** — the window couldn't be read honestly (coverage gap, indel). Excluded from
+  every denominator, never scored as a negative.
+
+Everything is **RUO** — research use only, not a clinical determination.
+
+The **echinocandin arm is the first to clear a pre-registered clinical-accuracy bar.** Graded
+against each isolate's measured echinocandin phenotype, it hits **very-major error 0%** (VME —
+calling a resistant isolate not-resistant, the dangerous direction; 0/42, 95% CI 0–8.4%) and
+**major error 2.2%** (ME — the reverse; 1/46, CI 0.4–11.3%), at a **10.2% honest-abstention
+price**. The key lesson, reached over three pre-registered rounds (a v1 that missed resistance
+and a v2 that over-called, both FAIL, before the v3 PASS): *scoping the claim to markers you can
+trust beats widening the panel*. The azole (ERG11) arm remains underpowered and the
+calibrated-probability track is blocked on non-public data — both carried as declared limits,
+not glossed. Full write-up: [work/PREPRINT_diagnostics_engine.md](work/PREPRINT_diagnostics_engine.md);
+clinical-path decision doc: [docs/DIAGNOSTIC_GO_NO_GO.md](docs/DIAGNOSTIC_GO_NO_GO.md).
+
+| Piece | Library | CLI / validator | What it does |
+|---|---|---|---|
+| genotype→verdict entrypoint | `openafr/interpret.py` | — | single path: raw genotype → routes through the callers → verdict object |
+| the verdict contract | `openafr/verdict.py` | — | maps caller output to the four-value enum; enforces the RUO scope |
+| concordance | `openafr/concordance.py` | `scripts/validate_fks1_concordance.py` | grades caller tokens against an external truth set (the 98-genome certification) |
+| verdict accuracy | `openafr/accuracy.py` | `scripts/validate_diagnostic_accuracy.py` | grades verdicts against measured phenotype in VME/ME terms vs a frozen bar |
+| calibration | `openafr/calibration.py` | `scripts/validate_calibration.py` | the (still-blocked) probability track — no probability is emitted until it passes |
+| RUO report | `openafr/report.py` | — | renders one isolate's verdicts to human + machine formats; renders, never re-decides |
+| resistance weather report | `openafr/weather.py` | `scripts/render_weather.py` | a public day-0 page over the surveillance feed; `.github/workflows/weather.yml` |
 
 ### Try it without NCBI
 

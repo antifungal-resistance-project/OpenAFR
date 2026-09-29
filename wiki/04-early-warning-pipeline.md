@@ -46,11 +46,12 @@ page was first written, and they reframe the whole track:
    **echinocandin (FKS1) resistance**, so a parallel **FKS1 detection track** was built (v2).
 
 The **azole/ERG11 arrival budget passes on real data** (median 97-day deposit lag), and the
-detector's mechanism is proven (fed synthetic calls it fires hundreds of days early). What
-remains genuinely open is a real FKS1 `fill` (same tool/host wall) and a wet-lab-anchored
-backtest truth set. Keep in mind as you read: most "honesty constraints" in the code exist to
-make sure an *absent* call is never mistaken for a *reassuring* one, and that a detection-only
-signal is never dressed up as a structural verdict.
+detector's mechanism is proven (fed synthetic calls it fires hundreds of days early). The FKS1
+re-caller has since been **run and certified** too (echinocandin event frequency 2.3%; 100%
+token-accuracy vs a published benchmark), and both callers were wrapped into a **genotype→verdict
+diagnostics engine** — see the last two sections of this page. Keep in mind as you read: most
+"honesty constraints" in the code exist to make sure an *absent* call is never mistaken for a
+*reassuring* one, and that a detection-only signal is never dressed up as a structural verdict.
 
 ---
 
@@ -67,8 +68,8 @@ right; each module has a `work/RESULTS_*.md` write-up.
                               │                    ▲                                                                    │
                               │                    │                                                                    ▼
                         erg11_call is EMPTY   ┌────┴─────┐                                                     commits a digest +
-                        (NCBI gives none)     │ recaller │  ◀── THE MISSING PIECE: reads → erg11_call          files a GitHub issue
-                                              │ recaller │      (core built & tested; real run pending)        only on genuine new news
+                        (NCBI gives none)     │ recaller │  ◀── the resistance signal: reads → erg11_call      files a GitHub issue
+                                              │ recaller │      (built, run, and certified — see below)        only on genuine new news
                                               └──────────┘
                                                     ▲
                               ┌─────────────────────┴──────────────────────┐
@@ -302,14 +303,14 @@ three things that *are* honest (all pre-registered in `PREREGISTRATION_backtest.
   detector converts a first-appearance into a dated, positive-lead-time flag *once calls
   exist*. This isolates H2's emptiness to the missing re-caller, not a broken method.
 
-It also computes the track's eventual deliverable number, the **azole event frequency**
-(`panel_prevalence`): once the re-caller has populated calls, what fraction of the isolates it
-could actually resolve carry a known panel substitution — reported with a **Wilson score
-confidence interval** (chosen over the textbook Wald interval precisely because the true
-proportion is near an extreme and the first samples are small, where Wald misbehaves). Until
-`fill` populates calls it is honestly "NOT MEASURED YET." `wilson_halfwidth_worst_case` even
-lets you size the run *before* peeking at the data — the same decide-n-in-advance discipline as
-the pre-registrations.
+It also computes the track's deliverable number, the **event frequency** (`panel_prevalence`):
+of the isolates the re-caller could resolve, what fraction carry a known panel substitution —
+reported with a **Wilson score confidence interval** (chosen over the textbook Wald interval
+precisely because the true proportion is near an extreme and the first samples are small, where
+Wald misbehaves). Both are now measured — **azole 80.4%, echinocandin 2.3%** — but the function
+still returns an honest "NOT MEASURED YET" for any gene/snapshot whose calls a `fill` hasn't yet
+populated, never a fabricated zero. `wilson_halfwidth_worst_case` even lets you size the run
+*before* peeking at the data — the same decide-n-in-advance discipline as the pre-registrations.
 
 ---
 
@@ -386,16 +387,20 @@ built — running the same detect → alert → deliver loop, in parallel to ERG
 
 **One design change from ERG11: windowed, not whole-CDS.** ERG11 is a compact 1,575-nt gene, so
 `recaller.py` builds a full-length in-frame consensus and refuses anything whose length differs.
-FKS1 is a ~5.6 kb gene (1,888 aa), but all echinocandin resistance lives in two short, conserved
-hot-spot windows (**HS1** around S639, **HS2** around R1354). Calling the whole gene buys nothing
-clinically and makes the length-exact frame contract fragile — one low-coverage indel anywhere
-would discard an isolate whose hot-spots were perfectly covered. So `fks1_caller.py` operates
-**per window**: each hot-spot is validated and called independently, and a frameshift inside one
-window refuses *that window* with a reason without discarding the other. The same four honesty
-constraints as the ERG11 re-caller apply per window (pinned/numbering-verified GSC1 reference in
-`data/earlywarning/fks1_reference/`; an uncalled codon is uncalled; frame asserted per window;
-panel tagged, novelty not invented — HS1 S639F/P/Y are panel-tagged, HS2 awaits a literature pin
-and is emitted untagged, a documented gap).
+FKS1 is a ~5.6 kb gene (1,888 aa), but all echinocandin resistance lives in short, conserved
+hot-spot windows — **HS1** around S639, **HS2** around R1354, and **HS3** around W691 (the window
+added after the diagnostics accuracy work below showed the earlier panel had no window for a real
+resistance hotspot). Calling the whole gene buys nothing clinically and makes the length-exact
+frame contract fragile — one low-coverage indel anywhere would discard an isolate whose hot-spots
+were perfectly covered. So `fks1_caller.py` operates **per window**: each hot-spot is validated
+and called independently, and a frameshift inside one window refuses *that window* with a reason
+without discarding the others. The same four honesty constraints as the ERG11 re-caller apply per
+window (pinned/numbering-verified GSC1 reference in `data/earlywarning/fks1_reference/`; an
+uncalled codon is uncalled; frame asserted per window; panel tagged, novelty not invented). The
+panel is now **PPV-tiered**: high-PPV core markers (F635C/Y, S639F/P/Y in HS1; R1354S in HS2;
+W691L in HS3) are tagged as resistance, while positions whose carriers split resistant/susceptible
+(D642Y, M690I) are recognised but *abstain* rather than over-call — the finding that made the
+diagnostics engine pass (see below).
 
 **Detection-only, enforced end-to-end.** Echinocandins do **not** coordinate a metal — FKS1 is a
 1,3-β-glucan synthase, not a heme enzyme — so the CYP51/heme-iron structural moat *does not
@@ -403,8 +408,72 @@ transfer*. The FKS1 half therefore claims **no structural so-what**, and that sc
 through composition (`alert.compose_fks1_alerts` emits **WATCH/CONTEXT only, never ACT-NOW**),
 rendering (`render_fks1_markdown`), and delivery (its own `DIGEST_FKS1.md` / `STATE_FKS1.json`).
 The `structural.py` stage stays ERG11-only by design; a FKS1 structural verdict is *deferred, not
-merely unbuilt* (revisit only if a PI asks). **What remains open:** a real FKS1 `fill` to turn
-`fks1_panel_prevalence` from "NOT MEASURED YET" into a number — same tool/host wall as ERG11.
+merely unbuilt* (revisit only if a PI asks). **The two numbers that were once open are now
+measured:** a real FKS1 `fill` put `fks1_panel_prevalence` at **10/443 = 2.3%** (Wilson 95% CI
+1.2–4.1%, `work/RESULTS_fks1_prevalence.md`) — low and non-saturated, the useful regime — and the
+caller is **certified 100% token-accurate** against a published 98-genome benchmark
+(`work/RESULTS_fks1_concordance.md`).
+
+## From detection to a genotype→verdict diagnostics engine
+
+Detection answers *"what mutations does this isolate carry?"*. The **diagnostics engine** answers
+the question a lab actually asks — *"what does that genotype mean for the drugs?"* — by turning a
+typed genotype into one **categorical verdict per drug-class**. It is a thin interpretation layer
+over the certified callers, not a new caller and not a wet assay, and it is **RUO** (research use
+only, never a clinical determination). The full output spec is
+`docs/DIAGNOSTIC_VERDICT_CONTRACT.md`; the clinical-path decision doc is
+`docs/DIAGNOSTIC_GO_NO_GO.md`.
+
+**One entrypoint, four verdicts.** `openafr/interpret.py` is the single genotype→verdict path:
+`interpret(gene, …)` takes raw input (a consensus CDS, FKS1 windows, or a bare variant token
+list from any WGS/panel), routes it through `recaller.py` / `fks1_caller.py`, and returns a
+verdict object built by `openafr/verdict.py`. Every verdict is exactly one of:
+
+- **`RESISTANCE_MARKER_DETECTED`** — a high-PPV known-resistance marker is present. (**PPV** =
+  positive predictive value: of the isolates carrying a marker, the fraction that are truly
+  resistant. A high-PPV marker is one you can trust to mean resistance.)
+- **`UNCHARACTERIZED_VARIANT`** — a real non-synonymous change is present but none is a trusted
+  marker. The explicit **"I don't know"** verdict, surfaced not hidden; for ERG11 it carries a
+  mechanism-based structural best-guess flagged *calibrated-low*. It also absorbs a low-PPV FKS1
+  hit (D642Y, M690I), which abstains rather than over-call.
+- **`NO_KNOWN_MARKER`** — only wild-type in the checked windows. **Not a susceptibility call** —
+  the engine checks named ERG11/FKS1 markers only, not efflux / ERG3 / promoter mechanisms.
+- **`UNRESOLVED`** — the window couldn't be called honestly (coverage gap, in-window indel).
+  Excluded from every denominator, never scored as a negative — the caller's "uncalled is never
+  wild-type" rule carried up to the verdict level.
+
+**The echinocandin arm clears a pre-registered clinical-accuracy bar** — the first arm to do so.
+Graded against each isolate's measured echinocandin phenotype in CLSI error terms
+(`openafr/accuracy.py`, `scripts/validate_diagnostic_accuracy.py`,
+`work/RESULTS_diagnostic_accuracy.md`), it reports:
+
+- **Very-major error (VME) = 0%** (0/42, 95% CI 0–8.4%). A VME is the dangerous miss — calling a
+  truly resistant isolate not-resistant.
+- **Major error (ME) = 2.2%** (1/46, CI 0.4–11.3%). An ME is the reverse — calling resistance
+  that isn't there.
+- **Abstention 10.2%** — the honest price, reported openly rather than hidden as false coverage.
+
+It got there over **three pre-registered rounds**, each committing a falsifiable projection in
+advance: **v1** (narrow panel) FAILed by *under-detecting* (VME 10% — real resistance the panel
+had no window for, all in FKS1 HS3); **v2** (added the HS3 window) drove VME to 0% but *flipped*
+to *over-calling* (ME 13.5%, from tagging split-phenotype positions); **v3** resolved it with the
+**PPV tier** — detect where the marker predicts, abstain where it doesn't — and PASSed. The
+methodological lesson is the headline: *scoping the claim beats widening the panel.* The azole
+(ERG11) arm stays underpowered and the calibrated-probability track (`openafr/calibration.py`) is
+blocked on non-public data — both carried as declared limits.
+
+**Concordance certification underneath it.** Before any verdict was graded, the FKS1 caller's
+raw tokens were certified against a published 98-genome external truth set (PMC12323592) with
+`openafr/concordance.py` / `scripts/validate_fks1_concordance.py`: sensitivity, specificity, and
+exact-token identity all 100%, 98/98 resolved, zero false calls
+(`work/RESULTS_fks1_concordance.md`). The engine's verdicts are only as trustworthy as the tokens
+under them, so that certification is load-bearing.
+
+**Reporting and the weather page.** `openafr/report.py` renders one isolate's verdicts to human
+(`render_markdown`) and machine (`render_json`) forms — it *renders, never re-decides*, and bakes
+the RUO no-clinical-claim disclaimer in before any per-class block. Separately, `openafr/weather.py`
+(`scripts/render_weather.py`, `.github/workflows/weather.yml`) publishes a public day-0
+**resistance weather report** summarising the surveillance feed.
 
 ## Try it without NCBI (synthetic demo mode)
 
@@ -432,8 +501,14 @@ small batches), see [TODOS.md](../TODOS.md), `work/RUNBOOK_recaller_run.md` (ERG
   **but a fully *validated warning* still needs a wet-lab-anchored backtest truth set** (published
   clade/mutation panels; few NCBI isolates carry AST phenotype). The scaffold and the mechanism
   are proven; end-to-end validation against ground truth is the remaining step.
-- **The FKS1 track is detection-only and awaits a real fill.** It claims no structural verdict,
-  and its prevalence reads "NOT MEASURED YET" until an echinocandin `fill` runs.
+- **The FKS1 track is detection-only** (no structural verdict — echinocandins coordinate no
+  metal). Its prevalence is now measured (2.3%) and the caller is certified, and the
+  diagnostics engine's **echinocandin verdict arm passes** a pre-registered accuracy bar — but
+  under a *scoped* claim (detection over high-PPV markers, not a full R/S classifier), at a
+  declared 10.2% abstention.
+- **The azole verdict arm is underpowered and the calibrated-probability track is blocked** on
+  the absence of a public paired genotype+MIC *Candida* collection. No probability is emitted
+  until that track produces a measured, held-out reliability.
 - **Nothing claims validation it hasn't earned** — the gaps above are named precisely rather
   than papered over.
 

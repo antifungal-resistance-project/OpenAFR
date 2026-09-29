@@ -53,9 +53,12 @@ Grouped by area. For the fuller story behind the biology terms, see the
   Targets β-1,3-glucan synthase (FKS1), **not** CYP51 — coordinates no metal, so track 1's
   structural moat does not transfer.
 - **FKS1 / GSC1** — the gene encoding β-1,3-glucan synthase, the echinocandin target. Track 2's
-  v2 detection axis; resistance lives in two hot-spot windows (**HS1** ≈ S639, **HS2** ≈ R1354).
-- **Hot-spot window (HS1 / HS2)** — the short, conserved FKS1 regions where echinocandin
+  detection axis; resistance lives in three short hot-spot windows (**HS1** ≈ S639, **HS2** ≈
+  R1354, **HS3** ≈ W691).
+- **Hot-spot window (HS1 / HS2 / HS3)** — the short, conserved FKS1 regions where echinocandin
   resistance mutations cluster; the FKS1 re-caller calls these per window rather than whole-gene.
+  HS3 was added after the diagnostics accuracy work found real resistance the earlier two-window
+  panel had no window for.
 - **Type-II heme coordination / ligation** — an sp²-ring-nitrogen lone pair binding the ferric
   heme iron as its sixth axial ligand. The azole antifungal mechanism *on the target* — and the
   same mechanism by which azoles inhibit **human** CYPs (the off-target liability).
@@ -111,8 +114,19 @@ Grouped by area. For the fuller story behind the biology terms, see the
   small n and near 0/1 (unlike the textbook Wald interval); used for the azole event frequency.
 - **Azole event frequency / panel prevalence** — of the isolates the re-caller could *resolve*,
   the fraction carrying a known panel mutation. Track 2's deliverable number; **measured for
-  ERG11 at 80.4%** (Wilson 95% CI 74.3–85.3%, n=199). The FKS1 equivalent is still "NOT MEASURED
-  YET" until an echinocandin `fill` runs.
+  ERG11 at 80.4%** (Wilson 95% CI 74.3–85.3%, n=199) and **for FKS1 (echinocandin) at 2.3%**
+  (10/443, CI 1.2–4.1%) — near-saturated for azoles, low and non-saturated for echinocandins.
+- **VME (very-major error)** — a genotype→phenotype tool calling a truly *resistant* isolate
+  **not** resistant: the dangerous miss. The engine's echinocandin arm measures **0%** (0/42).
+- **ME (major error)** — the reverse: calling resistance that **isn't** there. The echinocandin
+  arm measures **2.2%** (1/46). (VME/ME are the CLSI-M23 error terms for a susceptibility test.)
+- **PPV (positive predictive value)** — of the isolates carrying a marker, the fraction that are
+  truly resistant. A **high-PPV** marker is one you can trust to mean resistance; the engine
+  DETECTs on high-PPV markers and ABSTAINs on low-PPV ones (e.g. FKS1 D642Y, whose carriers split
+  R/S) rather than over-call.
+- **Abstention** — the fraction of isolates for which the engine emits `UNCHARACTERIZED_VARIANT`
+  instead of a resistance/no-marker call. The echinocandin arm's is 10.2% — the honest price of
+  the high-PPV scoping, reported openly rather than hidden as false coverage.
 - **pChEMBL** — ChEMBL's −log₁₀(molar potency): IC50/Ki/Kd/EC50 on one comparable scale (7 =
   100 nM, 8 = 10 nM). The continuous potency axis the geometry criterion was tested against (#81).
 
@@ -142,8 +156,29 @@ Grouped by area. For the fuller story behind the biology terms, see the
   `estimate` (a direction, no magnitude), or `none` (honest no-call).
 - **ERG11 re-caller** — the module (`openafr/recaller.py` + `scripts/recall_erg11.py`) that turns
   raw reads into an azole-resistance call. **Built and run** (n=199, 80.4% event frequency).
-- **FKS1 re-caller** — the v2 analog (`openafr/fks1_caller.py` + `scripts/recall_fks1.py`) for
-  echinocandin resistance; **windowed** (hot-spots only) and **detection-only**.
+- **FKS1 re-caller** — the analog (`openafr/fks1_caller.py` + `scripts/recall_fks1.py`) for
+  echinocandin resistance; **windowed** (HS1/HS2/HS3 hot-spots only) and **detection-only**.
+  **Run and certified** — 100% token-accurate vs a published 98-genome benchmark (PMC12323592).
+- **Genotype→verdict diagnostics engine** — the interpretation layer over the certified callers
+  (`openafr/interpret.py` → `verdict.py`): a typed genotype in, one **categorical resistance
+  verdict per drug-class** out. RUO; never a probability. Its echinocandin arm passes a
+  pre-registered clinical-accuracy bar.
+- **The four verdicts** — `RESISTANCE_MARKER_DETECTED` (a trusted high-PPV marker is present),
+  `UNCHARACTERIZED_VARIANT` (a real change but no trusted marker — the explicit "I don't know",
+  and where low-PPV FKS1 hits abstain), `NO_KNOWN_MARKER` (only wild-type in the checked windows
+  — **not** a susceptibility call), `UNRESOLVED` (the window couldn't be read honestly — excluded
+  from every denominator, never a negative).
+- **Concordance** — agreement between the caller's emitted *tokens* and an external truth set
+  (`openafr/concordance.py`); how the FKS1 caller was certified. Distinct from *verdict accuracy*
+  (agreement of the engine's *verdict* with measured *phenotype*, `openafr/accuracy.py`).
+- **Calibration** — the deferred track (`openafr/calibration.py`) that would attach a *measured,
+  held-out* resistance probability to a verdict. Blocked on the absence of a public paired
+  genotype+MIC *Candida* collection; until it passes, the engine emits **no** probability.
+- **RUO (research use only)** — the scope stamped on every verdict: not a clinical determination,
+  not a treatment basis. The engine's honest boundary, baked into the report, never fine print.
+- **Resistance weather report** — a public day-0 page (`openafr/weather.py` +
+  `scripts/render_weather.py`, published by `.github/workflows/weather.yml`) summarising the
+  surveillance feed at a glance.
 - **NCBI Pathogen Detection** — the public feed track 2 reads; a metadata + genome-pointer feed
   with *no* resistance calls for *C. auris*.
 - **SRA** — the Sequence Read Archive; where NCBI stores the raw sequencing reads the re-caller

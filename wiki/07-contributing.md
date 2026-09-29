@@ -92,11 +92,12 @@ workaround.
 - **Tests.** Find an `openafr/` branch that isn't covered and lock it with a known-answer test.
 - **Track 2 demo polish / new demo modes** — low-risk, self-contained, no external deps.
 - **The big open items** are in [TODOS.md](../TODOS.md). Current headliners: the
-  **coordinator-identity** follow-through on the shortlist (track 1), and a real **FKS1 `fill`**
-  to measure the echinocandin event frequency (track 2). The FKS1 (and the earlier ERG11) run
-  needs a Linux/x86 host and large downloads, so read the runbooks (`work/RUNBOOK_fks1_run.md`,
-  `work/RUNBOOK_recaller_run.md`) and the TODO's run order first, and coordinate before starting.
-  (The ERG11 re-caller has already been run — see `work/RESULTS_prevalence.md`.)
+  **coordinator-identity** follow-through on the shortlist (track 1), and — now that both
+  re-callers are run and certified and the echinocandin *verdict* arm passes — **powering the
+  azole verdict arm** and **unblocking the calibrated-probability track** (which needs a public
+  paired genotype+MIC *Candida* collection) on track 2. Re-caller runs need a Linux/x86 host and
+  large downloads, so read the runbooks (`work/RUNBOOK_fks1_run.md`, `work/RUNBOOK_recaller_run.md`)
+  and the TODO's run order first, and coordinate before starting.
 
 Before picking anything up, skim the relevant `work/RESULTS_*.md` write-up — most stages have one,
 and it tells you what's been tried, what worked, and what was deliberately deferred.
@@ -104,13 +105,15 @@ and it tells you what's been tried, what worked, and what was deliberately defer
 ## 6. Scope discipline
 
 The project's power comes from being **narrow**: CYP51/ERG11 azole resistance in *C. auris*, plus
-the one data-justified adjacency it has taken on — **FKS1/echinocandin *detection*** (v2), opened
-*because* the measured 80.4% azole baseline showed azole emergence is a weak signal, and kept
-honest as detection-only (no structural verdict). Everything past that — TAC1B efflux, ERG3,
-diagnostics, other pathogens, or a *structural* FKS1 verdict — remains **out of scope until the
-current work is validated** (a wet-lab hit for track 1; a wet-lab-anchored backtest for track 2).
-[VISION.md](../VISION.md) explains the "broad mission, focused execution" reasoning. New scope is
-a strategy conversation, not a quiet PR.
+the data-justified adjacencies it has taken on — **FKS1/echinocandin detection** (opened *because*
+the measured 80.4% azole baseline showed azole emergence is a weak signal, kept honest with no
+structural verdict), and the **genotype→verdict diagnostics engine** layered on the certified
+callers (a computational interpretation layer, not a wet assay — it opened no new competency).
+Everything past that — TAC1B efflux, ERG3, other pathogens, a *structural* FKS1 verdict, or any
+*clinical* diagnostic (an LDT, regulatory validation) — remains **out of scope until the current
+work is validated** (a wet-lab hit for track 1; a powered azole arm and an unblocked calibration
+track for track 2). [VISION.md](../VISION.md) explains the "broad mission, focused execution"
+reasoning. New scope is a strategy conversation, not a quiet PR.
 
 ## 7. License & contributions
 
