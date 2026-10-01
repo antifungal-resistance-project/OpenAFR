@@ -142,7 +142,9 @@ is met**; meeting it is necessary, not sufficient, for the next.
 - GATE: the #136 calibration track executes on the option-C pooled panel and clears its frozen
   reliability bar (ECE ≤0.10, Brier ≤0.20, in-large gap ≤0.10, ≥15/class on the held-out split),
   under a *separately frozen* prereg amendment for cross-study MIC-method heterogeneity.
-- Today: **NO-GO (panel does not exist; C1/C3).** Deferred, not killed; unlock route named.
+- Today: **NO-GO (panel does not exist; C1/C3).** **Scoped out of the current publication**
+  (2026-09-30, #160; `docs/AZOLE_ARM_SCOPE_DECISION.md`) — paused on a named data gap, not killed;
+  unlock route named.
 
 **Rung C — Panel breadth + species scope adequate for the intended-use population.**
 - GATE: marker coverage and organism scope match the population the test would serve — either a
@@ -182,10 +184,10 @@ RUO research tool. The echinocandin *detection-accuracy* claim is now measured a
 
 | # | Limitation | Status | What lifts it |
 |---|---|---|---|
-| C1 | No calibrated probability | **Carried** — deferred to #136; not a defect, a declared scope | Rung B: option-C panel + reliability PASS |
+| C1 | No calibrated probability | **Scoped out of the current publication (2026-09-30, #160)** — engine + prereg complete and frozen, blocked only on non-public data; a declared boundary, not a defect (`docs/AZOLE_ARM_SCOPE_DECISION.md`) | Rung B: option-C panel + reliability PASS |
 | C2 | Narrow marker panel; `NO_KNOWN_MARKER` ≠ S | **Resolved for echinocandin as a scoped detection claim (2026-09-27)** — v2 HS3 extension fixed detection (VME → 0%) but exposed a PPV ceiling; v3 PPV tier (high-PPV core detects, low-PPV D642Y/M690I abstain) PASSES (VME 0%, ME 2.2%) | Broader mechanisms (efflux/ERG3/TR) still out of scope; not required for the narrowed claim |
 | C3 | Validated organism ≠ calibratable organism | **Open decision (echinocandin intended use now documented as narrow *C. auris* FKS1)** | Explicit intended-use call, or *C. albicans* caller/structure work |
-| C4 | Accuracy: echinocandin measured (v3 PASS, scoped); azole underpowered | **Echinocandin measured & PASSES (narrowed high-PPV claim); azole still blocked** | Azole: larger paired *C. auris* ERG11 collection |
+| C4 | Accuracy: echinocandin measured (v3 PASS, scoped); azole underpowered | **Echinocandin measured & PASSES (narrowed high-PPV claim); azole accuracy scoped out of the current publication (2026-09-30, #160; `docs/AZOLE_ARM_SCOPE_DECISION.md`)** | Azole: larger paired *C. auris* ERG11 collection |
 
 The discipline mirrors the preprint: no limit is quietly dropped once stated; each is carried in
 this register with its unblock route until the evidence that lifts it actually lands.
@@ -224,11 +226,12 @@ So the nearest unlocks are now:
   decision (Rung C) is documented as a narrow *C. auris* FKS1 panel. Remaining routes up are Rung B
   (probability, #136) and broader mechanisms — both separately blocked, neither required for the current
   claim.
-- **Azole/ERG11:** obtain a **larger paired *C. auris* ERG11 genotype+phenotype collection** (the
-  4-strain Lockhart set only supports a sanity control) to lift the azole arm past UNDERPOWERED. **This
-  is now the single most valuable next data acquisition.**
-- **Calibration (#136):** unchanged — still blocked on the non-public option-C pooled *C. albicans*
-  panel.
+- **Azole/ERG11:** **scoped out of the current publication** (2026-09-30, #160;
+  `docs/AZOLE_ARM_SCOPE_DECISION.md`). To restart it, obtain a **larger paired *C. auris* ERG11
+  genotype+phenotype collection** (the 4-strain Lockhart set only supports a sanity control) to lift
+  the azole arm past UNDERPOWERED. **This is still the single most valuable next data acquisition.**
+- **Calibration (#136):** **scoped out of the current publication** on the same data gap — still
+  blocked on the non-public option-C pooled *C. albicans* panel; paused, not killed.
 
 The engine stands, honestly, at the RUO tier — now with a *measured, passing* echinocandin detection
 claim rather than a measured ceiling. Scoping the claim to what the data support (high-PPV detection,
