@@ -283,14 +283,19 @@ Same discipline as the geometry preprint's §6 and the go/no-go register
 (`docs/DIAGNOSTIC_GO_NO_GO.md`): each limit is stated with the specific evidence that would
 lift it.
 
-1. **The azole/ERG11 arm is underpowered.** Only 4 Lockhart clade strains carry paired ERG11
-   genotype + azole phenotype in hand — enough for a sanity control, not a measured accuracy.
-   *Lifts it:* a larger paired *C. auris* ERG11 genotype+phenotype collection (the go/no-go's
-   stated single most valuable next data acquisition). This preprint's PASS is echinocandin-only.
-2. **No calibrated probability / no MIC.** The engine is categorical by construction (#132
-   found no public *Candida* panel that clears the calibration bar; the calibrated-probability
-   track #136 is blocked on a non-public pooled *C. albicans* ERG11 panel). *Lifts it:* that
-   option-C panel + a held-out reliability PASS (Rung B). Deferred, not killed.
+1. **The azole/ERG11 accuracy arm is out of scope for this publication.** Only 4 Lockhart clade
+   strains carry paired ERG11 genotype + azole phenotype in hand — a sanity control, not a
+   measurable accuracy — so no azole accuracy is claimed and this preprint's PASS is
+   echinocandin-only. This is a declared scope boundary on a named data gap, not an open to-do
+   (`docs/AZOLE_ARM_SCOPE_DECISION.md`). *Lifts it:* a larger paired *C. auris* ERG11
+   genotype+phenotype collection (the go/no-go's stated single most valuable next data acquisition).
+2. **No calibrated probability / no MIC — out of scope for this publication.** The engine is
+   categorical by construction: #132 found no public *Candida* panel that clears the calibration
+   bar, and the calibrated-probability track #136 is blocked on a non-public pooled *C. albicans*
+   ERG11 panel. The calibration machinery (`openafr/calibration.py`) and its pre-registration are
+   complete and frozen, waiting only on that data — a scoped-out boundary with a named restart
+   trigger, not a defect (`docs/AZOLE_ARM_SCOPE_DECISION.md`). *Lifts it:* that option-C panel +
+   a held-out reliability PASS (Rung B).
 3. **`NO_KNOWN_MARKER` is not "susceptible."** The panel covers named ERG11/FKS1 markers only —
    not efflux (TAC1/MRR1/CDR1), ERG3, or promoter/TR mechanisms. The measured VME (0% under the
    scoped claim) is honest *within* that coverage; off-panel resistance is out of scope by
