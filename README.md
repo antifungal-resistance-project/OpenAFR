@@ -391,6 +391,18 @@ it fires hundreds of days early — [work/RESULTS_backtest.md](work/RESULTS_back
 | ERG11 re-caller (**run**) | `openafr/recaller.py` | `scripts/recall_erg11.py` | reads → azole call; measured 80.4% event frequency |
 | FKS1 re-caller (**run, certified**) | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin call; windowed hot-spots (HS1/HS2/HS3); 2.3% event frequency; no structural verdict |
 
+**Try a re-caller in one command** (no conda env, no network, any platform):
+
+```bash
+python scripts/demo_recallers.py          # run both re-callers on a tiny sample set
+python scripts/demo_recallers.py --check   # same, verified against a committed oracle
+```
+
+It drives each caller's deterministic `call` path on the committed samples in
+[data/earlywarning/demo/](data/earlywarning/demo/) (a wild-type control + one known
+resistance mutation per gene) — the on-ramp before the full reads→consensus run. See that
+directory's README for the samples and expected output.
+
 The initial feasibility probe is `scripts/probe_ncbi_auris.py`. Persistence and delivery
 state have their own READMEs: [data/earlywarning/README.md](data/earlywarning/README.md)
 (snapshot store) and [data/earlywarning/digest/README.md](data/earlywarning/digest/README.md)
