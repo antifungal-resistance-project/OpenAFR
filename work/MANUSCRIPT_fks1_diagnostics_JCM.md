@@ -113,7 +113,7 @@ The re-tiered fixture was derived offline — no SRA re-read — re-running the 
 
 ## Limitations
 
-Each limit is stated with the specific evidence that would lift it.
+Each limit is stated with the specific evidence that would lift it; the frozen artifact behind every claim these limits qualify is traced in Supplementary Appendix S1.
 
 1. **The azole/ERG11 accuracy arm is out of scope for this publication.** Only four clade strains carry paired ERG11 genotype + azole phenotype in hand — a sanity control, not a measurable accuracy — so no azole accuracy is claimed; this manuscript's PASS is echinocandin-only. This is a declared scope boundary set on a named data gap, not an open to-do (`docs/AZOLE_ARM_SCOPE_DECISION.md`). *Lifts it:* a larger paired *C. auris* ERG11 genotype+phenotype collection.
 2. **No calibrated probability / no MIC — out of scope for this publication.** The engine is categorical by construction, and a calibrated probability is deliberately not emitted: a data-availability audit found no public *Candida* panel clearing a calibration bar, and the calibrated-probability track is blocked on a non-public pooled *C. albicans* ERG11 panel. The calibration machinery and its pre-registration are complete and frozen, waiting only on that data, so this is a scoped-out boundary with a named restart trigger, not a defect (`docs/AZOLE_ARM_SCOPE_DECISION.md`). *Lifts it:* that panel plus a held-out reliability PASS.
@@ -125,6 +125,8 @@ Each limit is stated with the specific evidence that would lift it.
 Nothing here has been tested prospectively against consecutively collected clinical isolates, and every verdict is RUO. The overall clinical-path verdict is RUO with the echinocandin detection arm cleared under a narrowed high-PPV claim; no clinical susceptibility claim is made.
 
 ## Data availability
+
+A claim-by-claim traceability audit — every quantitative claim in this manuscript mapped to the exact hash-frozen pre-registration, fixture, RESULTS record, and code module behind it, plus a step-by-step reproduction recipe (offline from committed fixtures, and the full SRA→caller re-harvest) — is provided as **Supplementary Appendix S1** (`work/APPENDIX_reproducibility.md`). All eight frozen hashes it inventories were re-verified on disk and match.
 
 All code, all pre-registrations with their hashes, the transcribed hash-pinned benchmark fixture, the harvested per-version accuracy fixtures, and every `RESULTS_*.md` are in the project repository. Key modules: the callers (`openafr/recaller.py`, `openafr/fks1_caller.py`), the single interpretation entrypoint (`openafr/interpret.py`), the verdict schema (`openafr/verdict.py`), the metric engines (`openafr/accuracy.py`, `openafr/concordance.py`), the report layer (`openafr/report.py`), the graders (`scripts/validate_fks1_concordance.py`, `scripts/validate_diagnostic_accuracy.py`), and the offline v3 harvester (`scripts/harvest_diagnostic_accuracy_v3.py`). Truth set: PMC12323592 (Misas et al., *Microbiol Spectr* 2025), transcribed by hand from the paywalled Table 1. Software is licensed PolyForm Noncommercial 1.0.0.
 
