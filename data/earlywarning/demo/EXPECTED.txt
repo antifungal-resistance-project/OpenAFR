@@ -1,0 +1,19 @@
+## erg11_wildtype
+call: (none -- no substitution)
+source: sra-recaller:wild-type
+panel: (none)
+
+## erg11_Y132F
+call: Y132F
+source: sra-recaller:called
+panel: Y132F
+
+## fks1_wildtype
+call: (none -- no substitution)
+source: sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type
+panel: (none)
+
+## fks1_S639F
+call: S639F
+source: sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type
+panel: S639F
