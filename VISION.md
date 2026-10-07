@@ -4,7 +4,24 @@ Strategic framing for the project. The [README](README.md) covers *what the pipe
 does and how to run it*; this covers *what it's for, what's genuinely new, and where it
 goes next.* Written to be picked up cold.
 
-## What the tool is
+## The product bet (2026-10-06)
+
+**OpenAFR's product is a public-health surveillance service, not a drug.** The thing we ship
+and put in front of a user is **OpenAFR Resistance Weather**: a live, public, auto-updating
+report on *emerging echinocandin resistance* in *Candida auris*, backed by a benchmark-certified
+FKS1 caller, for public-health and genomic-surveillance teams. The beachhead user is a
+**public-health / genomic-surveillance lab** (CDC AR Lab Network, a state PH lab, a *C. auris*
+genomics group), not — yet — a clinical microbiology lab making per-patient treatment calls
+(that is a later, higher-regulatory-bar market).
+
+The drug-discovery work below (the CYP51 geometry triage tool) is the **research /
+credibility arm** — a research instrument and the basis of the JCM manuscript. It is not the
+product. This bet reframes the whole backlog: the north star is a *live* surveillance page in
+front of one design partner. The one gap between here and that is operationalizing the
+certified caller as a standing cloud fill over the live NCBI feed, so the page shows a real
+picture instead of a perpetual day-0 "watching…" state.
+
+## What the research arm's tool is
 
 A **triage tool for antifungal drug discovery**, aimed at CYP51 — the fungal enzyme the
 azole drugs jam and that drug-resistant *Candida auris* is defeating.

@@ -1,24 +1,36 @@
-# OpenAFR — a self-validating antifungal screening pipeline
+# OpenAFR — early-warning surveillance for drug-resistant *Candida auris*
 
-An open-source computational pipeline for finding candidate antifungal molecules against
-drug-resistant *Candida auris*, built around one rule:
+**The product: OpenAFR Resistance Weather** — a public, auto-updating surveillance report
+for *emerging echinocandin resistance* in *Candida auris*, built for public-health and
+genomic-surveillance teams. It reads what NCBI actually publishes (genomes, not resistance
+calls), re-calls each isolate's FKS1 genotype with a **benchmark-certified caller** (100%
+sensitivity and specificity on a 98-genome external truth set), and renders one honest page:
+loud on an emerging-resistance signal, calm and explicit when a week is quiet.
+
+Why echinocandin, why surveillance: azole resistance in *C. auris* is already near-saturated
+(~80% of sequenced isolates), so it is a dead early-warning signal. Echinocandin resistance is
+still rare (~2%) and *dynamic* — the regime where early warning is actually useful. See
+[Resistance Weather — the surveillance product](#openafr-resistance-weather--the-surveillance-product).
+
+> **Honest status.** The whole surveillance chain is built, tested, and pulls real NCBI data,
+> and the public page auto-deploys weekly. The one gap to a live picture: the certified caller
+> has to run over the live feed on a cadence (heavy SRA re-calling, run on cloud compute), not
+> just in the one-off benchmarks it has passed. Until that standing fill lands, the page shows
+> its honest day-0 "watching…" state. Closing that loop is the current milestone.
+
+## Research arm: self-validating antifungal drug discovery
+
+Alongside the product, the repo carries the project's **research / credibility arm** — a
+geometry-over-docking-score triage tool for antifungal drug discovery against CYP51, built
+around one rule:
 
 > **The pipeline must prove it can re-discover the drugs we already know work, on molecules
 > it has never seen, before it is allowed to rank anything new.**
 
-If it cannot, the validation gate exits nonzero and blocks the screen.
-
-The repo now holds **two tracks** against the same pathogen and enzyme:
-
-1. **Drug discovery** (the original, validated track) — the geometry-over-docking-score
-   triage tool described immediately below.
-2. **Genomic early-warning surveillance** (a newer track) — watching NCBI for emerging
-   *C. auris* resistance mutations, and interpreting an isolate's genotype into a categorical
-   resistance verdict (a genotype→verdict diagnostics engine whose echinocandin arm now clears a
-   pre-registered clinical-accuracy bar). See
-   [Second track: genomic early-warning surveillance](#second-track-genomic-early-warning-surveillance).
-
-Everything from here to that section is about track 1.
+If it cannot, the validation gate exits nonzero and blocks the screen. This arm is a research
+instrument and the basis of the JCM manuscript — it generates wet-lab hypotheses, it is not the
+shipped product. Everything from here until
+[Resistance Weather](#openafr-resistance-weather--the-surveillance-product) is about this arm.
 
 > **New here?** The [`wiki/`](wiki/README.md) is written to be picked up cold — a
 > [biology primer](wiki/01-antifungal-resistance-primer.md) for anyone new to antifungal
@@ -330,13 +342,14 @@ with the extracted chain-A + heme atoms asserted identical to the tracked `work/
 the gate grades against. Verified by re-docking VT-1161 (top −12.1 kcal/mol; iron-bound pose
 at N–Fe 2.63 Å, matching `work/RESULTS_redock_VT1.md`).
 
-## Second track: genomic early-warning surveillance
+## OpenAFR Resistance Weather — the surveillance product
 
-A separate pipeline that watches **NCBI Pathogen Detection** for *C. auris* isolates and
-tries to flag *emerging* azole-resistance mutations early — before they show up in the
-published surveillance record — then attaches a **structural so-what** (does fluconazole
-still fit the pocket if this spreads?) to each flag. Track 1 finds new drugs; track 2
-watches the enemy evolve against the drugs we have.
+The shipped product (formerly described here as "the second track"). A pipeline that watches
+**NCBI Pathogen Detection** for *C. auris* isolates and flags *emerging* resistance early —
+before it shows up in the published surveillance record — then attaches a **structural so-what**
+(does fluconazole still fit the pocket if this spreads?) where the mechanism allows. The
+research arm above finds new drugs; this product watches the enemy evolve against the drugs we
+have, and is the thing a public-health team would actually subscribe to.
 
 ### Honest status: scaffold built, both re-callers run, now a genotype→verdict engine
 
