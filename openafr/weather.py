@@ -79,10 +79,17 @@ def _status_line(alerts, watching_since, now_date):
 
 
 def _alert_card(a):
-    """One alert -> an HTML card. Reads only fields alert.compose_alerts guarantees."""
+    """One alert -> an HTML card. Reads only fields the composer guarantees.
+
+    Gene-agnostic: the ERG11 composer attaches a `structural` fit verdict and the page
+    shows that row plus the pre-rendered pocket image; the FKS1 (echinocandin) composer
+    is detection-only and attaches no `structural` block, so the card drops the fit row
+    and the pocket image (there is no FKS1 pocket render) -- the detection-only caveat
+    rides in on the composed `headline` instead.
+    """
     tier_txt, accent = _TIER.get(a["priority"], (a["priority"].upper(), "#8a94a6"))
     e = a["emergence"]
-    s = a["structural"]
+    s = a.get("structural")
     mut = html.escape(str(a["mutation"]))
     regions = ", ".join(a.get("regions") or []) or "undisclosed"
     rows = [
@@ -95,24 +102,45 @@ def _alert_card(a):
          f"{a.get('n_regions', 0)} region(s): {html.escape(regions)} "
          f"({a.get('n_carriers_total', 0)} carrier(s))"),
         ("First seen", html.escape(str(a.get("first_seen") or "unknown"))),
-        ("Structural fit",
-         f"[{html.escape(str(s['evidence_class']))}, conf={html.escape(str(s['confidence']))}] "
-         f"{html.escape(str(s['fluconazole_fit_verdict']))}"),
     ]
+    if s:
+        rows.append(
+            ("Structural fit",
+             f"[{html.escape(str(s['evidence_class']))}, conf={html.escape(str(s['confidence']))}] "
+             f"{html.escape(str(s['fluconazole_fit_verdict']))}"))
     rows_html = "\n".join(
         f'      <div class="k">{k}</div><div class="v">{v}</div>' for k, v in rows)
-    img = pocket_asset(a["mutation"])
     headline = html.escape(str(a.get("headline") or ""))
+    img_html = ""
+    if s:
+        img = pocket_asset(a["mutation"])
+        img_html = (
+            f'\n      <img class="pocket" src="{img}" '
+            f'alt="Mutant vs wild-type CYP51 pocket for {mut}"\n'
+            f"           loading=\"lazy\" onerror=\"this.style.display='none'\">")
     return f"""    <article class="card" style="--accent:{accent}">
       <header><span class="badge" style="background:{accent}">{tier_txt}</span>
         <code class="mut">{mut}</code></header>
       <p class="headline">{headline}</p>
       <div class="grid">
 {rows_html}
-      </div>
-      <img class="pocket" src="{img}" alt="Mutant vs wild-type CYP51 pocket for {mut}"
-           loading="lazy" onerror="this.style.display='none'">
+      </div>{img_html}
     </article>"""
+
+
+def _calm_copy(gene):
+    """The two calm-state sentences, keyed to the gene the page is tracking.
+
+    Default is the echinocandin (FKS1) surveillance product; ERG11/azole is the
+    research arm, shown only when a result explicitly marks `gene == "ERG11"`.
+    """
+    if str(gene).upper() == "ERG11":
+        return ("No azole-resistance variant is over threshold right now.",
+                "When a resistance-conferring ERG11 substitution emerges, it appears "
+                "here with its structural fit verdict.")
+    return ("No echinocandin-resistance variant is over threshold right now.",
+            "When an echinocandin-resistance FKS1 substitution emerges, it appears here "
+            "with its emergence signal — detection only, no structural verdict.")
 
 
 def render_page(alert_result, *, now=None, watching_since=None):
@@ -142,11 +170,10 @@ def render_page(alert_result, *, now=None, watching_since=None):
         note = r.get("note")
         since = html.escape(str(watching_since)) if watching_since else "the first run"
         note_html = (f'<p class="note">{html.escape(str(note))}</p>' if note else "")
+        calm_headline, calm_body = _calm_copy(r.get("gene"))
         body = f"""    <article class="card calm">
-      <p class="headline">No azole-resistance variant is over threshold right now.</p>
-      <p>Watching {html.escape(_TAXON)} genome deposits since {since}. When a
-         resistance-conferring ERG11 substitution emerges, it appears here with its
-         structural fit verdict.</p>
+      <p class="headline">{calm_headline}</p>
+      <p>Watching {html.escape(_TAXON)} genome deposits since {since}. {calm_body}</p>
       {note_html}
     </article>"""
 

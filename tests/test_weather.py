@@ -20,6 +20,7 @@ from openafr import alert, weather
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "scripts"))
 from detect_emergence import _demo_records  # noqa: E402  (the shared #22 fixture)
+from compose_alert import _demo_fks1_records  # noqa: E402  (the FKS1 analog)
 
 AS_OF = "2024-12-31"
 NOW = "2026-09-17T08:30:00Z"
@@ -28,6 +29,11 @@ NOW = "2026-09-17T08:30:00Z"
 def _hit_result():
     return alert.compose_alerts(_demo_records(), AS_OF, window_days=180,
                                 min_count=3, min_delta=0.05)
+
+
+def _fks1_hit_result():
+    return alert.compose_fks1_alerts(_demo_fks1_records(), AS_OF, window_days=180,
+                                     min_count=3, min_delta=0.05)
 
 
 def _empty_result(note=None):
@@ -41,10 +47,20 @@ def _empty_result(note=None):
 # ---- WATCHING / day-0 --------------------------------------------------------
 
 def test_none_result_renders_watching_page():
+    # Default arm is the echinocandin (FKS1) product; a bare None result shows its copy.
     page = weather.render_page(None, now=NOW)
     assert "WATCHING" in page
-    assert "No azole-resistance variant is over threshold" in page
+    assert "No echinocandin-resistance variant is over threshold" in page
     assert 'class="badge"' not in page  # no tier badge element when there are no alerts
+
+
+def test_erg11_gene_result_keeps_azole_calm_copy():
+    # The research arm (gene=ERG11) still renders the azole wording.
+    r = _empty_result()
+    r["gene"] = "ERG11"
+    page = weather.render_page(r, now=NOW)
+    assert "No azole-resistance variant is over threshold" in page
+    assert "ERG11 substitution" in page
 
 
 def test_empty_result_shows_note_when_present():
@@ -71,6 +87,27 @@ def test_hit_page_renders_one_card_per_alert_with_verdict():
 def test_hit_status_line_leads_with_resistance():
     page = weather.render_page(_hit_result(), now=NOW)
     assert "RESISTANCE SEEN" in page
+
+
+# ---- FKS1 (echinocandin, detection-only) HIT --------------------------------
+
+def test_fks1_hit_page_renders_detection_only_cards():
+    result = _fks1_hit_result()
+    assert result["alerts"], "FKS1 fixture must produce alerts"
+    page = weather.render_page(result, now=NOW)
+    assert "RESISTANCE SEEN" in page
+    for a in result["alerts"]:
+        assert a["mutation"] in page
+    # detection-only: no structural fit row, and the caveat rides in on the headline
+    assert "Structural fit" not in page
+    assert "detection only" in page
+
+
+def test_fks1_hit_page_has_no_pocket_image():
+    # No FKS1 pocket render exists, so the card must not reference a pockets/ asset.
+    page = weather.render_page(_fks1_hit_result(), now=NOW)
+    assert "pockets/" not in page
+    assert 'class="pocket"' not in page
 
 
 # ---- QUIET framing -----------------------------------------------------------
