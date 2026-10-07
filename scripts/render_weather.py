@@ -10,12 +10,16 @@ worse than a page that says "quiet week".
 The pocket image is not rendered here (PyMOL is out of the offline path). The page
 references pockets/<token>.png; the workflow copies committed assets next to index.html.
 
+The arm defaults to FKS1/echinocandin -- the surveillance product. Pass --gene erg11 to
+render the azole/ERG11 research arm instead.
+
 Usage
 -----
-  # Live pull, render to the default site dir:
+  # Live pull, render the echinocandin page to the default site dir:
   python scripts/render_weather.py --as-of 2025-01-01 --out site/index.html
 
   python scripts/render_weather.py --snapshot data/.../PDG..tsv --as-of ... --out site/index.html
+  python scripts/render_weather.py --gene erg11 --snapshot data/.../PDG..tsv --as-of ... --out ...
   python scripts/render_weather.py --tsv saved.tsv --as-of ... --out site/index.html
   python scripts/render_weather.py --watching-only --out site/index.html   # skip data, day-0 page
 """
@@ -63,16 +67,25 @@ def _load_records(args):
     return records
 
 
+def _watching(args):
+    """An empty, gene-marked result so the calm page names the right arm even when no
+    data is loaded (watching-only, or a data hiccup) -- render_page reads `gene` for copy."""
+    return {"gene": "FKS1" if args.gene == "fks1" else "ERG11", "alerts": []}
+
+
 def _compose(args):
-    """Compose the current alert result, or None if data can't be loaded (-> watching)."""
+    """Compose the current alert result; on no/failed data, an empty gene-marked result
+    (-> the calm watching page for the selected arm)."""
     if args.watching_only:
-        return None
+        return _watching(args)
     try:
         records = _load_records(args)
     except Exception as exc:  # noqa: BLE001 -- a page must never fail on a data hiccup
         print(f"data unavailable ({exc!r}); rendering the watching page.", file=sys.stderr)
-        return None
-    return alert.compose_alerts(
+        return _watching(args)
+    composer = (alert.compose_fks1_alerts if args.gene == "fks1"
+                else alert.compose_alerts)
+    return composer(
         records, args.as_of, window_days=args.window,
         min_count=args.min_count, min_delta=args.min_delta,
         backlog_frac=args.backlog_frac)
@@ -86,6 +99,9 @@ def main():
     src.add_argument("--tsv", help="offline raw NCBI metadata TSV")
     src.add_argument("--watching-only", action="store_true",
                      help="skip data entirely; render the day-0 watching page")
+    ap.add_argument("--gene", choices=("fks1", "erg11"), default="fks1",
+                    help="which arm to render: fks1/echinocandin (the product, default) "
+                         "or erg11/azole (the research arm)")
     ap.add_argument("--release", type=int, default=None,
                     help="pin an NCBI release to pull (default: latest)")
     ap.add_argument("--as-of", default=datetime.date.today().isoformat(),

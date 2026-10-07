@@ -6,9 +6,11 @@
 # files nothing -- delivery.py already owns the digest/issue/no-op; this only publishes a
 # link you can send someone.
 #
-# Honest today-state: erg11 calls are pending the re-caller, so compose returns zero
-# alerts and the page shows the calm "watching since ..." state. It lights up automatically
-# once a real fill lands and delivery starts producing alerts -- same data, same source.
+# The page renders the echinocandin (FKS1) arm -- the surveillance product. Honest
+# today-state: the live metadata pull carries no fks1 calls (the re-caller runs out-of-band
+# on GCP, issue #171), so compose returns zero alerts and the page shows the calm "watching
+# since ..." state. It lights up once a real filled snapshot is committed and this render
+# step points at it with --snapshot -- same data, same source.
 #
 # The pocket images are pre-rendered out-of-band (PyMOL is out of the offline path) and
 # committed under docs/pockets/<token>.png; this workflow just copies them next to the page.
@@ -62,6 +64,7 @@ jobs:
           # render_weather.py never crashes on a data hiccup -- it falls back to the
           # watching page -- so a quiet or offline run still publishes a valid page.
           python3 scripts/render_weather.py \
+            --gene fks1 \
             --as-of "${{ steps.dates.outputs.as_of }}" \
             --window 180 \
             --out site/index.html

@@ -1,0 +1,21 @@
+isolate_key	target_acc	biosample_acc	run_acc	asm_acc	collection_date	target_creation_date	country	geo_loc_name	lat_lon	erg11_call	resistance_source	fks1_call	fks1_resistance_source
+PDFB000	PDFB000.1		SRR000		2023	2024-03-01	Pakistan					S639Y	recalled
+PDFB001	PDFB001.1		SRR001		2023	2024-03-01	Pakistan					S639Y	recalled
+PDFB002	PDFB002.1		SRR002		2023	2024-03-01	Pakistan					S639Y	recalled
+PDFB003	PDFB003.1		SRR003		2023	2024-03-01	Pakistan					S639Y	recalled
+PDFB004	PDFB004.1		SRR004		2023	2024-03-01	Pakistan					S639Y	recalled
+PDFB005	PDFB005.1		SRR005		2023	2024-03-01	Pakistan						recalled
+PDFB006	PDFB006.1		SRR006		2023	2024-03-01	Pakistan						recalled
+PDFB007	PDFB007.1		SRR007		2023	2024-03-01	Pakistan						recalled
+PDFB008	PDFB008.1		SRR008		2023	2024-03-01	Pakistan						recalled
+PDFB009	PDFB009.1		SRR009		2023	2024-03-01	Pakistan						recalled
+PDFR100	PDFR100.1		SRR100		2024	2025-02-01	Pakistan					S639F,S639Y	recalled
+PDFR101	PDFR101.1		SRR101		2024	2025-02-01	Pakistan					S639F,S639Y	recalled
+PDFR102	PDFR102.1		SRR102		2024	2025-02-01	Pakistan					S639F,S639Y	recalled
+PDFR103	PDFR103.1		SRR103		2024	2025-02-01	Pakistan					S639F,S639Y	recalled
+PDFR300	PDFR300.1		SRR300		2019	2025-03-01	India					S639P	recalled
+PDFR301	PDFR301.1		SRR301		2019	2025-03-01	India					S639P	recalled
+PDFR302	PDFR302.1		SRR302		2019	2025-03-01	India					S639P	recalled
+PDFR303	PDFR303.1		SRR303		2019	2025-03-01	India					S639P	recalled
+PDFR304	PDFR304.1		SRR304		2019	2025-03-01	India					S639P	recalled
+PDFR400	PDFR400.1		SRR400		2024	2025-02-15	Pakistan						recalled
