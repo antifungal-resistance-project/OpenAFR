@@ -317,8 +317,10 @@ def _snapshot(tmp_path, rows):
 def test_cmd_plan_matches_fill_selection_without_tools(script, tmp_path, capsys):
     # Two isolates with reads (fill-eligible) + one without (skipped, stays pending).
     p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "SRR2"), ("PDT3.1", "")])
+    # --no-window: this locks the whole-pool selection; the trailing-180d window scope (#171)
+    # is covered in test_fks1_call_table.py against dated fixtures.
     args = argparse.Namespace(snapshot=str(p), limit=0, random=False, seed=0,
-                              list_runs=True)
+                              list_runs=True, no_window=True)
     assert script.cmd_plan(args) == 0
     out = capsys.readouterr().out
     # PDT3 has no reads -> source is pending:no-reads, not the fill-eligible
@@ -358,9 +360,11 @@ def test_cmd_fill_marks_calls_and_logs(script, monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(script, "_recall_one",
                         lambda *a, **k: ("S639F",
                                          "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"))
+    # redirect the committed call-table dir into tmp so the fill (#171) can't touch the repo
+    monkeypatch.setattr(script, "FKS1_CALLS_DIR", tmp_path / "fks1_calls")
     p = _snapshot(tmp_path, [("PDT1.1", "SRR1"), ("PDT2.1", "")])
     args = argparse.Namespace(snapshot=str(p), limit=0, random=False, seed=0,
-                              dry_run=False)
+                              dry_run=False, no_window=True)
     assert script.cmd_fill(args) == 0
     records = {r["isolate_key"]: r for r in _ew.read_snapshot(p)}
     # the with-reads isolate got the call; the no-reads isolate stayed pending, not faked
@@ -368,6 +372,10 @@ def test_cmd_fill_marks_calls_and_logs(script, monkeypatch, tmp_path, capsys):
     assert records["PDT2"]["fks1_call"] == "" \
         and records["PDT2"]["fks1_resistance_source"] == "pending:no-reads"
     assert "S639F" in (tmp_path / "runlog" / "fill-fks1.jsonl").read_text()
+    # the fill also emits the durable, committed call table (#171): only the resolved isolate
+    table = tmp_path / "fks1_calls" / "snap.tsv"
+    assert "S639F" in table.read_text() and "PDT2" not in table.read_text()
+    assert "snap" in (tmp_path / "fks1_calls" / "INDEX.tsv").read_text()
 
 
 def test_cmd_migrate_upgrades_a_pre_v2_snapshot(script, tmp_path, capsys):

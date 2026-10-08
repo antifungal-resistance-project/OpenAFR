@@ -6,11 +6,13 @@
 # files nothing -- delivery.py already owns the digest/issue/no-op; this only publishes a
 # link you can send someone.
 #
-# The page renders the echinocandin (FKS1) arm -- the surveillance product. Honest
-# today-state: the live metadata pull carries no fks1 calls (the re-caller runs out-of-band
-# on GCP, issue #171), so compose returns zero alerts and the page shows the calm "watching
-# since ..." state. It lights up once a real filled snapshot is committed and this render
-# step points at it with --snapshot -- same data, same source.
+# The page renders the echinocandin (FKS1) arm -- the surveillance product. The live metadata
+# pull carries no fks1 calls (NCBI runs no AMR pipeline), so on its own it would show the calm
+# "watching since ..." state. render_weather overlays the durable, git-tracked FKS1 call table
+# (data/earlywarning/fks1_calls/, produced by the out-of-band GCP fill -- issue #171,
+# work/RUNBOOK_fks1_fill.md) onto that pull by isolate_key, so the page shows the real
+# echinocandin picture -- same data, same source. Until the first fill is committed the table
+# is empty and the page honestly stays at day-0; it lights up automatically once a fill lands.
 #
 # The pocket images are pre-rendered out-of-band (PyMOL is out of the offline path) and
 # committed under docs/pockets/<token>.png; this workflow just copies them next to the page.
@@ -31,6 +33,7 @@ on:
       - ".github/workflows/weather.yml"
       - "docs/pockets/**"
       - "data/earlywarning/digest/**"
+      - "data/earlywarning/fks1_calls/**"   # a committed fill (#171) re-publishes the page
 
 permissions:
   contents: read
