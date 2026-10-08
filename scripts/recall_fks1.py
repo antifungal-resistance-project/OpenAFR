@@ -60,6 +60,7 @@ alone. An isolate that fails to fetch/align yields an empty call with a `failed(
 source, not a dropped or guessed one.
 """
 import argparse
+import datetime
 import os
 import pathlib
 import random
@@ -72,8 +73,19 @@ import tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from openafr import backtest as bt           # noqa: E402  (fks1_panel_prevalence)
 from openafr import earlywarning as ew        # noqa: E402  (snapshot store + migration)
+from openafr import emergence                 # noqa: E402  (recent-window split, shared w/ the page)
 from openafr import fks1_caller as F         # noqa: E402
 from openafr import runlog                   # noqa: E402  (append-only per-run provenance)
+
+# Where the durable, git-tracked FKS1 call tables live (issue #171). A fill writes the compact
+# per-release table + a provenance INDEX row here so the public page can overlay the billable
+# calls onto a fresh live pull; the big snapshot blob they came from stays gitignored.
+FKS1_CALLS_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "earlywarning" / "fks1_calls"
+
+# The recent-window default the resistance-weather page uses (.github/workflows/weather.yml
+# renders with --window 180 and an as-of 180 days back), kept in sync so a fill re-calls
+# exactly the isolates the page will display.
+DEFAULT_WINDOW_DAYS = 180
 
 # External binaries the orchestration layer needs. Same toolchain as the ERG11 re-caller;
 # kept in one place so the gate message and the actual calls cannot drift.
@@ -325,34 +337,103 @@ def cmd_recall(args):
 FKS1_PENDING = "pending:sra-fks1-recaller"
 
 
-def _pending_with_run(records):
-    """The rows `fill` would attempt, in fill's order: pending:sra-fks1-recaller + a run_acc."""
+def _default_as_of(window_days=DEFAULT_WINDOW_DAYS):
+    """The baseline-cut date that makes `emergence.split_by_creation`'s recent window the
+    trailing `window_days` up to today -- the same convention the weather page uses (it passes
+    an as-of of today - 180). So the default fill scope IS the window the page displays."""
+    return (datetime.date.today() - datetime.timedelta(days=window_days)).isoformat()
+
+
+def _in_window(records, as_of, window_days):
+    """The isolate_keys of the recent window the page scopes to: NCBI-visible after `as_of`
+    and within `window_days` of it. `None` as_of means no window filter (whole snapshot)."""
+    if as_of is None:
+        return None
+    _baseline, recent, _undated = emergence.split_by_creation(records, as_of, window_days)
+    return {r["isolate_key"] for r in recent}
+
+
+def _pending_with_run(records, window_keys=None):
+    """The rows `fill` would attempt, in fill's order: pending:sra-fks1-recaller + a run_acc,
+    optionally restricted to the recent-window isolate_keys (`window_keys`) so a fill's GCP
+    cost is bounded to what the page will show."""
     return [r for r in records
             if (r.get("fks1_resistance_source") or "") == FKS1_PENDING
-            and (r.get("run_acc") or "").strip()]
+            and (r.get("run_acc") or "").strip()
+            and (window_keys is None or r.get("isolate_key") in window_keys)]
 
 
-def _fill_order(records, limit=0, shuffle=False, seed=0):
+def _fill_order(records, limit=0, shuffle=False, seed=0, window_keys=None):
     """The exact rows a `fill` will attempt, in the order it will attempt them (shared by
     cmd_fill and cmd_plan so the offline preflight matches the real run).
 
     Snapshot order tracks NCBI accession/submission order, which correlates with
     outbreak/study, so the head is a biased sample. With `shuffle`, deterministically permute
     (seeded) BEFORE slicing, so a `--limit N` is a representative sample of the pending pool --
-    the same discipline as recall_erg11.py and the pinned pre-registrations."""
-    rows = _pending_with_run(records)
+    the same discipline as recall_erg11.py and the pinned pre-registrations. `window_keys`
+    restricts to the recent window before any slicing."""
+    rows = _pending_with_run(records, window_keys)
     if shuffle:
         random.Random(seed).shuffle(rows)
     return rows[:limit] if limit else rows
 
 
+def _resolve_window(args):
+    """(as_of, window_days) defining the fill/plan scope. `--no-window` disables scoping
+    (as_of None -> the whole pending pool, the pre-#171 behavior). Otherwise `--as-of`
+    defaults to today - window_days, so the recent window is the trailing window_days the
+    resistance-weather page displays -- the fill re-calls exactly what the page will show."""
+    window_days = getattr(args, "window_days", DEFAULT_WINDOW_DAYS)
+    if getattr(args, "no_window", False):
+        return None, window_days
+    return (getattr(args, "as_of", None) or _default_as_of(window_days)), window_days
+
+
+def _release_tag_from_snapshot(path):
+    """Derive the NCBI release tag (PDG000000067.<N>) from a snapshot filename, for naming the
+    call table. Falls back to the bare stem if the name does not match the release pattern."""
+    stem = os.path.basename(path)
+    if stem.endswith(".tsv"):
+        stem = stem[:-4]
+    return stem
+
+
+def _emit_call_table(args, records, as_of, window_days):
+    """Write/refresh this release's compact FKS1 call table + its provenance INDEX row from the
+    full snapshot's resolved rows (issue #171 durability). Idempotent: re-emits the union of
+    calls-so-far, so an incremental fill never duplicates. Returns (path, sha, n_called)."""
+    FKS1_CALLS_DIR.mkdir(parents=True, exist_ok=True)
+    tag = _release_tag_from_snapshot(args.snapshot)
+    table_path = FKS1_CALLS_DIR / f"{tag}.tsv"
+    sha, n_called = ew.write_fks1_call_table(str(table_path), records)
+    ew.update_fks1_calls_index(str(FKS1_CALLS_DIR / "INDEX.tsv"), {
+        "release_tag": tag,
+        "as_of": as_of or "",
+        "window_days": window_days if as_of else "",
+        "n_called": n_called,
+        "sha256": sha,
+        "written_at_utc": ew.utcnow_iso(),
+    })
+    return table_path, sha, n_called
+
+
 def cmd_fill(args):
-    """Fill every pending:sra-fks1-recaller row of a snapshot in place (orchestration)."""
+    """Fill the pending:sra-fks1-recaller rows of a snapshot in place (orchestration).
+
+    By default scoped to the trailing-`--window-days` recent window the resistance-weather page
+    shows (issue #171), so the GCP cost is bounded to the isolates that will be displayed.
+    Writes the big snapshot blob (gitignored) AND the durable, git-tracked FKS1 call table the
+    public page overlays onto a live pull."""
     _require_tools()
     reference = F.load_reference()
     records = ew.read_snapshot(args.snapshot)   # migrates a pre-v2 snapshot on load
-    pending = _fill_order(records, args.limit, args.random, args.seed)
+    as_of, window_days = _resolve_window(args)
+    window_keys = _in_window(records, as_of, window_days)
+    pending = _fill_order(records, args.limit, args.random, args.seed, window_keys)
     how = f"random sample, seed={args.seed}" if args.random else "snapshot order"
+    scope = (f"recent window (as-of {as_of}, {window_days}d): {len(window_keys)} isolate(s)"
+             if window_keys is not None else "whole snapshot (--no-window)")
+    print(f"scope: {scope}", file=sys.stderr)
     print(f"{len(pending)} isolate(s) to re-call (pending:sra-fks1-recaller with a run_acc; "
           f"{how})", file=sys.stderr)
     # A `fill` overwrites calls in place, so without a log a re-run erases its predecessor with
@@ -365,6 +446,10 @@ def cmd_fill(args):
                            tools=list(TOOLS),
                            extra={"snapshot": os.path.basename(args.snapshot),
                                   "snapshot_sha256_before": digest_before,
+                                  "as_of": as_of,
+                                  "window_days": window_days if as_of else None,
+                                  "n_in_window": (len(window_keys)
+                                                  if window_keys is not None else None),
                                   "n_pending": len(pending),
                                   "limit": args.limit or None,
                                   "random": bool(args.random),
@@ -388,10 +473,16 @@ def cmd_fill(args):
             print(f"[{i}/{len(pending)}] {rec['isolate_key']} {run_acc} -> "
                   f"{call or '(no sub)'} [{source}]", file=sys.stderr)
         digest_after = ew.snapshot_sha256(records)
+        table_info = None
         if not args.dry_run:
             digest = ew.write_snapshot(args.snapshot, records)
             print(f"wrote {args.snapshot} ({digest[:12]}...)", file=sys.stderr)
+            table_path, table_sha, table_n = _emit_call_table(args, records, as_of, window_days)
+            table_info = {"path": str(table_path), "sha256": table_sha, "n_called": table_n}
+            print(f"wrote {table_path} ({table_sha[:12]}..., {table_n} resolved call(s))",
+                  file=sys.stderr)
         run.set(snapshot_sha256_after=digest_after, wrote=not args.dry_run,
+                call_table=table_info,
                 summary={"called": n_called, "partial": n_partial, "failed": n_failed,
                          "attempted": len(pending)})
     print(f"summary: {n_called} with substitution(s), {n_partial} partial/refused, "
@@ -406,16 +497,23 @@ def cmd_plan(args):
     be inspected before committing to the multi-GB downloads. Mirrors cmd_fill's row selection
     exactly, so its counts ARE the next fill's workload."""
     records = ew.read_snapshot(args.snapshot)
+    as_of, window_days = _resolve_window(args)
+    window_keys = _in_window(records, as_of, window_days)
     pending = [r for r in records
-               if (r.get("fks1_resistance_source") or "") == FKS1_PENDING]
-    with_run = _pending_with_run(records)
+               if (r.get("fks1_resistance_source") or "") == FKS1_PENDING
+               and (window_keys is None or r.get("isolate_key") in window_keys)]
+    with_run = _pending_with_run(records, window_keys)
     without_run = len(pending) - len(with_run)
-    attempted = _fill_order(records, args.limit, args.random, args.seed)
+    attempted = _fill_order(records, args.limit, args.random, args.seed, window_keys)
     first_runs = [r["run_acc"].split(",")[0].strip() for r in attempted]
     distinct = sorted(set(first_runs))
 
     print(f"snapshot:                {args.snapshot}")
     print(f"total isolates:          {len(records)}")
+    print("scope:                   " + (f"recent window as-of {as_of}, {window_days}d "
+                                         f"({len(window_keys)} isolate(s))"
+                                         if window_keys is not None
+                                         else "whole snapshot (--no-window)"))
     print(f"pending:sra-fks1-recaller {len(pending)}"
           f"  ({without_run} with no run_acc -> skipped, stay pending)")
     print(f"fill would re-call:      {len(attempted)} isolate(s)"
@@ -471,6 +569,20 @@ def cmd_migrate(args):
     return 0
 
 
+def _add_window_args(p):
+    """The recent-window scoping shared by `fill` and `plan` (issue #171): bound the re-call to
+    the trailing window the resistance-weather page displays, so GCP cost tracks what is shown."""
+    p.add_argument("--window-days", type=int, default=DEFAULT_WINDOW_DAYS,
+                   help=f"recent-window length in days (default {DEFAULT_WINDOW_DAYS}, "
+                        "matching the weather page)")
+    p.add_argument("--as-of", default=None,
+                   help="baseline-cut date; the recent window is the window-days AFTER it. "
+                        "Default: today - window-days, so the scope is the trailing window the "
+                        "page shows.")
+    p.add_argument("--no-window", action="store_true",
+                   help="disable window scoping -- re-call the whole pending pool (pre-#171)")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -504,6 +616,7 @@ def main():
                    help="RNG seed for --random (default 0); same snapshot+seed -> same sample")
     p.add_argument("--dry-run", action="store_true",
                    help="re-call but do not write the snapshot")
+    _add_window_args(p)
     p.set_defaults(func=cmd_fill)
 
     p = sub.add_parser("plan",
@@ -515,6 +628,7 @@ def main():
     p.add_argument("--seed", type=int, default=0, help="RNG seed for --random (default 0)")
     p.add_argument("--list-runs", action="store_true",
                    help="print the distinct SRA accessions")
+    _add_window_args(p)
     p.set_defaults(func=cmd_plan)
 
     p = sub.add_parser("prevalence",

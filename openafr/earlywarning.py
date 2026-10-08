@@ -326,3 +326,126 @@ def update_index(index_path, entry):
 
 def utcnow_iso():
     return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# ----- FKS1 call table: the durable, git-tracked home for the billable calls -----
+#
+# The FKS1/echinocandin re-caller runs out-of-band on GCP (issue #171) and its calls are
+# NOT regenerable without re-paying for the SRA download + align. The snapshot blobs those
+# calls live in are gitignored (multi-MB, regenerable NCBI metadata), so the calls need their
+# own small, committable home or the public page would snap back to the day-0 "watching" state
+# on the next live pull. This layer is that home: a compact per-release table of just the
+# isolates the re-caller resolved, overlaid onto a fresh live pull by isolate_key at
+# render/alert time. Same "small git-tracked memory, big blob gitignored" split as INDEX.tsv.
+
+FKS1_CALLS_COLUMNS = ("isolate_key", "fks1_call", "fks1_resistance_source",
+                      "run_acc", "target_creation_date")
+FKS1_CALLS_INDEX_COLUMNS = ("release_tag", "as_of", "window_days", "n_called",
+                            "sha256", "written_at_utc")
+
+
+def _is_resolved_fks1(rec):
+    """True iff the FKS1 re-caller has spoken for this isolate -- a real (non-pending)
+    source, whatever its verdict (called / partial / refused / failed). A `pending:` row is
+    one the re-caller has not reached yet and carries nothing worth persisting."""
+    src = (rec.get("fks1_resistance_source") or "")
+    return bool(src) and not src.startswith("pending:")
+
+
+def serialize_fks1_calls(records):
+    """Render the resolved FKS1 calls in `records` to canonical, byte-stable call-table TSV.
+
+    One row per isolate the re-caller resolved, sorted by isolate_key and carrying only the
+    compact FKS1 columns -- so the committed table diffs cleanly and re-emitting the same
+    calls produces identical bytes."""
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=list(FKS1_CALLS_COLUMNS), delimiter="\t",
+                       lineterminator="\n", extrasaction="ignore")
+    w.writeheader()
+    for rec in sorted(records, key=lambda x: x.get("isolate_key", "")):
+        if _is_resolved_fks1(rec):
+            w.writerow({c: (rec.get(c) or "") for c in FKS1_CALLS_COLUMNS})
+    return buf.getvalue()
+
+
+def write_fks1_call_table(path, records):
+    """(Re)write a release's compact FKS1 call table from its snapshot records, in place.
+
+    Idempotent/byte-stable: the same resolved calls always produce the same file, so a
+    repeated or incremental fill re-emits the full union of calls-so-far rather than appending
+    duplicates. Returns (sha256, n_called)."""
+    text = serialize_fks1_calls(records)
+    n_called = max(text.count("\n") - 1, 0)   # rows minus the header line
+    with open(path, "w", newline="") as fh:
+        fh.write(text)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest(), n_called
+
+
+def read_fks1_call_table(path):
+    """Load a FKS1 call table -> {isolate_key: row-dict of the compact FKS1 columns}."""
+    with open(path, newline="") as fh:
+        return {r["isolate_key"]: r for r in csv.DictReader(fh, delimiter="\t")}
+
+
+def overlay_fks1_calls(records, calls):
+    """Overlay committed FKS1 calls onto live-pull records, IN PLACE, by isolate_key.
+
+    `calls` is a mapping from read_fks1_call_table, or a path to one. A live NCBI pull carries
+    no echinocandin call -- every row is the honest `pending:` state `normalize` seeds. This
+    replays the billable re-caller output onto the matching rows so the page/alert shows the
+    real picture without re-running GCP. A record with no committed call is left in its honest
+    pending state -- never silently wild-type. Returns the number of records overlaid."""
+    if isinstance(calls, str):
+        calls = read_fks1_call_table(calls)
+    n = 0
+    for rec in records:
+        hit = calls.get(rec.get("isolate_key"))
+        if hit and (hit.get("fks1_resistance_source") or ""):
+            rec["fks1_call"] = hit.get("fks1_call") or ""
+            rec["fks1_resistance_source"] = hit.get("fks1_resistance_source") or ""
+            n += 1
+    return n
+
+
+def latest_fks1_call_table(calls_dir):
+    """The newest per-release FKS1 call table in `calls_dir` (highest PDG release), or None.
+
+    Lets a live render/alert auto-discover the durable calls without naming the release the
+    last fill happened to target."""
+    import glob
+    import os.path
+    best, best_rel = None, -1
+    pat = re.compile(re.escape(ORG_PREFIX) + r"\.(\d+)\.tsv$")
+    for path in glob.glob(os.path.join(calls_dir, ORG_PREFIX + ".*.tsv")):
+        m = pat.search(os.path.basename(path))
+        if m and int(m.group(1)) > best_rel:
+            best, best_rel = path, int(m.group(1))
+    return best
+
+
+def update_fks1_calls_index(index_path, entry):
+    """Upsert one fill's FKS1 call-table provenance row into the git-tracked calls INDEX.
+
+    Mirrors `update_index`: idempotent per release_tag (a re-fill of the same release replaces
+    its row), rows ordered by release number, byte-stable."""
+    rows = {}
+    try:
+        with open(index_path, newline="") as fh:
+            for r in csv.DictReader(fh, delimiter="\t"):
+                rows[r["release_tag"]] = r
+    except FileNotFoundError:
+        pass
+    rows[entry["release_tag"]] = entry
+
+    def _order(tag):
+        # Order by trailing release number when the tag is a PDG release (the production case);
+        # fall back to lexical so a non-release tag (e.g. a test snapshot name) cannot crash.
+        suffix = tag.split(".")[-1]
+        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, tag)
+
+    with open(index_path, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(FKS1_CALLS_INDEX_COLUMNS), delimiter="\t",
+                           lineterminator="\n", extrasaction="ignore")
+        w.writeheader()
+        for tag in sorted(rows, key=_order):
+            w.writerow(rows[tag])

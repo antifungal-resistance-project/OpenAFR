@@ -80,6 +80,22 @@ def _compose(records, args):
         min_delta=args.min_delta, backlog_frac=args.backlog_frac)
 
 
+FKS1_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
+
+
+def _overlay_live_calls(records, args):
+    """Replay the durable, git-tracked FKS1 calls onto a freshly pulled set (issue #171), so the
+    fks1 schedule decides on the real echinocandin picture rather than an all-pending pull. No-op
+    for the erg11 arm, when no table is found, or on a written --snapshot (it carries its own)."""
+    if getattr(args, "gene", "erg11") != "fks1":
+        return
+    table = getattr(args, "fks1_calls", None) or ew.latest_fks1_call_table(str(FKS1_CALLS_DIR))
+    if not table or not pathlib.Path(table).exists():
+        return
+    n = ew.overlay_fks1_calls(records, str(table))
+    print(f"overlaid {n} FKS1 call(s) from {table}", file=sys.stderr)
+
+
 def _load_records(args):
     """Resolve the run's record source: written snapshot, offline TSV, or a live pull."""
     if args.snapshot:
@@ -88,9 +104,11 @@ def _load_records(args):
         with open(args.tsv, newline="") as fh:
             rows = list(csv.DictReader(fh, delimiter="\t"))
         records, _ = ew.normalize(rows)
+        _overlay_live_calls(records, args)
         return records, f"offline tsv {args.tsv}"
     rows, tag, url = ew.fetch_release_rows(args.release)
     records, _ = ew.normalize(rows)
+    _overlay_live_calls(records, args)
     return records, f"live pull {tag} ({url})"
 
 
@@ -233,6 +251,9 @@ def _add_source_args(p):
     src.add_argument("--tsv", help="offline raw NCBI metadata TSV")
     p.add_argument("--release", type=int, default=None,
                    help="pin an NCBI release to pull (default: latest)")
+    p.add_argument("--fks1-calls", default=None,
+                   help="committed FKS1 call table to overlay onto a live pull / --tsv "
+                        "(default: newest in data/earlywarning/fks1_calls; fks1 arm only)")
 
 
 def main():

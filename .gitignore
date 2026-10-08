@@ -76,6 +76,12 @@ work/chembl/
 data/earlywarning/snapshots/*.tsv
 !data/earlywarning/snapshots/INDEX.tsv
 
+# FKS1 call tables (issue #171) are the OPPOSITE case and are deliberately committed in
+# full: the echinocandin re-caller runs billably on GCP and its calls are NOT regenerable
+# without re-paying, so the compact per-release table under data/earlywarning/fks1_calls/
+# (plus its INDEX.tsv) is the durable home the public page overlays onto a live pull. Small
+# and diffable -- no ignore rule here, on purpose.
+
 # Python
 __pycache__/
 *.pyc

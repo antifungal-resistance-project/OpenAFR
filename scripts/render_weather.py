@@ -37,6 +37,24 @@ from openafr import earlywarning as ew  # noqa: E402
 
 DIGEST_DIR = ROOT / "data" / "earlywarning" / "digest"
 DEFAULT_STATE = DIGEST_DIR / "STATE.json"
+FKS1_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
+
+
+def _overlay_live_calls(records, args):
+    """Replay the durable, git-tracked FKS1 calls onto a freshly pulled set (issue #171).
+
+    A live NCBI pull (or a raw --tsv) carries no echinocandin call -- every row is the honest
+    `pending:` state. The billable re-caller output lives in a committed call table; overlay it
+    so the page shows the real echinocandin picture instead of day-0. No-op for the erg11 arm
+    or when no table is found. A written --snapshot is left untouched (it carries its own calls).
+    """
+    if args.gene != "fks1":
+        return
+    table = args.fks1_calls or ew.latest_fks1_call_table(str(FKS1_CALLS_DIR))
+    if not table or not pathlib.Path(table).exists():
+        return
+    n = ew.overlay_fks1_calls(records, str(table))
+    print(f"overlaid {n} FKS1 call(s) from {table}", file=sys.stderr)
 
 
 def _watching_since(state_path, fallback):
@@ -61,9 +79,11 @@ def _load_records(args):
         with open(args.tsv, newline="") as fh:
             rows = list(csv.DictReader(fh, delimiter="\t"))
         records, _ = ew.normalize(rows)
+        _overlay_live_calls(records, args)
         return records
     rows, _tag, _url = ew.fetch_release_rows(args.release)
     records, _ = ew.normalize(rows)
+    _overlay_live_calls(records, args)
     return records
 
 
@@ -104,6 +124,9 @@ def main():
                          "or erg11/azole (the research arm)")
     ap.add_argument("--release", type=int, default=None,
                     help="pin an NCBI release to pull (default: latest)")
+    ap.add_argument("--fks1-calls", default=None,
+                    help="committed FKS1 call table to overlay onto a live pull / --tsv "
+                         "(default: newest in data/earlywarning/fks1_calls; fks1 arm only)")
     ap.add_argument("--as-of", default=datetime.date.today().isoformat(),
                     help="baseline cut date, ISO (default: today)")
     ap.add_argument("--window", type=int, default=180, help="recent-window days")
