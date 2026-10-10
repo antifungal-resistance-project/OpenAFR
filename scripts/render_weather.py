@@ -57,6 +57,22 @@ def _overlay_live_calls(records, args):
     print(f"overlaid {n} FKS1 call(s) from {table}", file=sys.stderr)
 
 
+def _calls_provenance(args):
+    """Provenance of the FKS1 call table the page overlays (`as_of`, `n_called`), for the
+    freshness clause -- or None for the erg11 arm or when no fill exists. Mirrors the table
+    auto-discovery in `_overlay_live_calls`, so what the clause reports is what was overlaid.
+    A written --snapshot carries its own calls (no overlay), so its freshness is its own
+    as_of, not the committed table's -- return None there rather than claim the fill date."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    if args.fks1_calls:
+        # Explicit table: read provenance from the sibling INDEX in its directory.
+        calls_dir = str(pathlib.Path(args.fks1_calls).resolve().parent)
+    else:
+        calls_dir = str(FKS1_CALLS_DIR)
+    return ew.latest_fks1_calls_index_entry(calls_dir)
+
+
 def _watching_since(state_path, fallback):
     """The date to frame 'quiet since' by: the delivery state's `updated`, else fallback.
 
@@ -143,7 +159,8 @@ def main():
 
     result = _compose(args)
     watching_since = _watching_since(args.state, args.watching_start)
-    page = weather.render_page(result, watching_since=watching_since)
+    page = weather.render_page(result, watching_since=watching_since,
+                               calls_provenance=_calls_provenance(args))
 
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

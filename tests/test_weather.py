@@ -155,3 +155,56 @@ def test_pocket_asset_is_filename_safe():
     assert weather.pocket_asset("F126L") == "pockets/F126L.png"
     assert weather.pocket_asset("TR34/L98H") == "pockets/TR34L98H.png"
     assert "/" not in weather.pocket_asset("../../etc/passwd").removeprefix("pockets/")
+
+
+# ---- freshness / coverage honesty (issue #171) -------------------------------
+# A public-health page must state how much of the shown window is actually re-called and
+# how current those calls are -- it must degrade honestly as a fill ages out of the window,
+# never present a stale/partial sample as a confident current picture.
+
+def _cov_result(recent_total, recent_called):
+    r = _empty_result()
+    r["gene"] = "FKS1"
+    r["coverage"] = {"recent_total": recent_total, "recent_called": recent_called,
+                     "baseline_total": 0, "baseline_called": 0, "undated": 0}
+    return r
+
+
+def test_healthy_coverage_shows_percent_and_fill_date():
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert "150 of 200 window isolates re-called (75%)" in page
+    assert "calls current through" in page and "2026-04-11" in page
+
+
+def test_window_with_no_recalls_reads_as_awaiting_not_current():
+    # recent_total > 0 but recent_called == 0: the fill has aged out of the window.
+    page = weather.render_page(_cov_result(200, 0), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert "awaiting re-call" in page
+    assert "Awaiting the next echinocandin re-call batch" in page
+    assert "the last batch covered through 2026-04-11" in page
+    assert "window isolates re-called" not in page  # never a confident coverage %
+
+
+def test_quiet_window_omits_coverage_clause():
+    # recent_total == 0: a genuinely quiet window, not a stale fill -> no coverage clause,
+    # the normal watching copy stands.
+    page = weather.render_page(_cov_result(0, 0), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert "re-called" not in page.split("<footer>")[0]  # body/meta carry no coverage %
+    assert "awaiting re-call" not in page
+    assert "No echinocandin-resistance variant is over threshold" in page
+
+
+def test_missing_coverage_and_provenance_omit_clause_without_crashing():
+    # The page-never-fails invariant: no coverage / no provenance -> clause simply absent.
+    page = weather.render_page(_empty_result(), now=NOW, calls_provenance=None)
+    assert "window isolates re-called" not in page
+    assert "awaiting re-call" not in page
+
+
+def test_footer_states_the_monthly_refresh_cadence():
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert "monthly FKS1 re-call batch" in page
