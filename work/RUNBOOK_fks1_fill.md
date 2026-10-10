@@ -73,3 +73,10 @@ isolates accrue slowly; a weekly fill would mostly re-pay for an unchanged windo
 `weather.yml` keeps *publishing* the latest committed table regardless — only the (billable) fill
 is monthly. Each fill is idempotent and re-emits the union of calls-so-far, so a missed month
 simply catches up on the next run.
+
+Between fills the page is honest about how current it is: `render_weather.py` passes the newest
+`INDEX.tsv` row to `weather.render_page`, which surfaces a coverage/freshness clause —
+`echinocandin calls: N of M window isolates re-called (X%) · calls current through <as_of>`, or a
+muted *awaiting re-call* when the fill has aged out of the displayed window — and the footer states
+this monthly contract. So a lapsed fill reads as *stale*, never as a confident current picture;
+that is the signal that it is time to re-run this runbook.

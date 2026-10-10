@@ -101,6 +101,25 @@ def test_calls_index_upserts_per_release(tmp_path):
     assert len(rows) == 1 and rows[0]["n_called"] == "5"   # re-fill replaced the row
 
 
+def test_latest_index_entry_picks_highest_release(tmp_path):
+    idx = tmp_path / "INDEX.tsv"
+    for rel, as_of in (("300", "2025-01-01"), ("709", "2026-04-11"), ("12", "2024-01-01")):
+        ew.update_fks1_calls_index(str(idx), {"release_tag": f"PDG000000067.{rel}",
+                                              "as_of": as_of, "window_days": 180,
+                                              "n_called": 1, "sha256": "x",
+                                              "written_at_utc": "2026-10-07T00:00:00Z"})
+    entry = ew.latest_fks1_calls_index_entry(str(tmp_path))
+    assert entry["release_tag"] == "PDG000000067.709"   # highest release number, not lexical
+    assert entry["as_of"] == "2026-04-11"
+
+
+def test_latest_index_entry_none_when_missing_or_empty(tmp_path):
+    assert ew.latest_fks1_calls_index_entry(str(tmp_path)) is None   # no INDEX.tsv
+    (tmp_path / "INDEX.tsv").write_text(
+        "\t".join(ew.FKS1_CALLS_INDEX_COLUMNS) + "\n")                # header only
+    assert ew.latest_fks1_calls_index_entry(str(tmp_path)) is None
+
+
 # --- windowed fill scope (recall_fks1.py) ------------------------------------
 
 def test_in_window_restricts_to_recent_partition():

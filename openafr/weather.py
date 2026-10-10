@@ -143,13 +143,51 @@ def _calm_copy(gene):
             "with its emergence signal — detection only, no structural verdict.")
 
 
-def render_page(alert_result, *, now=None, watching_since=None):
+def _coverage_clause(coverage, provenance):
+    """A freshness/coverage clause for the .meta line, or "" when there is nothing honest
+    to say. For a public-health page, how much of the shown window is actually re-called —
+    and how current those calls are — matters as much as the verdict itself.
+
+    `coverage` -- the composer's coverage dict (recent_total / recent_called), or None.
+    `provenance` -- {as_of, n_called} of the overlaid call table (the fill date), or None.
+    Degrades honestly: zero re-called isolates in the window reads as "awaiting re-call",
+    never as a confident current picture; missing data omits the clause rather than guessing.
+    """
+    if not coverage:
+        return ""
+    total = coverage.get("recent_total") or 0
+    called = coverage.get("recent_called") or 0
+    if total == 0:
+        # No isolates in the window at all -- a genuinely quiet window, not a stale fill.
+        # The calm "watching since" copy carries this; a coverage % would be meaningless.
+        return ""
+    through = (provenance or {}).get("as_of")
+    through_html = (f" &middot; calls current through <code>{html.escape(str(through))}</code>"
+                    if through else "")
+    if called == 0:
+        return f'<span class="stale">echinocandin calls: awaiting re-call{through_html}</span>'
+    pct = round(100 * called / total)
+    return (f"echinocandin calls: {called} of {total} window isolates re-called "
+            f"({pct}%){through_html}")
+
+
+def _is_awaiting(coverage):
+    """True when a window exists but no isolate in it has been re-called yet -- a lapsed or
+    not-yet-current fill, distinct from a genuinely never-started day-0 watch."""
+    return bool(coverage) and (coverage.get("recent_total") or 0) > 0 \
+        and (coverage.get("recent_called") or 0) == 0
+
+
+def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
     `now`          -- a datetime/ISO string for "last checked"; defaults to UTC now.
     `watching_since` -- ISO date the watch started / last-delivered date, for the quiet
                         framing. None renders the pure day-0 line.
+    `calls_provenance` -- {as_of, n_called} of the overlaid FKS1 call table, for the
+                        freshness clause; None omits it. Passed in (not read) to keep this
+                        deterministic.
     Deterministic given its inputs -- no I/O, no network, no wall-clock unless `now` is None.
     """
     if now is None:
@@ -164,21 +202,34 @@ def render_page(alert_result, *, now=None, watching_since=None):
     status = _status_line(alerts, watching_since, now_date)
     accent = _TIER[alerts[0]["priority"]][1] if alerts else "#4dd6a0"
 
+    coverage = r.get("coverage")
     if alerts:
         body = "\n".join(_alert_card(a) for a in alerts)
     else:
         note = r.get("note")
-        since = html.escape(str(watching_since)) if watching_since else "the first run"
         note_html = (f'<p class="note">{html.escape(str(note))}</p>' if note else "")
         calm_headline, calm_body = _calm_copy(r.get("gene"))
+        if _is_awaiting(coverage):
+            # A window exists but nothing in it is re-called yet: a lapsed / not-yet-current
+            # fill, not a never-started watch. Frame it by the last batch, not day-0.
+            through = (calls_provenance or {}).get("as_of")
+            watch_line = ("Awaiting the next echinocandin re-call batch"
+                          + (f"; the last batch covered through {html.escape(str(through))}."
+                             if through else "."))
+        else:
+            since = html.escape(str(watching_since)) if watching_since else "the first run"
+            watch_line = (f"Watching {html.escape(_TAXON)} genome deposits since {since}. "
+                          f"{calm_body}")
         body = f"""    <article class="card calm">
       <p class="headline">{calm_headline}</p>
-      <p>Watching {html.escape(_TAXON)} genome deposits since {since}. {calm_body}</p>
+      <p>{watch_line}</p>
       {note_html}
     </article>"""
 
     as_of = html.escape(str(r.get("as_of", "—")))
     window = html.escape(str(r.get("window_days", "—")))
+    coverage_clause = _coverage_clause(coverage, calls_provenance)
+    coverage_html = f"\n     {coverage_clause} &middot;" if coverage_clause else ""
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -196,6 +247,7 @@ def render_page(alert_result, *, now=None, watching_since=None):
              color:{accent}; }}
   .meta {{ color:#8a94a6; font-size:.85rem; margin-bottom:2rem; }}
   .meta code {{ color:#c3cad6; }}
+  .meta .stale {{ color:#e0b050; }}
   .card {{ background:#151a23; border:1px solid #232a36; border-left:4px solid var(--accent,#232a36);
            border-radius:10px; padding:1.1rem 1.25rem; margin:1rem 0; }}
   .card.calm {{ --accent:#4dd6a0; }}
@@ -219,12 +271,14 @@ def render_page(alert_result, *, now=None, watching_since=None):
   <h1>C. auris Resistance Weather Report</h1>
   <p class="status">{html.escape(status)}</p>
   <p class="meta">Last checked <code>{last_checked}</code> &middot;
-     as of <code>{as_of}</code> &middot; window <code>{window}</code>d &middot;
+     as of <code>{as_of}</code> &middot; window <code>{window}</code>d &middot;{coverage_html}
      source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
 {body}
   <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
-    Priority tiers and every number come straight from
+    Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
+    (cadence set by the ~97-day median deposit lag); between batches the coverage line above
+    states how current they are. Priority tiers and every number come straight from
     <code>openafr.alert</code>; this page renders that verdict, it never invents one.
   </footer>
 </div>

@@ -449,3 +449,27 @@ def update_fks1_calls_index(index_path, entry):
         w.writeheader()
         for tag in sorted(rows, key=_order):
             w.writerow(rows[tag])
+
+
+def latest_fks1_calls_index_entry(calls_dir):
+    """The newest FKS1-calls provenance row from `calls_dir`/INDEX.tsv, or None.
+
+    Mirrors `latest_fks1_call_table`'s "highest PDG release wins" ordering so a live render
+    can report how current the overlaid calls are (as_of / n_called) without naming the
+    release the last fill targeted. Returns the row as a dict over FKS1_CALLS_INDEX_COLUMNS;
+    a missing/empty INDEX yields None."""
+    import os.path
+    index_path = os.path.join(calls_dir, "INDEX.tsv")
+
+    def _order(tag):
+        suffix = str(tag).split(".")[-1]
+        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, str(tag))
+
+    try:
+        with open(index_path, newline="") as fh:
+            rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("release_tag")]
+    except FileNotFoundError:
+        return None
+    if not rows:
+        return None
+    return max(rows, key=lambda r: _order(r["release_tag"]))
