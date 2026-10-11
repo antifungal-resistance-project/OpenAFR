@@ -18,6 +18,12 @@ still rare (~2%) and *dynamic* — the regime where early warning is actually us
 > just in the one-off benchmarks it has passed. Until that standing fill lands, the page shows
 > its honest day-0 "watching…" state. Closing that loop is the current milestone.
 
+> **Lab users — interpret your own isolate.** Hold a sequenced *C. auris* isolate? The
+> genotype→verdict engine has a one-command front door: give it a variant list or a consensus
+> and it returns one RUO resistance-marker verdict per drug-class (echinocandin / azole). See
+> [**`docs/QUICKSTART_LAB.md`**](docs/QUICKSTART_LAB.md) — what it does, how to run it, and how
+> to read each verdict.
+
 ## Research arm: self-validating antifungal drug discovery
 
 Alongside the product, the repo carries the project's **research / credibility arm** — a
@@ -447,6 +453,12 @@ Every verdict is one of four values (full spec in
 
 Everything is **RUO** — research use only, not a clinical determination.
 
+A lab user runs the whole engine from one command —
+`python scripts/interpret_isolate.py --isolate <id> --gene FKS1 --variants S639P` — which routes
+a genotype (variant tokens, a consensus CDS, or per-window FKS1 consensus) through the callers
+and renders the per-drug-class verdict. The lab-facing walkthrough, including how to read each
+verdict, is [`docs/QUICKSTART_LAB.md`](docs/QUICKSTART_LAB.md).
+
 The **echinocandin arm is the first to clear a pre-registered clinical-accuracy bar.** Graded
 against each isolate's measured echinocandin phenotype, it hits **very-major error 0%** (VME —
 calling a resistant isolate not-resistant, the dangerous direction; 0/42, 95% CI 0–8.4%) and
@@ -460,7 +472,7 @@ clinical-path decision doc: [docs/DIAGNOSTIC_GO_NO_GO.md](docs/DIAGNOSTIC_GO_NO_
 
 | Piece | Library | CLI / validator | What it does |
 |---|---|---|---|
-| genotype→verdict entrypoint | `openafr/interpret.py` | — | single path: raw genotype → routes through the callers → verdict object |
+| genotype→verdict entrypoint | `openafr/interpret.py` | `scripts/interpret_isolate.py` | single path: raw genotype → routes through the callers → verdict object (the lab-user front door, see [`docs/QUICKSTART_LAB.md`](docs/QUICKSTART_LAB.md)) |
 | the verdict contract | `openafr/verdict.py` | — | maps caller output to the four-value enum; enforces the RUO scope |
 | concordance | `openafr/concordance.py` | `scripts/validate_fks1_concordance.py` | grades caller tokens against an external truth set (the 98-genome certification) |
 | verdict accuracy | `openafr/accuracy.py` | `scripts/validate_diagnostic_accuracy.py` | grades verdicts against measured phenotype in VME/ME terms vs a frozen bar |
