@@ -4,6 +4,10 @@ The output spec for the resistance-interpretation engine (`.context/DIAGNOSTICS_
 It defines *exactly* what the engine emits per isolate and — just as importantly — what it
 refuses to claim. This contract **is** the product: the honest boundary is the differentiator.
 
+> **Running it as a lab user?** Start with [`QUICKSTART_LAB.md`](QUICKSTART_LAB.md) — the
+> one-command front door (`scripts/interpret_isolate.py`) and a plain-English guide to reading
+> each verdict. This document is the full specification behind that walkthrough.
+
 **Day-one scope is fixed by #132.** The calibration-grade panel does not exist in public form
 for *C. auris* (class-imbalanced, ERG11-hotspot-skewed; see
 `work/RESULTS_diagnostics_panel_spike.md`). So this contract is **concordance-only**: it detects
