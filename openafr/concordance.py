@@ -34,6 +34,62 @@ sanity harness reuses recall_fks1.
 from openafr.backtest import wilson_interval
 
 
+# Pre-committed FKS1 concordance pass bar (work/PREREGISTRATION_fks1_concordance.md, frozen
+# 2026-09-07). Kept here, in the scoring library, so BOTH the cloud grader
+# (scripts/validate_fks1_concordance.py) and the offline CI replay gate
+# (tests/test_fks1_concordance_replay.py) apply the SAME bar to an evaluate() summary --
+# the grader must never drift from the bar the published result was certified against.
+FKS1_CONCORDANCE_BAR = {
+    "specificity_point": 0.95, "specificity_lo": 0.90,
+    "sensitivity_point": 0.90, "sensitivity_lo": 0.75,
+    "identity_point": 0.95,
+    "resolved_frac": 0.80,
+}
+
+
+def apply_bar(summary, bar=FKS1_CONCORDANCE_BAR, certified=True):
+    """Apply the pre-committed pass bar to an evaluate() summary.
+
+    Returns (verdict, [reason lines]) where verdict is "PASS", "FAIL", or "UNDERPOWERED"
+    (resolved fraction below the floor -- too thin to certify, neither pass nor fail).
+    `certified=False` (integrity overridden) only annotates the reasons; it does not change
+    the pass/fail arithmetic.
+    """
+    reasons = []
+    n_total = summary["n_total"] or 1
+    resolved_frac = summary["n_resolved"] / n_total
+    if resolved_frac < bar["resolved_frac"]:
+        return "UNDERPOWERED", [
+            f"resolved {summary['n_resolved']}/{summary['n_total']} = {resolved_frac:.0%} "
+            f"< {bar['resolved_frac']:.0%} required -- coverage too thin to certify; "
+            f"try more reads / a lower min-depth. Neither a pass nor a fail."]
+    if not certified:
+        reasons.append("NOTE: uncertified (integrity check was overridden).")
+
+    sens, spec, ident = summary["sensitivity"], summary["specificity"], summary["identity"]
+    checks = [
+        ("specificity", spec["point"], bar["specificity_point"],
+         spec["ci95"][0] if spec["ci95"] else None, bar["specificity_lo"]),
+        ("sensitivity", sens["point"], bar["sensitivity_point"],
+         sens["ci95"][0] if sens["ci95"] else None, bar["sensitivity_lo"]),
+        ("identity", ident["point"], bar["identity_point"], None, None),
+    ]
+    passed = True
+    for name, point, pbar, lo, lobar in checks:
+        if point is None:
+            passed = False
+            reasons.append(f"{name}: no resolved isolates to measure -- FAIL")
+            continue
+        pt_ok = point >= pbar
+        lo_ok = (lobar is None) or (lo is not None and lo >= lobar)
+        passed = passed and pt_ok and lo_ok
+        detail = f"point {point:.1%} (bar {pbar:.0%})"
+        if lobar is not None:
+            detail += f", lower {lo:.1%} (bar {lobar:.0%})"
+        reasons.append(f"{name}: {detail} -- {'ok' if pt_ok and lo_ok else 'BELOW BAR'}")
+    return ("PASS" if passed else "FAIL"), reasons
+
+
 def _proportion(k, n):
     """A (k, n, point, ci) record; point/ci are None when n == 0 (nothing to divide)."""
     return {
