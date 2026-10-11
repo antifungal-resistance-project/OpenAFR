@@ -21,6 +21,15 @@ matched at run time.**
 finished 2026-09-20T05:30Z; GCP e2-standard-4, us-central1-a (VM deleted after the run). Tools:
 fasterq-dump 3.1.1, minimap2 2.28, samtools 1.21.
 
+**CI regression guard (#164):** `tests/test_fks1_concordance_replay.py` re-scores this run's
+frozen per-isolate calls (the 98-isolate PASS record in the runlog above) through the production
+scorer + pass bar on every PR, asserting the headline below still holds (100%/100%/100%, 98/98
+resolved, PASS). The pass bar is the single `openafr.concordance.FKS1_CONCORDANCE_BAR` that the
+cloud grader also applies. *Scope:* this guards the scoring code, the bar, and the frozen calls —
+it does **not** re-run the aligner/caller (SRA + tools, not CI-able; that stays in the cloud
+grader + `work/RUNBOOK_fks1_run.md`). The caller's genotype→panel logic is covered offline by
+`tests/test_fks1_caller.py`.
+
 ## Truth set
 
 **PMC12323592** — *"A benchmark dataset for validating FKS1 mutations in Candida auris"* — Table 1,

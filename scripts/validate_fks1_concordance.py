@@ -56,13 +56,9 @@ DEFAULT_FIXTURE = ROOT / "data" / "earlywarning" / "recaller_sanity" / "fks1_ben
 
 PANEL_WINDOWS = [name for name, w in F.FKS1_WINDOWS.items() if w.panel]
 
-# Pre-committed pass bar (work/PREREGISTRATION_fks1_concordance.md, frozen 2026-09-07).
-BAR = {
-    "specificity_point": 0.95, "specificity_lo": 0.90,
-    "sensitivity_point": 0.90, "sensitivity_lo": 0.75,
-    "identity_point": 0.95,
-    "resolved_frac": 0.80,
-}
+# The pre-committed pass bar and its application live in openafr.concordance
+# (FKS1_CONCORDANCE_BAR + apply_bar), so this cloud grader and the offline CI replay gate
+# (tests/test_fks1_concordance_replay.py) certify against one source of truth.
 
 
 def _sha256(path):
@@ -260,7 +256,7 @@ def main():
                     strain, run_acc, result, row.get("susceptibility"), row.get("citation")))
 
         summary = cc.evaluate(evals)
-        verdict, reasons = _verdict(summary, certified=ok)
+        verdict, reasons = cc.apply_bar(summary, certified=ok)
         run.set(status=("ok" if verdict == "PASS" else "fail"),
                 summary={"verdict": verdict, "confusion": summary["confusion"],
                          "n_resolved": summary["n_resolved"],
@@ -283,42 +279,6 @@ def main():
         print(f"  python scripts/validate_diagnostic_accuracy.py --fixture {out}")
 
     return 0 if verdict == "PASS" else 1
-
-
-def _verdict(summary, certified):
-    """Apply the pre-committed pass bar. Returns (verdict, [reason lines])."""
-    reasons = []
-    n_total = summary["n_total"] or 1
-    resolved_frac = summary["n_resolved"] / n_total
-    if resolved_frac < BAR["resolved_frac"]:
-        return "UNDERPOWERED", [
-            f"resolved {summary['n_resolved']}/{summary['n_total']} = {resolved_frac:.0%} "
-            f"< {BAR['resolved_frac']:.0%} required -- coverage too thin to certify; "
-            f"try more reads / a lower min-depth. Neither a pass nor a fail."]
-    if not certified:
-        reasons.append("NOTE: uncertified (integrity check was overridden).")
-
-    sens, spec, ident = summary["sensitivity"], summary["specificity"], summary["identity"]
-    checks = [
-        ("specificity", spec["point"], BAR["specificity_point"],
-         spec["ci95"][0] if spec["ci95"] else None, BAR["specificity_lo"]),
-        ("sensitivity", sens["point"], BAR["sensitivity_point"],
-         sens["ci95"][0] if sens["ci95"] else None, BAR["sensitivity_lo"]),
-        ("identity", ident["point"], BAR["identity_point"], None, None),
-    ]
-    passed = True
-    for name, point, pbar, lo, lobar in checks:
-        if point is None:
-            passed = False; reasons.append(f"{name}: no resolved isolates to measure -- FAIL")
-            continue
-        pt_ok = point >= pbar
-        lo_ok = (lobar is None) or (lo is not None and lo >= lobar)
-        passed = passed and pt_ok and lo_ok
-        detail = f"point {point:.1%} (bar {pbar:.0%})"
-        if lobar is not None:
-            detail += f", lower {lo:.1%} (bar {lobar:.0%})"
-        reasons.append(f"{name}: {detail} -- {'ok' if pt_ok and lo_ok else 'BELOW BAR'}")
-    return ("PASS" if passed else "FAIL"), reasons
 
 
 if __name__ == "__main__":
