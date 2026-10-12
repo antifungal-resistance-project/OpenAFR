@@ -208,3 +208,51 @@ def test_footer_states_the_monthly_refresh_cadence():
     page = weather.render_page(_cov_result(200, 150), now=NOW,
                                calls_provenance={"as_of": "2026-04-11", "n_called": 300})
     assert "monthly FKS1 re-call batch" in page
+
+
+# ---- certification badge + methods / provenance (track C) --------------------
+# A public-health product must show that its numbers come from a certified caller, and
+# expose its methods/provenance -- but only when there is a real PASS record to stand on.
+
+_CERT_PASS = {"verdict": "PASS", "n": 98, "n_resolved": 98,
+              "sensitivity": 1.0, "specificity": 1.0, "identity": 1.0,
+              "benchmark": "fks1_benchmark_100.tsv"}
+
+
+def test_certification_pass_renders_badge_and_methods():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        calls_provenance={"as_of": "2026-04-11", "n_called": 300,
+                          "release_tag": "PDG000000067.709"},
+        certification=_CERT_PASS)
+    assert 'class="cert"' in page
+    assert "certified FKS1 caller" in page
+    assert 'id="methods"' in page
+    # measured numbers are surfaced, and the release the fill targeted is named
+    assert "100%" in page and "PASS (98/98 isolates resolved)" in page
+    assert "PDG000000067.709" in page and "300" in page
+
+
+def test_no_certification_omits_badge_and_methods():
+    # The default (no certification) page makes no certification claim at all.
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert 'class="cert"' not in page
+    assert 'id="methods"' not in page
+
+
+def test_non_pass_verdict_makes_no_certification_claim():
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               certification={**_CERT_PASS, "verdict": "UNDERPOWERED"})
+    assert 'class="cert"' not in page
+
+
+def test_head_carries_shareable_meta():
+    page = weather.render_page(_fks1_hit_result(), now=NOW,
+                               page_url="https://example.org/weather/")
+    for tag in ('name="description"', 'property="og:title"', 'property="og:description"',
+                'name="twitter:card"'):
+        assert tag in page
+    assert 'property="og:url" content="https://example.org/weather/"' in page
+    # the description reflects the real status, not boilerplate
+    assert "RESISTANCE SEEN" in page.split("<body>")[0]

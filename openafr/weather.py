@@ -178,16 +178,108 @@ def _is_awaiting(coverage):
         and (coverage.get("recent_called") or 0) == 0
 
 
-def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None):
+def _pct(x):
+    """A proportion (0..1) as a whole-percent string, or an em dash when absent."""
+    return "—" if x is None else f"{round(100 * x)}%"
+
+
+def _share_description(status, coverage, calls_provenance):
+    """A one-line, plain-text summary for the <meta description>/OpenGraph card.
+
+    Built from the same state the page shows -- the status headline plus, when a fill
+    covers the window, how much of it is re-called -- so a shared link previews the real
+    picture, not boilerplate. Never invents counts: falls back to the plain product line.
+    """
+    base = ("Echinocandin-resistance (FKS1) surveillance of Candida auris genomes from "
+            "NCBI Pathogen Detection, genotyped by a certified caller and updated monthly.")
+    total = (coverage or {}).get("recent_total") or 0
+    called = (coverage or {}).get("recent_called") or 0
+    if total and called:
+        return (f"{status}. {called} of {total} recent isolates genotyped. {base}")
+    return f"{status}. {base}"
+
+
+def _cert_badge(certification):
+    """A small 'certified caller' pill, or "" unless the concordance verdict is PASS.
+
+    The product's core credibility claim -- the numbers come from a caller that passed a
+    frozen concordance benchmark -- which was otherwise invisible on the page. Shown only
+    on a genuine PASS; any other verdict (or no record) makes no claim at all.
+    """
+    if not certification or certification.get("verdict") != "PASS":
+        return ""
+    sens = _pct(certification.get("sensitivity"))
+    spec = _pct(certification.get("specificity"))
+    n = certification.get("n")
+    return (f'  <p class="cert"><a href="#methods">&#10003; Calls from a certified FKS1 '
+            f"caller &mdash; {sens} sensitivity / {spec} specificity on a "
+            f"{html.escape(str(n))}-isolate benchmark</a></p>\n")
+
+
+def _methods_section(certification, calls_provenance, window):
+    """The collapsible 'how this works / methods' block, or "" when uncertified.
+
+    Surfaces provenance the page otherwise dropped: the NCBI release the fill targeted, the
+    re-call batch size, the window + cadence, and the full certification table scored from
+    the committed concordance runlog. Gated on a certification record so it rides with the
+    credibility claim; every measured number is passed in, never recomputed here.
+    """
+    if not certification:
+        return ""
+    prov = calls_provenance or {}
+    release = html.escape(str(prov.get("release_tag") or "the latest NCBI release"))
+    n_called = prov.get("n_called")
+    fill_line = (f" The most recent batch re-called <code>{html.escape(str(n_called))}</code> "
+                 f"isolates over release <code>{release}</code>."
+                 if n_called else f" Calls are drawn from release <code>{release}</code>.")
+    verdict = html.escape(str(certification.get("verdict")))
+    bench = html.escape(str(certification.get("benchmark") or "a concordance panel"))
+    n = html.escape(str(certification.get("n")))
+    n_res = html.escape(str(certification.get("n_resolved")))
+    sens, spec, ident = (_pct(certification.get("sensitivity")),
+                         _pct(certification.get("specificity")),
+                         _pct(certification.get("identity")))
+    return f"""  <details class="about" id="methods">
+    <summary>How this works &middot; methods &amp; provenance</summary>
+    <p><b>Source.</b> {html.escape(_TAXON)} whole-genome deposits from NCBI Pathogen
+      Detection, over a trailing <code>{html.escape(str(window))}</code>-day window.{fill_line}
+      Public assemblies carry no echinocandin call (NCBI runs no AMR pipeline), so an
+      out-of-band FKS1 re-call batch (cadence set by the ~97-day median deposit lag)
+      produces the calls this page overlays.</p>
+    <p><b>Certified caller.</b> The FKS1 re-caller is graded on a frozen external benchmark
+      (<code>{bench}</code>, PMC12323592) on every change, through the same scorer this
+      verdict uses:</p>
+    <div class="grid cert-grid">
+      <div class="k">Verdict</div><div class="v">{verdict} ({n_res}/{n} isolates resolved)</div>
+      <div class="k">Sensitivity</div><div class="v">{sens}</div>
+      <div class="k">Specificity</div><div class="v">{spec}</div>
+      <div class="k">Exact-token identity</div><div class="v">{ident}</div>
+    </div>
+    <p class="note">Detection only &mdash; the echinocandin arm reports whether a known
+      resistance variant is present, not a structural fit verdict. Research use only: a
+      triage aid, not a clinical claim. Priority tiers and every number come straight from
+      <code>openafr.alert</code>; this page renders that verdict, it never invents one.</p>
+  </details>
+"""
+
+
+def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
+                certification=None, page_url=None):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
     `now`          -- a datetime/ISO string for "last checked"; defaults to UTC now.
     `watching_since` -- ISO date the watch started / last-delivered date, for the quiet
                         framing. None renders the pure day-0 line.
-    `calls_provenance` -- {as_of, n_called} of the overlaid FKS1 call table, for the
-                        freshness clause; None omits it. Passed in (not read) to keep this
-                        deterministic.
+    `calls_provenance` -- the overlaid FKS1 call table's INDEX row (as_of, n_called,
+                        release_tag, window_days...), for the freshness clause and the
+                        methods section; None omits them. Passed in (not read) to keep
+                        this deterministic.
+    `certification` -- the caller's concordance verdict dict (verdict, n, sensitivity,
+                        specificity, identity, benchmark), scored upstream from the
+                        committed runlog; a PASS adds the credibility badge + methods
+                        section. None (or non-PASS) makes no certification claim.
+    `page_url` -- canonical URL for the shareable OpenGraph/Twitter card; None omits og:url.
     Deterministic given its inputs -- no I/O, no network, no wall-clock unless `now` is None.
     """
     if now is None:
@@ -230,12 +322,26 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     window = html.escape(str(r.get("window_days", "—")))
     coverage_clause = _coverage_clause(coverage, calls_provenance)
     coverage_html = f"\n     {coverage_clause} &middot;" if coverage_clause else ""
+
+    cert_badge = _cert_badge(certification)
+    methods_html = _methods_section(certification, calls_provenance, window)
+    share_desc = html.escape(_share_description(status, coverage, calls_provenance))
+    title = "C. auris Resistance Weather Report"
+    og_url_tag = (f'\n<meta property="og:url" content="{html.escape(str(page_url))}">'
+                  if page_url else "")
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>C. auris Resistance Weather Report</title>
+<title>{title}</title>
+<meta name="description" content="{share_desc}">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{share_desc}">
+<meta property="og:type" content="website">{og_url_tag}
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{share_desc}">
 <style>
   :root {{ color-scheme: dark; }}
   body {{ margin:0; background:#0d1017; color:#e6e9ef;
@@ -248,6 +354,16 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .meta {{ color:#8a94a6; font-size:.85rem; margin-bottom:2rem; }}
   .meta code {{ color:#c3cad6; }}
   .meta .stale {{ color:#e0b050; }}
+  .cert {{ margin:-.5rem 0 2rem; font-size:.85rem; }}
+  .cert a {{ display:inline-block; color:#4dd6a0; text-decoration:none;
+             border:1px solid #2a5a47; background:#132019; border-radius:999px;
+             padding:.2rem .7rem; }}
+  .cert a:hover {{ border-color:#4dd6a0; }}
+  .about {{ margin-top:2.5rem; border-top:1px solid #232a36; padding-top:1rem;
+            color:#8a94a6; font-size:.85rem; }}
+  .about summary {{ cursor:pointer; color:#9aa4b2; font-weight:600; }}
+  .about code {{ color:#c3cad6; }}
+  .about .cert-grid {{ max-width:420px; margin:.6rem 0; }}
   .card {{ background:#151a23; border:1px solid #232a36; border-left:4px solid var(--accent,#232a36);
            border-radius:10px; padding:1.1rem 1.25rem; margin:1rem 0; }}
   .card.calm {{ --accent:#4dd6a0; }}
@@ -273,8 +389,8 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   <p class="meta">Last checked <code>{last_checked}</code> &middot;
      as of <code>{as_of}</code> &middot; window <code>{window}</code>d &middot;{coverage_html}
      source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
-{body}
-  <footer>
+{cert_badge}{body}
+{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
