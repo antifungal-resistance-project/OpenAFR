@@ -38,6 +38,9 @@ from openafr import earlywarning as ew  # noqa: E402
 DIGEST_DIR = ROOT / "data" / "earlywarning" / "digest"
 DEFAULT_STATE = DIGEST_DIR / "STATE.json"
 FKS1_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
+CONCORDANCE_RUNLOG = ROOT / "data" / "earlywarning" / "runlog" / "concordance-fks1.jsonl"
+# The public page's canonical URL, for the shareable OpenGraph/Twitter card.
+PAGE_URL = "https://antifungal-resistance-project.github.io/OpenAFR/"
 
 
 def _overlay_live_calls(records, args):
@@ -71,6 +74,41 @@ def _calls_provenance(args):
     else:
         calls_dir = str(FKS1_CALLS_DIR)
     return ew.latest_fks1_calls_index_entry(calls_dir)
+
+
+def _certification(runlog_path=CONCORDANCE_RUNLOG):
+    """Certification verdict for the FKS1 caller, scored live from the committed concordance
+    runlog through the SAME scorer (`openafr.concordance.evaluate` + `apply_bar`) the CI
+    replay gate asserts against on every PR (#164/#179). The badge is therefore a computed,
+    self-updating fact -- never a hardcoded claim. Returns {verdict, n, n_resolved,
+    sensitivity, specificity, identity, benchmark} or None on any failure (fail-open: the
+    page just omits the badge, the same page-never-fails discipline as `_watching`)."""
+    try:
+        from openafr import concordance
+        lines = [ln for ln in pathlib.Path(runlog_path).read_text().splitlines() if ln.strip()]
+        record = json.loads(lines[-1])
+        items = record.get("items") or []
+        if not items:
+            return None
+        summary = concordance.evaluate(items)
+        verdict, _reasons = concordance.apply_bar(summary)
+
+        def _pt(metric):
+            p = summary[metric]["point"]
+            return None if p is None else round(p, 4)
+
+        return {
+            "verdict": verdict,
+            "n": summary["n_total"],
+            "n_resolved": summary["n_resolved"],
+            "sensitivity": _pt("sensitivity"),
+            "specificity": _pt("specificity"),
+            "identity": _pt("identity"),
+            "benchmark": record.get("fixture") or "concordance panel",
+        }
+    except Exception as exc:  # noqa: BLE001 -- the badge must never fail the build
+        print(f"certification unavailable ({exc!r}); omitting the badge.", file=sys.stderr)
+        return None
 
 
 def _watching_since(state_path, fallback):
@@ -159,8 +197,12 @@ def main():
 
     result = _compose(args)
     watching_since = _watching_since(args.state, args.watching_start)
+    # Certification is the caller's, not the fill's -- the azole research arm has no such
+    # concordance record, so only the echinocandin product surfaces the badge.
+    certification = _certification() if args.gene == "fks1" else None
     page = weather.render_page(result, watching_since=watching_since,
-                               calls_provenance=_calls_provenance(args))
+                               calls_provenance=_calls_provenance(args),
+                               certification=certification, page_url=PAGE_URL)
 
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
