@@ -256,3 +256,85 @@ def test_head_carries_shareable_meta():
     assert 'property="og:url" content="https://example.org/weather/"' in page
     # the description reflects the real status, not boilerplate
     assert "RESISTANCE SEEN" in page.split("<body>")[0]
+
+
+# ---- render-layer polish: design tokens, head completeness, meta hierarchy --------
+# Presentation only -- no new data. The palette must live in exactly one place (:root
+# tokens), the <head> must be complete (canonical, favicon, structured data), and the
+# meta facts must keep their honest degradation under a cleaner hierarchy.
+
+import json as _json  # noqa: E402
+
+
+def test_palette_lives_in_root_tokens_not_inline_hex():
+    page = weather.render_page(_fks1_hit_result(), now=NOW)
+    # The tier palette is declared once as :root custom properties ...
+    assert ":root" in page
+    for token in ("--tier-act-now:", "--tier-watch:", "--tier-context:", "--accent:"):
+        assert token in page
+    # ... and consumed via var(), never re-injected as inline hex on the cards.
+    assert 'style="--accent:#' not in page
+    assert 'style="background:#' not in page
+
+
+def test_alert_cards_name_their_tier_by_class():
+    result = _fks1_hit_result()
+    page = weather.render_page(result, now=NOW)
+    for a in result["alerts"]:
+        assert f'class="card tier-{a["priority"]}"' in page
+
+
+def test_canonical_link_emitted_only_with_page_url():
+    with_url = weather.render_page(_empty_result(), now=NOW,
+                                   page_url="https://example.org/weather/")
+    assert '<link rel="canonical" href="https://example.org/weather/">' in with_url
+    without = weather.render_page(_empty_result(), now=NOW)
+    assert 'rel="canonical"' not in without
+
+
+def test_favicon_is_present_inline():
+    page = weather.render_page(_empty_result(), now=NOW)
+    assert 'rel="icon"' in page
+    assert "data:image/svg+xml," in page
+
+
+def _extract_jsonld(page):
+    tag = '<script type="application/ld+json">'
+    chunk = page.split(tag, 1)[1]
+    return _json.loads(chunk.split("</script>", 1)[0])
+
+
+def test_structured_data_is_valid_json_and_describes_the_dataset():
+    page = weather.render_page(_empty_result(), now=NOW,
+                               page_url="https://example.org/weather/")
+    data = _extract_jsonld(page)  # must parse
+    assert data["@type"] == "MedicalWebPage"
+    assert data["url"] == "https://example.org/weather/"
+    assert data["mainEntity"]["@type"] == "Dataset"
+
+
+def test_structured_data_carries_cert_metrics_only_on_pass():
+    passed = weather.render_page(_cov_result(200, 150), now=NOW, certification=_CERT_PASS)
+    measured = _extract_jsonld(passed)["mainEntity"]["variableMeasured"]
+    values = {m["name"]: m["value"] for m in measured}
+    assert values["certified caller sensitivity"] == 100
+    assert values["certified caller specificity"] == 100
+    plain = weather.render_page(_cov_result(200, 150), now=NOW)
+    assert "variableMeasured" not in _extract_jsonld(plain)["mainEntity"]
+
+
+def test_meta_freshness_leads_on_its_own_line_when_covered():
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert 'class="meta-fresh"' in page
+    assert 'class="meta-detail"' in page
+    # the coverage fact and the provenance detail both survive the regroup
+    assert "150 of 200 window isolates re-called (75%)" in page
+    assert "Last checked" in page
+
+
+def test_meta_omits_freshness_line_when_window_is_quiet():
+    page = weather.render_page(_cov_result(0, 0), now=NOW,
+                               calls_provenance={"as_of": "2026-04-11", "n_called": 300})
+    assert 'class="meta-fresh"' not in page
+    assert 'class="meta-detail"' in page
