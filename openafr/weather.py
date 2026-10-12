@@ -33,12 +33,15 @@ broken image. `pocket_asset` is the single place that names that path.
 """
 import datetime
 import html
+import json
 
-# Tier -> (badge text, accent colour). Keys match alert.PRIORITY exactly.
+# Tier -> badge text. Keys match alert.PRIORITY exactly. The accent colours live once in
+# CSS (`:root` tier tokens + `.tier-*` classes); a card names its tier by class, so the
+# palette has a single source of truth and never gets duplicated into Python.
 _TIER = {
-    "act-now": ("ACT-NOW", "#ff5c5c"),
-    "watch": ("WATCH", "#ffcc4d"),
-    "context": ("CONTEXT", "#8a94a6"),
+    "act-now": "ACT-NOW",
+    "watch": "WATCH",
+    "context": "CONTEXT",
 }
 _TAXON = "Candida auris (Candidozyma auris)"
 
@@ -70,7 +73,7 @@ def _status_line(alerts, watching_since, now_date):
     """The one-line headline that names which of the three states the page is in."""
     if alerts:
         counts = {t: sum(1 for a in alerts if a["priority"] == t) for t in _TIER}
-        parts = [f"{counts[t]} {_TIER[t][0].lower()}" for t in _TIER if counts[t]]
+        parts = [f"{counts[t]} {_TIER[t].lower()}" for t in _TIER if counts[t]]
         return "RESISTANCE SEEN — " + ", ".join(parts)
     days = _fmt_days_since(watching_since, now_date)
     if days is None:
@@ -87,7 +90,8 @@ def _alert_card(a):
     and the pocket image (there is no FKS1 pocket render) -- the detection-only caveat
     rides in on the composed `headline` instead.
     """
-    tier_txt, accent = _TIER.get(a["priority"], (a["priority"].upper(), "#8a94a6"))
+    tier_txt = _TIER.get(a["priority"], a["priority"].upper())
+    tier_cls = f"tier-{a['priority']}"
     e = a["emergence"]
     s = a.get("structural")
     mut = html.escape(str(a["mutation"]))
@@ -118,8 +122,8 @@ def _alert_card(a):
             f'\n      <img class="pocket" src="{img}" '
             f'alt="Mutant vs wild-type CYP51 pocket for {mut}"\n'
             f"           loading=\"lazy\" onerror=\"this.style.display='none'\">")
-    return f"""    <article class="card" style="--accent:{accent}">
-      <header><span class="badge" style="background:{accent}">{tier_txt}</span>
+    return f"""    <article class="card {tier_cls}">
+      <header><span class="badge">{tier_txt}</span>
         <code class="mut">{mut}</code></header>
       <p class="headline">{headline}</p>
       <div class="grid">
@@ -263,6 +267,55 @@ def _methods_section(certification, calls_provenance, window):
 """
 
 
+def _structured_data(description, certification, provenance, page_url):
+    """A schema.org JSON-LD <script> block describing the page + dataset, for search and
+    link-preview engines. Built from the same inputs already in scope -- no I/O. Always
+    emitted (the dataset description stands on its own); a PASS `certification` additionally
+    records the caller's measured sensitivity/specificity as `variableMeasured`.
+
+    The serialized JSON is escaped for safe embedding in HTML (`<`/`>`/`&`), so it can never
+    break out of the <script> element even though every field here is page-controlled.
+    """
+    prov = provenance or {}
+    dataset = {
+        "@type": "Dataset",
+        "name": "Candida auris FKS1 echinocandin-resistance surveillance",
+        "description": description,
+        "measurementTechnique":
+            "Whole-genome FKS1 re-calling of NCBI Pathogen Detection deposits",
+        "isBasedOn": "NCBI Pathogen Detection",
+        "creator": {"@type": "Organization", "name": "OpenAFR"},
+        "license": "Research use only",
+    }
+    if prov.get("release_tag"):
+        dataset["version"] = str(prov["release_tag"])
+    cert = certification or {}
+    if cert.get("verdict") == "PASS":
+        measured = [
+            {"@type": "PropertyValue", "name": f"certified caller {label}",
+             "value": round(100 * cert[key]), "unitText": "%"}
+            for label, key in (("sensitivity", "sensitivity"),
+                               ("specificity", "specificity"))
+            if cert.get(key) is not None
+        ]
+        if measured:
+            dataset["variableMeasured"] = measured
+    doc = {
+        "@context": "https://schema.org",
+        "@type": "MedicalWebPage",
+        "name": "C. auris Resistance Weather Report",
+        "description": description,
+        "about": {"@type": "MedicalCondition",
+                  "name": "Echinocandin-resistant Candida auris infection"},
+        "mainEntity": dataset,
+    }
+    if page_url:
+        doc["url"] = str(page_url)
+    safe = (json.dumps(doc, separators=(",", ":"))
+            .replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026"))
+    return f'<script type="application/ld+json">{safe}</script>\n'
+
+
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
                 certification=None, page_url=None):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
@@ -292,7 +345,9 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     r = alert_result or {}
     alerts = r.get("alerts") or []
     status = _status_line(alerts, watching_since, now_date)
-    accent = _TIER[alerts[0]["priority"]][1] if alerts else "#4dd6a0"
+    # The page's headline accent is a CSS var reference (resolved from the :root tokens),
+    # not a hex literal -- the top alert's tier colour on a hit, the default green otherwise.
+    page_accent = (f"var(--tier-{alerts[0]['priority']})" if alerts else "var(--accent)")
 
     coverage = r.get("coverage")
     if alerts:
@@ -321,20 +376,34 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     as_of = html.escape(str(r.get("as_of", "—")))
     window = html.escape(str(r.get("window_days", "—")))
     coverage_clause = _coverage_clause(coverage, calls_provenance)
-    coverage_html = f"\n     {coverage_clause} &middot;" if coverage_clause else ""
+    # The freshness/coverage clause is the single most important fact on the meta line, so
+    # it leads on its own readable line; the provenance detail (checked/as-of/window/source)
+    # follows, muted. Same facts and the same honest degradation as before, better hierarchy.
+    fresh_html = (f'  <p class="meta-fresh">{coverage_clause}</p>\n'
+                  if coverage_clause else "")
 
     cert_badge = _cert_badge(certification)
     methods_html = _methods_section(certification, calls_provenance, window)
-    share_desc = html.escape(_share_description(status, coverage, calls_provenance))
+    share_desc_plain = _share_description(status, coverage, calls_provenance)
+    share_desc = html.escape(share_desc_plain)
+    jsonld_html = _structured_data(share_desc_plain, certification, calls_provenance, page_url)
     title = "C. auris Resistance Weather Report"
     og_url_tag = (f'\n<meta property="og:url" content="{html.escape(str(page_url))}">'
                   if page_url else "")
+    canonical_tag = (f'\n<link rel="canonical" href="{html.escape(str(page_url))}">'
+                     if page_url else "")
+    favicon = ("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' "
+               "viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d1017'/>"
+               "<circle cx='16' cy='16' r='5' fill='%234dd6a0'/><circle cx='16' cy='16' "
+               "r='10' fill='none' stroke='%234dd6a0' stroke-opacity='.4' "
+               "stroke-width='2'/></svg>")
     return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
+<link rel="icon" href="{favicon}">{canonical_tag}
 <meta name="description" content="{share_desc}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{share_desc}">
@@ -342,53 +411,69 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{share_desc}">
-<style>
-  :root {{ color-scheme: dark; }}
-  body {{ margin:0; background:#0d1017; color:#e6e9ef;
+{jsonld_html}<style>
+  :root {{
+    color-scheme: dark;
+    --bg:#0d1017; --surface:#151a23; --surface-accent:#132019; --text:#e6e9ef;
+    --muted:#8a94a6; --muted-strong:#9aa4b2; --border:#232a36; --code:#c3cad6;
+    --accent:#4dd6a0; --accent-border:#2a5a47; --link:#7aa2ff; --stale:#e0b050;
+    --footer:#5c6675;
+    --tier-act-now:#ff5c5c; --tier-watch:#ffcc4d; --tier-context:#8a94a6;
+    --accent-page:{page_accent};
+  }}
+  body {{ margin:0; background:var(--bg); color:var(--text);
          font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }}
   .wrap {{ max-width:760px; margin:0 auto; padding:2rem 1.25rem 4rem; }}
   h1 {{ font-size:1.15rem; letter-spacing:.02em; margin:0 0 .25rem;
-        text-transform:uppercase; color:#9aa4b2; font-weight:600; }}
+        text-transform:uppercase; color:var(--muted-strong); font-weight:600; }}
   .status {{ font-size:1.6rem; font-weight:700; margin:.2rem 0 1rem;
-             color:{accent}; }}
-  .meta {{ color:#8a94a6; font-size:.85rem; margin-bottom:2rem; }}
-  .meta code {{ color:#c3cad6; }}
-  .meta .stale {{ color:#e0b050; }}
+             color:var(--accent-page); }}
+  .meta {{ margin:0 0 2rem; }}
+  .meta-fresh {{ color:var(--text); font-size:.9rem; margin:0 0 .35rem; }}
+  .meta-detail {{ color:var(--muted); font-size:.82rem; margin:0; }}
+  .meta code {{ color:var(--code); }}
+  .meta .stale {{ color:var(--stale); }}
   .cert {{ margin:-.5rem 0 2rem; font-size:.85rem; }}
-  .cert a {{ display:inline-block; color:#4dd6a0; text-decoration:none;
-             border:1px solid #2a5a47; background:#132019; border-radius:999px;
-             padding:.2rem .7rem; }}
-  .cert a:hover {{ border-color:#4dd6a0; }}
-  .about {{ margin-top:2.5rem; border-top:1px solid #232a36; padding-top:1rem;
-            color:#8a94a6; font-size:.85rem; }}
-  .about summary {{ cursor:pointer; color:#9aa4b2; font-weight:600; }}
-  .about code {{ color:#c3cad6; }}
+  .cert a {{ display:inline-block; color:var(--accent); text-decoration:none;
+             border:1px solid var(--accent-border); background:var(--surface-accent);
+             border-radius:999px; padding:.2rem .7rem; }}
+  .cert a:hover {{ border-color:var(--accent); }}
+  .about {{ margin-top:2.5rem; border-top:1px solid var(--border); padding-top:1rem;
+            color:var(--muted); font-size:.85rem; }}
+  .about summary {{ cursor:pointer; color:var(--muted-strong); font-weight:600; }}
+  .about code {{ color:var(--code); }}
   .about .cert-grid {{ max-width:420px; margin:.6rem 0; }}
-  .card {{ background:#151a23; border:1px solid #232a36; border-left:4px solid var(--accent,#232a36);
+  .card {{ background:var(--surface); border:1px solid var(--border);
+           border-left:4px solid var(--accent,var(--border));
            border-radius:10px; padding:1.1rem 1.25rem; margin:1rem 0; }}
-  .card.calm {{ --accent:#4dd6a0; }}
+  .tier-act-now {{ --accent:var(--tier-act-now); }}
+  .tier-watch {{ --accent:var(--tier-watch); }}
+  .tier-context {{ --accent:var(--tier-context); }}
   header {{ display:flex; align-items:center; gap:.6rem; margin-bottom:.5rem; }}
   .badge {{ font-size:.7rem; font-weight:700; letter-spacing:.05em;
-            padding:.15rem .5rem; border-radius:999px; color:#0d1017; }}
-  .mut {{ font-size:1.05rem; color:#e6e9ef; }}
+            padding:.15rem .5rem; border-radius:999px; color:var(--bg);
+            background:var(--accent); }}
+  .mut {{ font-size:1.05rem; color:var(--text); }}
   .headline {{ margin:.3rem 0 .8rem; }}
   .grid {{ display:grid; grid-template-columns:max-content 1fr; gap:.3rem .9rem;
            font-size:.9rem; }}
-  .grid .k {{ color:#8a94a6; }}
+  .grid .k {{ color:var(--muted); }}
   .pocket {{ display:block; width:100%; max-width:520px; margin:1rem 0 0;
-             border-radius:8px; border:1px solid #232a36; }}
-  .note {{ color:#8a94a6; font-size:.85rem; font-style:italic; }}
-  footer {{ margin-top:3rem; color:#5c6675; font-size:.78rem; }}
-  a {{ color:#7aa2ff; }}
+             border-radius:8px; border:1px solid var(--border); }}
+  .note {{ color:var(--muted); font-size:.85rem; font-style:italic; }}
+  footer {{ margin-top:3rem; color:var(--footer); font-size:.78rem; }}
+  a {{ color:var(--link); }}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>C. auris Resistance Weather Report</h1>
   <p class="status">{html.escape(status)}</p>
-  <p class="meta">Last checked <code>{last_checked}</code> &middot;
-     as of <code>{as_of}</code> &middot; window <code>{window}</code>d &middot;{coverage_html}
-     source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
+  <div class="meta">
+{fresh_html}    <p class="meta-detail">Last checked <code>{last_checked}</code> &middot;
+       as of <code>{as_of}</code> &middot; window <code>{window}</code>d &middot;
+       source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
+  </div>
 {cert_badge}{body}
 {methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
