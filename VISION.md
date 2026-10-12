@@ -4,6 +4,10 @@ Strategic framing for the project. The [README](README.md) covers *what the pipe
 does and how to run it*; this covers *what it's for, what's genuinely new, and where it
 goes next.* Written to be picked up cold.
 
+For the far-horizon, unlimited-resources version — the maximal "Resistance Weather"
+and the gaps between today and that end state — see [docs/MOONSHOT.md](docs/MOONSHOT.md).
+That is an aspirational north star, not the active backlog.
+
 ## The product bet (2026-10-06)
 
 **OpenAFR's product is a public-health surveillance service, not a drug.** The thing we ship
