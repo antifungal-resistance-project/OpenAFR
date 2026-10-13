@@ -118,13 +118,45 @@ def _add_days(iso_day, days):
     return (_dt.date(y, m, d) + _dt.timedelta(days=days)).isoformat()
 
 
+# The resistance-source column that pairs with each gene's call column. A re-caller records
+# its verdict as a non-`pending:` source whether or not it found a mutation, so the source --
+# not the (empty-for-wild-type) call -- is what says "this isolate was re-called".
+_SOURCE_FIELD = {"erg11_call": "resistance_source", "fks1_call": "fks1_resistance_source"}
+
+
 def called(records, call_field="erg11_call"):
     """The subset of records that carry a nonempty call in `call_field`.
 
     `call_field` selects which re-caller's column to read -- `erg11_call` (azole, the
-    default) or `fks1_call` (echinocandin, v2). The honesty is identical for both: an empty
-    call is NOT counted, so the denominator is always *called* isolates for that gene."""
+    default) or `fks1_call` (echinocandin, v2). An empty call is NOT counted, so this is the
+    set of *mutation-carrying* isolates for that gene -- the right set to enumerate carriers
+    over, but NOT the coverage/prevalence denominator (a re-called wild-type isolate carries
+    an empty call yet was still re-called -- use `resolved` for the denominator)."""
     return [r for r in records if (r.get(call_field) or "").strip()]
+
+
+def _is_resolved_source(source):
+    """True iff a resistance-source value means the re-caller has spoken (non-`pending:`),
+    whatever its verdict -- wild-type included. Mirrors earlywarning._is_resolved_fks1, kept
+    local so this layer takes no dependency on the early-warning package."""
+    src = (source or "")
+    return bool(src) and not src.startswith("pending:")
+
+
+def resolved(records, call_field="erg11_call"):
+    """The subset of records the re-caller has actually resolved for this gene's track.
+
+    This is the honest denominator for coverage ("how much of the window is re-called?") and
+    for mutation prevalence ("what share of re-called isolates carry X?"): an isolate that was
+    re-called and came back WILD-TYPE carries an empty call but was still re-called, so it
+    belongs in the denominator -- counting only mutation-carriers (`called`) would understate
+    coverage and inflate every prevalence. Resolution is read off the paired resistance-source
+    column; when no source column is known for `call_field`, falls back to `called` so an
+    unexpected gene degrades to the old behaviour rather than counting nothing."""
+    source_field = _SOURCE_FIELD.get(call_field)
+    if not source_field:
+        return called(records, call_field)
+    return [r for r in records if _is_resolved_source(r.get(source_field))]
 
 
 def mutation_carriers(records, call_field="erg11_call"):
@@ -198,8 +230,12 @@ def detect_emergence(records, as_of, window_days=180, min_count=3,
       note                                -- set when nothing is callable yet
     """
     baseline, recent, undated = split_by_creation(records, as_of, window_days)
-    b_called, r_called = called(baseline, call_field), called(recent, call_field)
-    nb, nr = len(b_called), len(r_called)
+    # The denominator for coverage and prevalence is RESOLVED isolates (the re-caller has
+    # spoken, wild-type included) -- not mutation-carriers. Counting only carriers understates
+    # coverage and inflates every mutation's recent share (e.g. a 1.5%-prevalent variant in a
+    # fully re-called window would read ~25% against a carriers-only denominator).
+    b_resolved, r_resolved = resolved(baseline, call_field), resolved(recent, call_field)
+    nb, nr = len(b_resolved), len(r_resolved)
 
     coverage = {
         "baseline_total": len(baseline), "baseline_called": nb,
@@ -215,8 +251,8 @@ def detect_emergence(records, as_of, window_days=180, min_count=3,
     if nr == 0:
         gene = "FKS1" if call_field == "fks1_call" else "ERG11"
         result["note"] = (
-            "no called isolates in the recent window -- cannot detect mutation "
-            f"emergence yet. Calls are pending the {gene} re-caller; an empty call "
+            "no re-called isolates in the recent window -- cannot detect mutation "
+            f"emergence yet. Calls are pending the {gene} re-caller; an uncalled isolate "
             "is honestly uncalled, never assumed susceptible.")
         return result
 

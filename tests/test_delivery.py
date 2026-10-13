@@ -115,8 +115,10 @@ def test_load_state_tolerates_blank_and_bad_tokens():
 # ---- honest no-call path -----------------------------------------------------
 
 def test_no_calls_yet_is_a_noop_not_a_false_all_clear():
-    # Uncalled records -> composer emits a note and zero alerts -> nothing delivered.
-    records = [dict(r, erg11_call="") for r in _demo_records()]
+    # Uncalled records (pending source -- the re-caller has not spoken, not merely an empty
+    # call) -> composer emits a note and zero alerts -> nothing delivered.
+    records = [dict(r, erg11_call="", resistance_source="pending:sra-recaller")
+               for r in _demo_records()]
     result = _compose(records)
     assert result["alerts"] == []
     assert "note" in result
