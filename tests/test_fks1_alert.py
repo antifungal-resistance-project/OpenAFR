@@ -86,7 +86,10 @@ def test_epidemiology_is_carried_like_the_erg11_path():
 
 
 def test_no_calls_yields_note_and_no_alerts():
-    recs = [dict(r, fks1_call="") for r in _demo_fks1_records()]
+    # "No calls yet" means the re-caller has not spoken -- a pending source, not merely an
+    # empty call. (A resolved wild-type source would be a real all-clear, not a pending note.)
+    recs = [dict(r, fks1_call="", fks1_resistance_source="pending:sra-fks1-recaller")
+            for r in _demo_fks1_records()]
     r = alert.compose_fks1_alerts(recs, AS_OF)
     assert "note" in r
     assert r["alerts"] == []

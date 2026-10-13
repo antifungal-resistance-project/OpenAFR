@@ -13,12 +13,15 @@ No network: everything runs against synthetic snapshot records.
 from openafr import emergence as em
 
 
-def _rec(key, created, call, collected="2024", country="Pakistan"):
+def _rec(key, created, call, collected="2024", country="Pakistan", source="recalled"):
+    # `source` is the resistance-source marker: "recalled" (default) = the re-caller has
+    # spoken (resolved -- wild-type included), a "pending:..." value = not re-called yet.
+    # An empty call with a resolved source is honest WILD-TYPE, not an uncalled isolate.
     return {
         "isolate_key": key, "target_acc": key + ".1",
         "target_creation_date": created, "collection_date": collected,
         "country": country, "erg11_call": call,
-        "run_acc": "SRR" + key[-1], "resistance_source": "recalled",
+        "run_acc": "SRR" + key[-1], "resistance_source": source,
     }
 
 
@@ -56,14 +59,18 @@ def test_split_by_creation_buckets_and_sets_aside_undated():
 # ---- called denominator honesty ---------------------------------------------
 
 def test_uncalled_isolate_is_not_a_susceptible_isolate():
+    # PDT1 was re-called and came back WILD-TYPE (empty call, resolved source); PDT2 carries
+    # Y132F. An empty call is never parsed into a mutation, but a re-called wild-type isolate
+    # DOES belong in the prevalence denominator -- Y132F is 1 of 2 re-called, not 1 of 1.
     recs = [_rec("PDT1", "2025-01-01", ""), _rec("PDT2", "2025-01-01", "Y132F")]
     assert [r["isolate_key"] for r in em.called(recs)] == ["PDT2"]
+    assert {r["isolate_key"] for r in em.resolved(recs)} == {"PDT1", "PDT2"}
     carriers = em.mutation_carriers(recs)
     assert set(carriers) == {"Y132F"}
-    # denominator is the called count (1), never the total (2)
+    # denominator is the RESOLVED count (2, wild-type included), never the carriers-only count
     res = em.detect_emergence(recs, "2024-12-31", min_count=1)
-    assert res["coverage"]["recent_called"] == 1
-    assert res["signals"][0]["recent_prop"] == 1.0
+    assert res["coverage"]["recent_called"] == 2
+    assert res["signals"][0]["recent_prop"] == 0.5
 
 
 # ---- first-appearance & rising ----------------------------------------------
@@ -85,8 +92,10 @@ def test_detect_emergence_on_fks1_call_field():
     # v2/T3: the same detector runs on the FKS1 call column via call_field. An empty
     # erg11_call must NOT be read as susceptible, and S639F must be detected as emerging
     # from the fks1_call column instead.
-    base = [dict(_rec(f"PDTB{i}", "2024-01-01", ""), fks1_call="") for i in range(5)]
-    recent = [dict(_rec(f"PDTR{i}", "2025-02-01", ""), fks1_call="S639F")
+    base = [dict(_rec(f"PDTB{i}", "2024-01-01", ""),
+                 fks1_call="", fks1_resistance_source="recalled") for i in range(5)]
+    recent = [dict(_rec(f"PDTR{i}", "2025-02-01", ""),
+                   fks1_call="S639F", fks1_resistance_source="recalled")
               for i in range(3)]
     res = em.detect_emergence(base + recent, "2024-12-31", min_count=3,
                               call_field="fks1_call")
@@ -140,11 +149,28 @@ def test_genuine_recent_collection_is_not_flagged_backlog():
 # ---- honest empty state on real (uncalled) data -----------------------------
 
 def test_no_calls_yields_honest_cannot_detect():
-    recs = [_rec(f"PDT{i}", "2025-02-01", "") for i in range(20)]
+    # Genuinely NOT re-called yet: a pending source, not merely an empty call. The re-caller
+    # has not spoken, so there is nothing in the denominator and the honest answer is "cannot
+    # detect yet" -- distinct from a fully re-called window that happens to be all wild-type.
+    recs = [_rec(f"PDT{i}", "2025-02-01", "", source="pending:sra-recaller")
+            for i in range(20)]
     res = em.detect_emergence(recs, "2024-12-31")
     assert res["signals"] == []
     assert "note" in res and "cannot detect" in res["note"].lower()
     assert res["coverage"]["recent_called"] == 0
+
+
+def test_fully_recalled_wild_type_window_is_a_clean_all_clear_not_pending():
+    # The bug this guards: a window the re-caller fully resolved as wild-type (resolved
+    # source, empty call) must read as 100% re-called with zero signals -- a real all-clear --
+    # NOT as "0 re-called / cannot detect yet". Counting only mutation-carriers would both
+    # drop the denominator to 0 and falsely claim the window is still pending.
+    recs = [_rec(f"PDT{i}", "2025-02-01", "", source="recalled") for i in range(20)]
+    res = em.detect_emergence(recs, "2024-12-31")
+    assert res["signals"] == []
+    assert "note" not in res                       # not pending: the re-caller has spoken
+    assert res["coverage"]["recent_total"] == 20
+    assert res["coverage"]["recent_called"] == 20  # all 20 re-called, just all wild-type
 
 
 def test_signal_ordering_genuine_before_backlog():

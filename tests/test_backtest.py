@@ -18,12 +18,14 @@ import datetime as _dt
 from openafr import backtest as bt
 
 
-def _rec(key, created, collected, call="", country="Pakistan"):
+def _rec(key, created, collected, call="", country="Pakistan", source="recalled"):
+    # `source`: "recalled" (default) = the re-caller resolved this isolate (wild-type when the
+    # call is empty); a "pending:..." value = not re-called yet, so it is not assessable.
     return {
         "isolate_key": key, "target_acc": key + ".1",
         "target_creation_date": created, "collection_date": collected,
         "country": country, "erg11_call": call,
-        "run_acc": "SRR" + key[-1], "resistance_source": "recalled",
+        "run_acc": "SRR" + key[-1], "resistance_source": source,
     }
 
 
@@ -123,11 +125,14 @@ def test_walk_forward_flags_first_appearance_with_lead_time():
 
 
 def test_walk_forward_is_honest_null_on_empty_calls():
-    # Real-data shape: dated, callable-by-reads, but no erg11_call anywhere.
-    recs = [_rec(f"E{i}", f"2024-0{1 + i}-01", "2023", "") for i in range(6)]
+    # Real-data shape: dated, has reads, but the re-caller has NOT run (pending source) --
+    # so nothing is resolved. (An empty call with a resolved source would be wild-type, which
+    # IS assessable; "not re-called yet" is a pending source, the honest-null case here.)
+    recs = [_rec(f"E{i}", f"2024-0{1 + i}-01", "2023", "", source="pending:sra-recaller")
+            for i in range(6)]
     start, stop = bt.creation_date_range(recs)
     wf = bt.walk_forward(recs, bt.month_steps(start, stop), target="Y132F")
-    assert wf["any_callable"] is False       # no step had a called isolate
+    assert wf["any_callable"] is False       # nothing resolved in any step
     assert wf["first_flag"] is None          # nothing flagged
     assert all(st["n_signals"] == 0 for st in wf["steps"])
 

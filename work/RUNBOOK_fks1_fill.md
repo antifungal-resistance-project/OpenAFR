@@ -41,6 +41,14 @@ SNAP=data/earlywarning/snapshots/PDG000000067.<N>.tsv   # the file step 1 just w
 python scripts/recall_fks1.py plan "$SNAP"              # defaults: --window-days 180, as-of today-180
 #   -> prints "scope: recent window as-of … 180d (K isolate(s))" and "fill would re-call: M"
 
+# 2b. Dry-run the DOWNSTREAM render before paying for compute (no cloud, no network). Pushes a
+#     synthetic full-window call table through the real render_weather CLI and asserts the page
+#     leaves day-0 with honest coverage/prevalence at the fill's expected scale — so a schema or
+#     scale regression surfaces here, not after the billable fill.
+python scripts/prestage_weather_dryrun.py --n "$(python scripts/recall_fks1.py plan "$SNAP" \
+    | sed -n 's/.*fill would re-call: \([0-9]*\).*/\1/p')"
+#   -> "PASS — the N-isolate release-<N> fill renders a real echinocandin picture …"
+
 # 3. *** BILLABLE *** The windowed GCP fill. Writes the snapshot AND the committed call table.
 python scripts/recall_fks1.py fill "$SNAP"              # same window default as plan
 #   -> wrote data/earlywarning/fks1_calls/PDG000000067.<N>.tsv (…, K resolved call(s))
