@@ -508,6 +508,22 @@ def cmd_plan(args):
     first_runs = [r["run_acc"].split(",")[0].strip() for r in attempted]
     distinct = sorted(set(first_runs))
 
+    if getattr(args, "json", False):
+        import json
+        print(json.dumps({
+            "snapshot": args.snapshot,
+            "total_isolates": len(records),
+            "window_days": window_days if window_keys is not None else None,
+            "as_of": as_of if window_keys is not None else None,
+            "in_window": len(window_keys) if window_keys is not None else None,
+            "pending": len(pending),
+            "pending_without_run": without_run,
+            "fill_would_recall": len(attempted),
+            "distinct_run_acc": len(distinct),
+            "runs": distinct if args.list_runs else None,
+        }))
+        return 0
+
     print(f"snapshot:                {args.snapshot}")
     print(f"total isolates:          {len(records)}")
     print("scope:                   " + (f"recent window as-of {as_of}, {window_days}d "
@@ -628,6 +644,9 @@ def main():
     p.add_argument("--seed", type=int, default=0, help="RNG seed for --random (default 0)")
     p.add_argument("--list-runs", action="store_true",
                    help="print the distinct SRA accessions")
+    p.add_argument("--json", action="store_true",
+                   help="emit the counts as a single JSON object instead of the text report "
+                        "(for the fill-due watchdog / scripting)")
     _add_window_args(p)
     p.set_defaults(func=cmd_plan)
 

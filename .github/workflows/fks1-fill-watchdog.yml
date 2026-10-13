@@ -1,0 +1,86 @@
+# FKS1 fill-due watchdog -- keep the resistance-weather page fresh (epic #170, issue #171).
+#
+# The public weather page is a thin view over a live NCBI C. auris pull with the durable,
+# git-tracked FKS1 call table overlaid on top. Those calls are manufactured out-of-band by the
+# BILLABLE GCP re-caller (work/RUNBOOK_fks1_fill.md); nothing re-runs that fill on a cadence, so
+# as NCBI deposits new in-window genomes the page quietly drifts toward "awaiting re-call".
+#
+# This job is the NON-billable half of the cadence: once a month it does the FREE NCBI metadata
+# pull (same fetch the early-warning schedule runs), overlays the newest committed call table,
+# and measures the in-window re-call gap (scripts/fill_due_check.py). When the gap crosses the
+# threshold -- or the last fill's whole window has rolled off the page -- it files/updates ONE
+# GitHub issue telling a human to run the billable fill. Otherwise it is a quiet no-op. It
+# commits nothing and NEVER downloads SRA reads or runs the re-caller: the paid step stays a
+# human decision; this only rings the bell when it pays off.
+name: fks1-fill-watchdog
+
+on:
+  schedule:
+    - cron: "23 7 1 * *"   # 07:23 UTC on the 1st of each month ("monthly is enough" -- runbook)
+  workflow_dispatch:
+    inputs:
+      window_days:
+        description: "Recent-window length in days"
+        default: "180"
+      threshold:
+        description: "New in-window isolates that make a refill due"
+        default: "25"
+
+permissions:
+  contents: read    # commits nothing -- it only reads the committed call table + files an issue
+  issues: write
+
+concurrency:
+  group: fks1-fill-watchdog
+  cancel-in-progress: false
+
+jobs:
+  fill-due:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compute rolling baseline cut date
+        id: dates
+        env:
+          WINDOW: ${{ github.event.inputs.window_days || '180' }}
+        run: |
+          # Recent window is (as_of, as_of + window]; a rolling schedule wants the last WINDOW
+          # days, so as_of = today - WINDOW -- the same window the weather page displays.
+          echo "window=$WINDOW" >> "$GITHUB_OUTPUT"
+          echo "as_of=$(python3 -c "import datetime,os;print((datetime.date.today()-datetime.timedelta(days=int(os.environ['WINDOW']))).isoformat())")" >> "$GITHUB_OUTPUT"
+
+      - name: Measure the FKS1 fill gap (non-billable)
+        id: check
+        run: |
+          python3 scripts/fill_due_check.py \
+            --as-of "${{ steps.dates.outputs.as_of }}" \
+            --window "${{ steps.dates.outputs.window }}" \
+            --threshold "${{ github.event.inputs.threshold || '25' }}" \
+            --issue-out "$RUNNER_TEMP/issue.md" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: File / update the fill-due issue
+        if: steps.check.outputs.due == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABEL: ${{ steps.check.outputs.label }}
+          TITLE: ${{ steps.check.outputs.title }}
+        run: |
+          # Ensure the dedupe label exists (idempotent), then find-or-create a single open issue
+          # keyed on it: a still-due month refreshes the open issue's body instead of spawning a
+          # duplicate, so the bell rings once and stays current.
+          gh label create "$LABEL" --description "FKS1 fill is due (weather freshness)" \
+            --color C2185B 2>/dev/null || true
+          existing="$(gh issue list --state open --label "$LABEL" --limit 1 \
+            --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --title "$TITLE" --body-file "$RUNNER_TEMP/issue.md"
+            gh issue comment "$existing" --body "Re-checked $(date -u +%F): still due -- body updated."
+          else
+            gh issue create --title "$TITLE" --body-file "$RUNNER_TEMP/issue.md" --label "$LABEL"
+          fi
