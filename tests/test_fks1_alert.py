@@ -111,3 +111,55 @@ def test_render_json_round_trips_the_fks1_dict():
     back = json.loads(alert.render_json(r))
     assert back["gene"] == "FKS1"
     assert back == r
+
+
+# --- novel-variant position context (#4 Rung 1) -------------------------------
+# A genuinely novel (uncharacterised) hot-spot variant gets geometry-free position context;
+# a known core marker gets none. Either way the alert stays WATCH/CONTEXT and detection-only.
+
+def _novel_variant_records(mut="S639L", country="Nigeria"):
+    """A snapshot where a NOVEL hot-spot variant genuinely first-appears over threshold."""
+    recs = []
+
+    def add(key, created, collected, call):
+        recs.append({
+            "isolate_key": key, "target_acc": key + ".1",
+            "target_creation_date": created, "collection_date": collected,
+            "country": country, "fks1_call": call,
+            "run_acc": "SRR" + key[-3:], "fks1_resistance_source": "recalled",
+        })
+
+    for i in range(12):   # baseline: wild-type called isolates, no marker
+        add(f"NVB{i:03d}", "2024-03-01", "2023", "")
+    for i in range(4):    # recent: a novel S639L first-appearance on fresh isolates
+        add(f"NVR{i:03d}", "2025-02-01", "2024", mut)
+    return recs
+
+
+def test_novel_variant_alert_carries_position_context():
+    r = alert.compose_fks1_alerts(_novel_variant_records(), AS_OF)
+    a = _by_mut(r)["S639L"]
+    assert a["position_context"] is not None
+    assert a["position_context"]["tier"] == "novel_substitution_at_panel_residue"
+    assert a["position_context"]["window"] == "HS1"
+    # still detection-only, still no act-now
+    assert a["priority"] in ("watch", "context")
+    assert "detection only" in a["headline"]
+    # the geometry-free geography clause rides in on the headline
+    assert "hot-spot HS1" in a["headline"]
+    assert "S639 anchor" in a["headline"]
+
+
+def test_known_core_marker_has_no_position_context():
+    s639f = _by_mut(_compose())["S639F"]
+    assert s639f["position_context"] is None
+    assert s639f["position_note"] == ""
+
+
+def test_render_markdown_shows_position_row_for_novel_variant():
+    md = alert.render_fks1_markdown(alert.compose_fks1_alerts(_novel_variant_records(), AS_OF))
+    assert "Position (geometry-free)" in md
+    assert "novel_substitution_at_panel_residue" in md
+    # the no-fit discipline is still stated, never replaced by the position row
+    assert "Structural fit:** none claimed" in md
+    assert "ACT-NOW" not in md
