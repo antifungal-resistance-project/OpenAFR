@@ -112,6 +112,16 @@ def _alert_card(a):
             ("Structural fit",
              f"[{html.escape(str(s['evidence_class']))}, conf={html.escape(str(s['confidence']))}] "
              f"{html.escape(str(s['fluconazole_fit_verdict']))}"))
+    # FKS1 novel-variant position context (geometry-free; never a fit verdict). Present only
+    # when the detection-only composer attached one for an uncharacterised hot-spot variant.
+    # The composer pre-renders the sentence into `position_note`, so the page stays decoupled
+    # from fks1_position (same discipline as it reading `headline`, not recomputing it).
+    ctx = a.get("position_context")
+    if ctx:
+        rows.append(
+            ("Position",
+             f"[{html.escape(str(ctx['tier']))}] "
+             f"{html.escape(str(a.get('position_note') or ''))}"))
     rows_html = "\n".join(
         f'      <div class="k">{k}</div><div class="v">{v}</div>' for k, v in rows)
     headline = html.escape(str(a.get("headline") or ""))

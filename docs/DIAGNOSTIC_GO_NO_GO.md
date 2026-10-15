@@ -62,6 +62,14 @@ R1354S). The FKS1 concordance run (`work/RESULTS_fks1_concordance.md`) separatel
 caller's *tokens* as perfect, so this is a **tractable coverage gap**, not a caller defect: adding an
 HS3 window would project the VME to 1/40 = 2.5% [0.4, 12.9] (clears bar) — a projection, pending the
 caller change + a GCP re-measure, not a measured re-claim.
+*Novel-variant blind-spot now annotated (2026-10-12):* a never-seen substitution inside a hot-spot
+previously surfaced as a bare `UNCHARACTERIZED_VARIANT` with no context. The #4 Rung-1
+**position-context** derivation (`openafr/fks1_position.py`,
+`work/PREREGISTRATION_fks1_position_context.md`) now locates such a variant in the resistance geography
+(which hot-spot, offset from the anchor, nearest known marker) — a deterministic sequence derivation
+that makes **no fit/phenotype/probability claim** and leaves `structural` null. It *escalates attention*
+on a novel hot-spot change; it is **not** a measured resistance re-claim. An actual structural
+(proximity) verdict on a glucan-synthase structure remains Rung 2, with its own prereg + re-measure.
 
 **C3 — The validated organism is not the calibratable organism.** The re-callers and the
 structural port are *C. auris*-centric (5TZ1, [[openafr-auris-port]]). But the organism whose

@@ -71,7 +71,7 @@ fully offline against the checked-in receptor/ligand.
 """
 import json
 
-from openafr import emergence, mapping, structural
+from openafr import emergence, fks1_position, mapping, structural
 
 # So-what priority tiers, strongest first. `rank` orders the rendered alert list.
 PRIORITY = {"act-now": 0, "watch": 1, "context": 2}
@@ -274,9 +274,13 @@ def _fks1_priority(signal):
     return "context" if signal["possible_backlog"] else "watch"
 
 
-def _fks1_headline(signal, regions, first_seen):
+def _fks1_headline(signal, regions, first_seen, position_context=None):
     """One plain sentence for an FKS1 signal -- mutation, spread, geography, first-seen
-    -- ending in the detection-only caveat instead of a fit so-what."""
+    -- ending in the detection-only caveat instead of a fit so-what.
+
+    When the mutation is a novel (uncharacterised) hot-spot variant, a position-context
+    clause is inserted before the caveat (openafr/fks1_position.describe): geography only,
+    still no fit claim -- the detection-only caveat continues to carry that."""
     mut = signal["mutation"]
     n = signal["recent_count"]
     isolate = "isolate" if n == 1 else "isolates"
@@ -284,8 +288,9 @@ def _fks1_headline(signal, regions, first_seen):
            else "of undisclosed geography")
     seen = first_seen["collected"] or first_seen["visible"] or "an unknown date"
     tag = " (possible archival backlog)" if signal["possible_backlog"] else ""
+    where = f" It {fks1_position.describe(position_context)}" if position_context else ""
     return (f"{mut} is {_emergence_kind(signal)} on {n} {isolate} {geo}, first seen "
-            f"{seen}{tag}; {FKS1_DETECTION_ONLY_CAVEAT}")
+            f"{seen}{tag}; {FKS1_DETECTION_ONLY_CAVEAT}{where}")
 
 
 def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=0.05,
@@ -324,8 +329,13 @@ def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=
     alerts = []
     for signal in result["signals"]:
         base = _base_alert_fields(signal, by_key, all_carriers)
+        # Position context for a novel (uncharacterised) hot-spot variant; None for a known
+        # core marker. Geography only -- never a fit verdict, so priority is untouched.
+        ctx = fks1_position.position_context(signal["mutation"])
         base["priority"] = _fks1_priority(signal)
-        base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"])
+        base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"], ctx)
+        base["position_context"] = ctx
+        base["position_note"] = f"It {fks1_position.describe(ctx)}" if ctx else ""
         base["detection_only"] = True
         alerts.append(base)
 
@@ -470,6 +480,10 @@ def render_fks1_markdown(alert_result):
         lines.append(f"- **Geography:** {a['n_regions']} region(s): {geo} "
                      f"({a['n_carriers_total']} carrier(s) total in store)")
         lines.append(f"- **First seen:** {_fmt_first_seen(a['first_seen'])}")
+        ctx = a.get("position_context")
+        if ctx:
+            lines.append(f"- **Position (geometry-free):** [{ctx['tier']}] "
+                         f"It {fks1_position.describe(ctx)}")
         lines.append(f"- **Structural fit:** none claimed — {FKS1_DETECTION_ONLY_CAVEAT}")
         lines.append("")
 

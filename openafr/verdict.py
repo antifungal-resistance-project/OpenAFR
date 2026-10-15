@@ -28,7 +28,18 @@ The four honesty rules this module enforces (docs/DIAGNOSTIC_VERDICT_CONTRACT.md
    position could not be read, we cannot rule resistance out there, so the drug-class
    verdict is UNRESOLVED -- the callers' "an uncalled codon is uncalled, never wild-type"
    rule carried up to the verdict level. UNRESOLVED is excluded downstream, never a negative.
+
+FKS1 position context (#4 Rung 1) -- NOT a structural verdict
+------------------------------------------------------------
+For FKS1 only, an UNCHARACTERIZED token is annotated with a `position` sub-dict (and the
+object gains a top-level `position_context` list) locating the novel residue in the
+resistance geography -- which hot-spot, offset from the anchor, nearest known marker
+(openafr/fks1_position.py). This is a DETERMINISTIC derivation over the pinned panel; it
+makes NO fit, phenotype, or probability claim and the `structural` field STILL stays null
+for FKS1. See work/PREREGISTRATION_fks1_position_context.md for the frozen non-claims.
 """
+
+from openafr import fks1_position
 
 RUO_SCOPE = "RUO -- research use only; not a clinical determination"
 
@@ -100,8 +111,9 @@ def build_verdict(gene, call=None, unresolved_reason=None, structural=None,
         raise ValueError(f"unknown gene {gene!r}; expected one of {sorted(_GENE)}")
     drug_class, carries_structural = _GENE[gene]
 
-    def obj(verdict, resolution, note, called_tokens, structural_out):
-        return {
+    def obj(verdict, resolution, note, called_tokens, structural_out,
+            position_context=None):
+        out = {
             "drug_class": drug_class,
             "gene": gene,
             "resolution": resolution,
@@ -112,6 +124,12 @@ def build_verdict(gene, call=None, unresolved_reason=None, structural=None,
             "provenance": dict(provenance or {}),
             "scope": RUO_SCOPE,
         }
+        # FKS1 only: a list (possibly empty) of per-token position contexts for the novel,
+        # uncharacterised tokens. Deliberately separate from `structural` (which stays null);
+        # claims only geography, never a fit/phenotype. ERG11 never carries this key.
+        if gene == "FKS1":
+            out["position_context"] = position_context or []
+        return out
 
     # Hard unresolved: the caller could not produce a call at all.
     if unresolved_reason is not None:
@@ -146,7 +164,21 @@ def build_verdict(gene, call=None, unresolved_reason=None, structural=None,
             return "known_low_ppv" if has_tier else "known_resistance"
         return "uncharacterized"
 
-    called_tokens = [{"token": t, "class": _class(t)} for t in tokens]
+    # For FKS1, attach a `position` sub-dict to each UNCHARACTERISED token (locating the
+    # novel residue in the resistance geography) and collect them into position_context.
+    # None for ERG11 and for known-marker tokens -- fks1_position returns None there.
+    position_context = []
+
+    def _entry(t):
+        e = {"token": t, "class": _class(t)}
+        if gene == "FKS1" and e["class"] == "uncharacterized":
+            ctx = fks1_position.position_context(t)
+            if ctx is not None:
+                e["position"] = ctx
+                position_context.append(ctx)
+        return e
+
+    called_tokens = [_entry(t) for t in tokens]
 
     if verdict == UNRESOLVED:
         pos = "+".join(str(p) for p in uncalled_panel)
@@ -157,7 +189,8 @@ def build_verdict(gene, call=None, unresolved_reason=None, structural=None,
         resolution = "resolved"
 
     structural_out = structural if carries_structural else None
-    return obj(verdict, resolution, note, called_tokens, structural_out)
+    return obj(verdict, resolution, note, called_tokens, structural_out,
+               position_context=position_context)
 
 
 def azole_verdict(call=None, unresolved_reason=None, structural=None, provenance=None):

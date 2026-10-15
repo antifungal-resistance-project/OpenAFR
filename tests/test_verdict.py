@@ -158,3 +158,44 @@ def test_erg11_has_no_tier_every_panel_hit_detects():
     out = v.azole_verdict(_call(tokens=["Y132F"], panel_hits=["Y132F"]))
     assert out["verdict"] == v.RESISTANCE_MARKER_DETECTED
     assert out["called_tokens"] == [{"token": "Y132F", "class": "known_resistance"}]
+
+
+# --- FKS1 novel-variant position context (#4 Rung 1) --------------------------
+# A geometry-free geography annotation on the UNCHARACTERIZED tail. It must never touch the
+# `structural` field (that stays null for FKS1) and must never appear on the ERG11 object.
+
+def test_fks1_uncharacterized_token_carries_position_context():
+    out = v.echinocandin_verdict(
+        _fks1_call(tokens=["S639L"], panel_hits=[], core_panel_hits=[]))
+    assert out["verdict"] == v.UNCHARACTERIZED_VARIANT
+    # structural STAYS null -- position context is NOT a structural verdict.
+    assert out["structural"] is None
+    # the token gains a `position` sub-dict, and the object a top-level list of them.
+    (ct,) = out["called_tokens"]
+    assert ct["class"] == "uncharacterized"
+    assert ct["position"]["tier"] == "novel_substitution_at_panel_residue"
+    assert ct["position"]["window"] == "HS1"
+    assert out["position_context"] == [ct["position"]]
+
+
+def test_fks1_position_context_empty_when_no_novel_token():
+    # A clean no-marker FKS1 result still carries the key, as an empty list (never missing,
+    # never a fabricated context).
+    out = v.echinocandin_verdict(_fks1_call())
+    assert out["position_context"] == []
+
+
+def test_fks1_known_markers_get_no_position_context():
+    # Core and low-PPV tokens are already labelled; they are not the uncharacterised tail, so
+    # no `position` is attached and the top-level list stays empty.
+    out = v.echinocandin_verdict(
+        _fks1_call(tokens=["S639F", "D642Y"], panel_hits=["S639F", "D642Y"],
+                   core_panel_hits=["S639F"]))
+    assert all("position" not in ct for ct in out["called_tokens"])
+    assert out["position_context"] == []
+
+
+def test_erg11_never_carries_position_context_key():
+    out = v.azole_verdict(_call(tokens=["Y123H"]))
+    assert "position_context" not in out
+    assert all("position" not in ct for ct in out["called_tokens"])
