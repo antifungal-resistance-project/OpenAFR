@@ -12,11 +12,13 @@ Why echinocandin, why surveillance: azole resistance in *C. auris* is already ne
 still rare (~2%) and *dynamic* — the regime where early warning is actually useful. See
 [Resistance Weather — the surveillance product](#openafr-resistance-weather--the-surveillance-product).
 
-> **Honest status.** The whole surveillance chain is built, tested, and pulls real NCBI data,
-> and the public page auto-deploys weekly. The one gap to a live picture: the certified caller
-> has to run over the live feed on a cadence (heavy SRA re-calling, run on cloud compute), not
-> just in the one-off benchmarks it has passed. Until that standing fill lands, the page shows
-> its honest day-0 "watching…" state. Closing that loop is the current milestone.
+> **Honest status.** The live loop is closed — the page shows a real echinocandin picture.
+> The certified caller has run a full-window re-call on cloud compute (release 710: 3,375
+> resolved isolates, 197 resistant = 5.8%, as-of 2026-04-14), and that committed call table is
+> overlaid on the weekly live NCBI pull, so the public page is lit at ~85% coverage. Freshness
+> is honest, not real-time: the page shows the last committed fill with its as-of date, and a
+> non-billable monthly watchdog measures drift and rings for a human-gated refill once enough
+> new in-window genomes have arrived. The remaining milestone is a public-health design partner.
 
 > **Lab users — interpret your own isolate.** Hold a sequenced *C. auris* isolate? The
 > genotype→verdict engine has a one-command front door: give it a variant list or a consensus
@@ -357,7 +359,18 @@ before it shows up in the published surveillance record — then attaches a **st
 research arm above finds new drugs; this product watches the enemy evolve against the drugs we
 have, and is the thing a public-health team would actually subscribe to.
 
-### Honest status: scaffold built, both re-callers run, now a genotype→verdict engine
+### Honest status: the page is live
+
+**The live loop is closed.** The certified FKS1 caller has run a full-window re-call on cloud
+compute (release 710: **3,375 resolved isolates, 197 resistant = 5.8%**, as-of 2026-04-14 —
+`data/earlywarning/fks1_calls/`), and that durable, git-tracked call table is overlaid on the
+weekly live NCBI pull, so the public page shows the real echinocandin-resistance picture at
+~85% coverage instead of a day-0 "watching…" placeholder. Freshness is honest, not real-time:
+the page carries the last committed fill's as-of date, and a **non-billable monthly watchdog**
+(`scripts/fill_due_check.py`, `.github/workflows/fks1-fill-watchdog.yml`) measures in-window
+drift and files one issue to ring for a human-gated billable refill once ≥25 new genomes have
+arrived. The remaining milestone to the north star is a public-health design partner. The rest
+of this section is the backstory — how the product arrived at the echinocandin axis.
 
 The whole chain is **built, tested, and pulls real NCBI data.** The load-bearing finding, from
 the initial spike ([work/RESULTS_earlywarning_spike.md](work/RESULTS_earlywarning_spike.md)),
@@ -478,7 +491,8 @@ clinical-path decision doc: [docs/DIAGNOSTIC_GO_NO_GO.md](docs/DIAGNOSTIC_GO_NO_
 | verdict accuracy | `openafr/accuracy.py` | `scripts/validate_diagnostic_accuracy.py` | grades verdicts against measured phenotype in VME/ME terms vs a frozen bar |
 | calibration | `openafr/calibration.py` | `scripts/validate_calibration.py` | the (still-blocked) probability track — no probability is emitted until it passes |
 | RUO report | `openafr/report.py` | — | renders one isolate's verdicts to human + machine formats; renders, never re-decides |
-| resistance weather report | `openafr/weather.py` | `scripts/render_weather.py` | a public day-0 page over the surveillance feed; `.github/workflows/weather.yml` |
+| resistance weather report | `openafr/weather.py` | `scripts/render_weather.py` | the live public FKS1 echinocandin-resistance page, overlaying the committed fill on the weekly pull; `.github/workflows/weather.yml` |
+| fill-due watchdog | `openafr/fill_status.py` | `scripts/fill_due_check.py` | the non-billable freshness half: monthly, measures drift and rings for a human-gated refill; `.github/workflows/fks1-fill-watchdog.yml` |
 
 ### Try it without NCBI
 

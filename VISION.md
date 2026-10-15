@@ -21,9 +21,14 @@ genomics group), not — yet — a clinical microbiology lab making per-patient 
 The drug-discovery work below (the CYP51 geometry triage tool) is the **research /
 credibility arm** — a research instrument and the basis of the JCM manuscript. It is not the
 product. This bet reframes the whole backlog: the north star is a *live* surveillance page in
-front of one design partner. The one gap between here and that is operationalizing the
-certified caller as a standing cloud fill over the live NCBI feed, so the page shows a real
-picture instead of a perpetual day-0 "watching…" state.
+front of one design partner. **The page is now live** — the certified caller has run a
+full-window cloud fill (release 710: 3,375 resolved isolates, 197 resistant = 5.8%) and that
+committed call table is overlaid on the weekly NCBI pull, so the page shows a real echinocandin
+picture, not a day-0 "watching…" placeholder. The operational cadence is settled too: a
+non-billable monthly watchdog measures drift and rings for a human-gated billable refill when
+enough new genomes arrive. What remains between here and the north star is keeping fills current
+(watchdog-driven) and landing **one public-health design partner** — build-first, send the live
+link now that it is real.
 
 ## What the research arm's tool is
 
