@@ -168,6 +168,25 @@ def test_count_resistant_missing_table_is_zero(tmp_path):
     assert ew.count_fks1_resistant(str(tmp_path / "nope.tsv")) == 0
 
 
+def test_panel_positive_separates_known_resistance_from_uncertain_variants(tmp_path):
+    # count_fks1_resistant counts ANY call token; count_fks1_panel_positive counts only
+    # KNOWN-resistance panel substitutions, carrying non-panel hot-spot variants as VUS so
+    # the page never headlines a variant of uncertain significance as "resistant".
+    path = tmp_path / "PDG000000067.800.tsv"
+    path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+                    "target_creation_date\n"
+                    "A\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-02-01\n"   # known resistance
+                    "B\tD642Y\tsra-fks1-recaller:called\tSRR2\t2026-02-02\n"   # known resistance
+                    "C\tR1354H\tsra-fks1-recaller:called\tSRR3\t2026-02-03\n"  # non-panel (VUS)
+                    "D\t\tsra-fks1-recaller:wild-type\tSRR4\t2026-02-04\n")    # wild-type
+    assert ew.count_fks1_resistant(str(path)) == 3            # A, B, C all carry a token
+    assert ew.count_fks1_panel_positive(str(path)) == (2, 1)  # (S639F+D642Y known, R1354H VUS)
+
+
+def test_count_panel_positive_missing_table_is_zero(tmp_path):
+    assert ew.count_fks1_panel_positive(str(tmp_path / "nope.tsv")) == (0, 0)
+
+
 # --- windowed fill scope (recall_fks1.py) ------------------------------------
 
 def test_in_window_restricts_to_recent_partition():

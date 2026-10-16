@@ -512,3 +512,33 @@ def count_fks1_resistant(path):
     except FileNotFoundError:
         return 0
     return sum(1 for r in rows.values() if (r.get("fks1_call") or "").strip())
+
+
+def count_fks1_panel_positive(path):
+    """Carriers of a KNOWN echinocandin-resistance panel substitution in a committed table.
+
+    Distinct from `count_fks1_resistant`, which counts *any* non-empty FKS1 call token: a
+    hot-spot-region variant that is NOT on the caller's known-resistance panel (e.g. D642H/N/V,
+    F635I/L/S, M690V, R1354C/H) is a variant of **uncertain significance**, not confirmed
+    echinocandin resistance, so it must not be headlined as "resistant". The real-data backtest
+    (work/RESULTS_fks1_backtest.md) surfaced the page conflating the two.
+
+    Returns `(n_panel_positive, n_vus)`: panel-positive carriers (the honest resistance
+    headline), and resolved carriers whose only call is a non-panel variant of uncertain
+    significance. Panel membership is read from `fks1_caller.is_panel_token` so this can never
+    drift from the caller. A missing table reads as `(0, 0)`."""
+    from openafr import emergence, fks1_caller
+    try:
+        rows = read_fks1_call_table(path)
+    except FileNotFoundError:
+        return 0, 0
+    n_panel = n_vus = 0
+    for r in rows.values():
+        toks = emergence.parse_call(r.get("fks1_call"))
+        if not toks:
+            continue
+        if any(fks1_caller.is_panel_token(t) for t in toks):
+            n_panel += 1
+        else:
+            n_vus += 1
+    return n_panel, n_vus

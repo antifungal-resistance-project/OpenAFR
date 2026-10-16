@@ -121,6 +121,71 @@ def cmd_prevalence(args):
             print(f"    {tok}: {n}  ({n / p['n_resolved']:.1%})")
 
 
+# ---------------- FKS1 (echinocandin) real-data backtest ----------------------
+# Unlike the azole arm, FKS1 has REAL committed calls, so these two commands read the
+# durable call table directly (no snapshot blob, no NCBI pull, no GCP) and run the SAME
+# detector/prevalence logic the azole arm uses. Pre-registered in
+# work/PREREGISTRATION_fks1_backtest.md. The frozen track thresholds are shared with the
+# azole replay above -- no new tunable is introduced here.
+
+def cmd_fks1_prevalence(args):
+    """Echinocandin event frequency on the committed FKS1 call table (prereg P1)."""
+    records = bt.load_fks1_call_table(args.call_table)
+    p = bt.fks1_panel_prevalence(records)
+    print(f"call table {pathlib.Path(args.call_table).name}: {p['n_total']} resolved isolates")
+    print("\nEchinocandin event frequency -- resolved FKS1 panel carrying a KNOWN "
+          "resistance mutation")
+    ex = p["excluded"]
+    print(f"  resolved panel:   {p['n_resolved']}/{p['n_total']} "
+          f"(excluded: {ex['partial']} partial, {ex['failed']} failed/refused, "
+          f"{ex['pending']} pending -- not counted echinocandin-negative)")
+    if p["event_frequency"] is None:
+        print("\n  NOT MEASURED YET: no isolate has a resolved FKS1 panel. This is "
+              "'cannot measure', NOT a zero signal.")
+        return
+    lo, hi = p["ci95"]
+    print(f"  panel-positive:   {p['n_panel_positive']}/{p['n_resolved']} "
+          f"= {p['event_frequency']:.1%}  (echinocandin event frequency)")
+    print(f"  95% CI (Wilson):  [{lo:.1%}, {hi:.1%}]  (+/-{(hi - lo) / 2:.1%})"
+          f"  -- quote the interval, not the point")
+    if p["n_called_nonpanel"]:
+        print(f"  called non-panel: {p['n_called_nonpanel']} resolved isolate(s) carry only "
+              f"NON-panel FKS1 variant(s) -- variants of uncertain significance, NOT known "
+              f"echinocandin resistance; excluded from the numerator above")
+    if p["per_mutation"]:
+        print("  by panel mutation (resolved isolates carrying it):")
+        for tok, n in p["per_mutation"].items():
+            print(f"    {tok}: {n}  ({n / p['n_resolved']:.1%})")
+
+
+def cmd_fks1_replay(args):
+    """Real-data walk-forward over the committed FKS1 calls (prereg P3).
+
+    The azole arm's H2 is a null by construction (erg11_call empty). FKS1 has real calls,
+    so this is the first time the detector runs on real C. auris resistance data. The 180-day
+    committed window limits the baseline/recent contrast -- see the pre-registered caveat."""
+    records = bt.load_fks1_call_table(args.call_table)
+    start, stop = bt.creation_date_range(records)
+    steps = bt.month_steps(start, stop)
+    print(f"call table {pathlib.Path(args.call_table).name}: {len(records)} resolved isolates")
+    print(f"\nFKS1 real-data walk-forward over creation dates {start} .. {stop} "
+          f"({len(steps)} monthly steps)")
+    wf = bt.walk_forward(records, steps, target=args.target, call_field="fks1_call",
+                         window_days=args.window, min_count=args.min_count,
+                         min_delta=args.min_delta, backlog_frac=args.backlog_frac)
+    for st in wf["steps"]:
+        flag = f"  <-- flagged {args.target}" if st["target_flagged"] else ""
+        print(f"  {st['as_of']}  callable={st['callable']}  "
+              f"signals={st['n_signals']}{flag}")
+    n_callable = sum(1 for st in wf["steps"] if st["callable"])
+    print(f"\n  steps with real calls in the recent window: {n_callable}/{len(wf['steps'])} "
+          f"(the azole 'cannot detect yet' null is RETIRED for FKS1)")
+    print("  CAVEAT (pre-registered): the committed table is ~180 days deep and the window is "
+          f"{args.window} days, so early steps have a thin/empty baseline -- any early "
+          "'emergence' is baseline-starved, NOT a validated rising trend. A full "
+          "emergence/lead-time backtest needs a wider-window fill (billable, out of scope).")
+
+
 # ---------------------------- H3: mechanism -----------------------------------
 
 def _labelled_records():
@@ -210,6 +275,21 @@ def main():
                        help="azole event frequency on a re-called snapshot (the deliverable)")
     p.add_argument("snapshot")
     p.set_defaults(func=cmd_prevalence)
+
+    p = sub.add_parser("fks1-prevalence",
+                       help="echinocandin event frequency on a committed FKS1 call table (REAL)")
+    p.add_argument("call_table", help="data/earlywarning/fks1_calls/PDG...<N>.tsv")
+    p.set_defaults(func=cmd_fks1_prevalence)
+
+    p = sub.add_parser("fks1-replay",
+                       help="REAL-data FKS1 walk-forward over a committed call table")
+    p.add_argument("call_table", help="data/earlywarning/fks1_calls/PDG...<N>.tsv")
+    p.add_argument("--target", default="S639F", help="mutation to track (default S639F)")
+    p.add_argument("--window", type=int, default=180)
+    p.add_argument("--min-count", type=int, default=3)
+    p.add_argument("--min-delta", type=float, default=0.05)
+    p.add_argument("--backlog-frac", type=float, default=0.5)
+    p.set_defaults(func=cmd_fks1_replay)
 
     p = sub.add_parser("mechanism", help="H3: lead time on a labelled (synthetic) replay")
     p.add_argument("--reference", default="2024-09-01",
