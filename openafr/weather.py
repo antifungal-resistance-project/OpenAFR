@@ -277,6 +277,75 @@ def _methods_section(certification, calls_provenance, window):
 """
 
 
+def _trend_section(release_trend):
+    """The resistance-trend block: prevalence per committed re-call batch, with the direction
+    of the latest move, or "" when there is no trajectory to show (fewer than two batches).
+
+    `release_trend` -- the per-release series from render_weather (`as_of`, resolved
+    `n_called`, `n_resistant`, `prevalence`), ascending by release. Reproducible from the
+    committed call tables; passed in, never recomputed here. Degrades honestly: a single batch
+    is a point, not a trend, so the section is omitted until a second batch gives it meaning.
+    """
+    if not release_trend or len(release_trend) < 2:
+        return ""
+
+    def _prev(x):
+        return "&mdash;" if x is None else f"{100 * x:.1f}%"
+
+    rows = "\n".join(
+        f'      <div class="k"><code>{html.escape(str(e.get("as_of") or "—"))}</code></div>'
+        f'<div class="v">{e.get("n_resistant", 0)} of {e.get("n_called", 0)} resolved '
+        f'&middot; {_prev(e.get("prevalence"))}</div>'
+        for e in release_trend)
+
+    pts = [e["prevalence"] for e in release_trend if e.get("prevalence") is not None]
+    delta_html = ""
+    if len(pts) >= 2:
+        dp = (pts[-1] - pts[-2]) * 100   # percentage points, latest vs previous batch
+        if dp > 0.05:
+            cls, line = "trend-up", f"&#9650; prevalence up {dp:.1f} pts since the previous batch."
+        elif dp < -0.05:
+            cls, line = "trend-down", (f"&#9660; prevalence down {abs(dp):.1f} pts since the "
+                                       "previous batch.")
+        else:
+            cls, line = "trend-flat", "&#9644; prevalence held steady since the previous batch."
+        delta_html = f'    <p class="trend-delta {cls}">{line}</p>\n'
+
+    return f"""  <section class="trend">
+    <h2>Resistance trend</h2>
+    <div class="grid">
+{rows}
+    </div>
+{delta_html}    <p class="note">Echinocandin-resistant FKS1 carriers as a share of resolved
+      isolates, per committed re-call batch &mdash; reproducible from the committed call tables.</p>
+  </section>
+"""
+
+
+def _geo_section(geo_breakdown):
+    """Where the current release's resistant carriers are: a country-ranked list, or "" when
+    there is nothing located. Labelled 'current release' because geography comes from the live
+    NCBI pull, not the committed historical series (the call table does not yet carry country).
+
+    `geo_breakdown` -- {country: carrier_count} from render_weather; passed in, not recomputed.
+    """
+    if not geo_breakdown:
+        return ""
+    items = sorted(geo_breakdown.items(), key=lambda kv: (-kv[1], kv[0]))
+    rows = "\n".join(
+        f'      <div class="k">{html.escape(str(country))}</div><div class="v">{n}</div>'
+        for country, n in items)
+    return f"""  <section class="geo">
+    <h2>Where carriers are &middot; current release</h2>
+    <div class="grid">
+{rows}
+    </div>
+    <p class="note">Resistant FKS1 carriers by country in the current NCBI release's metadata
+      (not the committed historical series). Isolates with no country are omitted.</p>
+  </section>
+"""
+
+
 def _structured_data(description, certification, provenance, page_url):
     """A schema.org JSON-LD <script> block describing the page + dataset, for search and
     link-preview engines. Built from the same inputs already in scope -- no I/O. Always
@@ -327,7 +396,7 @@ def _structured_data(description, certification, provenance, page_url):
 
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
-                certification=None, page_url=None):
+                certification=None, release_trend=None, geo_breakdown=None, page_url=None):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -342,6 +411,11 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
                         specificity, identity, benchmark), scored upstream from the
                         committed runlog; a PASS adds the credibility badge + methods
                         section. None (or non-PASS) makes no certification claim.
+    `release_trend` -- the per-release resistance series (as_of, n_called, n_resistant,
+                        prevalence), ascending; two or more batches render the trend section.
+                        None/one batch omits it.
+    `geo_breakdown` -- {country: carrier_count} for the current release; renders the geography
+                        section. None/empty omits it.
     `page_url` -- canonical URL for the shareable OpenGraph/Twitter card; None omits og:url.
     Deterministic given its inputs -- no I/O, no network, no wall-clock unless `now` is None.
     """
@@ -393,6 +467,8 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
                   if coverage_clause else "")
 
     cert_badge = _cert_badge(certification)
+    trend_html = _trend_section(release_trend)
+    geo_html = _geo_section(geo_breakdown)
     methods_html = _methods_section(certification, calls_provenance, window)
     share_desc_plain = _share_description(status, coverage, calls_provenance)
     share_desc = html.escape(share_desc_plain)
@@ -453,6 +529,13 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .about summary {{ cursor:pointer; color:var(--muted-strong); font-weight:600; }}
   .about code {{ color:var(--code); }}
   .about .cert-grid {{ max-width:420px; margin:.6rem 0; }}
+  h2 {{ font-size:.95rem; letter-spacing:.02em; text-transform:uppercase;
+        color:var(--muted-strong); font-weight:600; margin:2.5rem 0 .6rem; }}
+  .trend, .geo {{ margin:0 0 1rem; }}
+  .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
+  .trend-up {{ color:var(--tier-act-now); }}
+  .trend-down {{ color:var(--accent); }}
+  .trend-flat {{ color:var(--muted); }}
   .card {{ background:var(--surface); border:1px solid var(--border);
            border-left:4px solid var(--accent,var(--border));
            border-radius:10px; padding:1.1rem 1.25rem; margin:1rem 0; }}
@@ -485,7 +568,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{methods_html}  <footer>
+{trend_html}{geo_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above

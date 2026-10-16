@@ -338,3 +338,59 @@ def test_meta_omits_freshness_line_when_window_is_quiet():
                                calls_provenance={"as_of": "2026-04-11", "n_called": 300})
     assert 'class="meta-fresh"' not in page
     assert 'class="meta-detail"' in page
+
+
+# ---- deepening: release trend + geographic breakdown -------------------------
+# The page should read like weather, not a flat snapshot: a prevalence trajectory across
+# committed re-call batches (reproducible) and where the current release's carriers are
+# (current-release only, honestly labelled). Both degrade to nothing when their data is absent.
+
+def _trend(*points):
+    # points: (as_of, n_called, n_resistant) oldest-first; prevalence derived.
+    return [{"as_of": a, "n_called": c, "n_resistant": r,
+             "prevalence": (r / c) if c else None} for (a, c, r) in points]
+
+
+def test_trend_section_shows_per_batch_prevalence_and_rising_delta():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 300, 15), ("2026-04-14", 3375, 197)))
+    assert 'class="trend"' in page
+    assert "Resistance trend" in page
+    # both batches render with resolved counts and a one-decimal prevalence
+    assert "15 of 300 resolved" in page and "5.0%" in page
+    assert "197 of 3375 resolved" in page and "5.8%" in page
+    # 5.0% -> 5.8% is a rise; the delta names the direction and magnitude
+    assert "trend-up" in page and "prevalence up 0.8 pts" in page
+
+
+def test_trend_section_marks_a_falling_batch():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 100, 10), ("2026-04-14", 100, 6)))
+    assert "trend-down" in page and "prevalence down 4.0 pts" in page
+
+
+def test_trend_section_omitted_for_a_single_batch():
+    # One batch is a point, not a trend -- no section until there is a trajectory.
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               release_trend=_trend(("2026-04-14", 3375, 197)))
+    assert 'class="trend"' not in page
+    assert "Resistance trend" not in page
+
+
+def test_geo_section_ranks_countries_and_labels_current_release():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        geo_breakdown={"India": 12, "USA": 5, "South Africa": 12})
+    assert 'class="geo"' in page
+    assert "current release" in page
+    # ranked by count desc, ties broken by name -> India, South Africa (both 12), then USA (5)
+    order = [page.index("India"), page.index("South Africa"), page.index("USA")]
+    assert order == sorted(order)
+
+
+def test_trend_and_geo_absent_by_default_without_crashing():
+    page = weather.render_page(_cov_result(200, 150), now=NOW)
+    assert 'class="trend"' not in page
+    assert 'class="geo"' not in page

@@ -22,12 +22,18 @@ data/earlywarning/fks1_calls/
 
 ## Call table schema (one row per RESOLVED isolate)
 
-`isolate_key`, `fks1_call`, `fks1_resistance_source`, `run_acc`, `target_creation_date`.
+`isolate_key`, `fks1_call`, `fks1_resistance_source`, `run_acc`, `target_creation_date`,
+`country`.
 
 "Resolved" = the re-caller has spoken (a non-`pending:` source), whatever its verdict
 (`called` / `partial` / `refused` / `failed`). A `pending:` isolate the re-caller has not
 reached is simply absent. `isolate_key` is the version-stripped `target_acc`, so the table
 overlays cleanly onto a later live pull even after NCBI re-processes an isolate.
+
+`country` is the latest column: it lets a future render break resistance down by geography
+**reproducibly** from the committed table (not just the current live pull). Tables written
+before it was added (releases 709/710) simply omit it and stay valid — the readers are
+column-tolerant and no backfill is done.
 
 ## How it is produced and consumed
 

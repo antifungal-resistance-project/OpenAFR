@@ -68,12 +68,61 @@ def _calls_provenance(args):
     as_of, not the committed table's -- return None there rather than claim the fill date."""
     if args.gene != "fks1" or args.snapshot:
         return None
+    return ew.latest_fks1_calls_index_entry(_calls_dir(args))
+
+
+def _calls_dir(args):
+    """The FKS1-calls directory whose INDEX/tables back the trend + freshness, mirroring the
+    overlay auto-discovery so what the page reports is what it overlaid."""
     if args.fks1_calls:
-        # Explicit table: read provenance from the sibling INDEX in its directory.
-        calls_dir = str(pathlib.Path(args.fks1_calls).resolve().parent)
-    else:
-        calls_dir = str(FKS1_CALLS_DIR)
-    return ew.latest_fks1_calls_index_entry(calls_dir)
+        return str(pathlib.Path(args.fks1_calls).resolve().parent)
+    return str(FKS1_CALLS_DIR)
+
+
+def _release_trend(args):
+    """The per-release resistance trajectory the trend section renders, or None.
+
+    Fully reproducible from committed data: one entry per committed fill, read from the calls
+    INDEX (`release_tag`, `as_of`, resolved `n_called`) joined to that release's committed
+    table for the resistant-carrier count. Prevalence is resistant / resolved -- the same
+    resolved denominator the coverage fix uses. None for the erg11 arm or a written --snapshot
+    (which carries its own calls, not the committed series)."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    calls_dir = _calls_dir(args)
+    trend = []
+    for row in ew.read_fks1_calls_index(calls_dir):
+        tag = row.get("release_tag") or ""
+        table = pathlib.Path(calls_dir) / f"{tag}.tsv"
+        n_called = int(row.get("n_called") or 0)
+        n_resistant = ew.count_fks1_resistant(str(table))
+        trend.append({
+            "release_tag": tag,
+            "as_of": row.get("as_of") or "",
+            "n_called": n_called,
+            "n_resistant": n_resistant,
+            "prevalence": (n_resistant / n_called) if n_called else None,
+        })
+    return trend or None
+
+
+def _geo_breakdown(records, args):
+    """Where the current release's resolved carriers are: {country: carrier_count}, or None.
+
+    Zero-cost -- it reads the `country` the live NCBI pull already carries on each record
+    (normalize derives it); counts only resolved *carriers* (a non-empty FKS1 call). Reflects
+    the current release only, since the committed table does not yet carry geography -- the
+    section labels it as such. None for the erg11 arm, no records, or no located carriers."""
+    if args.gene != "fks1" or not records:
+        return None
+    counts = {}
+    for rec in records:
+        if not (rec.get("fks1_call") or "").strip():
+            continue
+        country = (rec.get("country") or "").strip()
+        if country:
+            counts[country] = counts.get(country, 0) + 1
+    return counts or None
 
 
 def _certification(runlog_path=CONCORDANCE_RUNLOG):
@@ -148,21 +197,24 @@ def _watching(args):
 
 
 def _compose(args):
-    """Compose the current alert result; on no/failed data, an empty gene-marked result
-    (-> the calm watching page for the selected arm)."""
+    """Compose the current alert result and return (result, records); on no/failed data, an
+    empty gene-marked result with records=None (-> the calm watching page for the selected
+    arm). The records ride along so the geo breakdown can aggregate them without a second load.
+    """
     if args.watching_only:
-        return _watching(args)
+        return _watching(args), None
     try:
         records = _load_records(args)
     except Exception as exc:  # noqa: BLE001 -- a page must never fail on a data hiccup
         print(f"data unavailable ({exc!r}); rendering the watching page.", file=sys.stderr)
-        return _watching(args)
+        return _watching(args), None
     composer = (alert.compose_fks1_alerts if args.gene == "fks1"
                 else alert.compose_alerts)
-    return composer(
+    result = composer(
         records, args.as_of, window_days=args.window,
         min_count=args.min_count, min_delta=args.min_delta,
         backlog_frac=args.backlog_frac)
+    return result, records
 
 
 def main():
@@ -195,14 +247,17 @@ def main():
     ap.add_argument("--out", default="site/index.html", help="output HTML path")
     args = ap.parse_args()
 
-    result = _compose(args)
+    result, records = _compose(args)
     watching_since = _watching_since(args.state, args.watching_start)
     # Certification is the caller's, not the fill's -- the azole research arm has no such
     # concordance record, so only the echinocandin product surfaces the badge.
     certification = _certification() if args.gene == "fks1" else None
     page = weather.render_page(result, watching_since=watching_since,
                                calls_provenance=_calls_provenance(args),
-                               certification=certification, page_url=PAGE_URL)
+                               certification=certification,
+                               release_trend=_release_trend(args),
+                               geo_breakdown=_geo_breakdown(records, args),
+                               page_url=PAGE_URL)
 
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
