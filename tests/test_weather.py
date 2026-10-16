@@ -394,3 +394,20 @@ def test_trend_and_geo_absent_by_default_without_crashing():
     page = weather.render_page(_cov_result(200, 150), now=NOW)
     assert 'class="trend"' not in page
     assert 'class="geo"' not in page
+
+
+def test_trend_section_surfaces_vus_separately_from_resistant():
+    # #192: non-panel variants of uncertain significance are tracked, never headlined as resistant.
+    trend = _trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128))
+    trend[-1]["n_vus"] = 69
+    page = weather.render_page(_cov_result(200, 150), now=NOW, release_trend=trend)
+    assert "128 of 3375 resolved" in page and "3.8%" in page
+    assert "69 resolved isolate(s) carry a non-panel FKS1 variant of uncertain significance" in page
+    assert "5.8%" not in page
+
+
+def test_trend_section_omits_vus_note_when_none():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128)))
+    assert "uncertain significance" not in page

@@ -14,7 +14,7 @@ still rare (~2%) and *dynamic* — the regime where early warning is actually us
 
 > **Honest status.** The live loop is closed — the page shows a real echinocandin picture.
 > The certified caller has run a full-window re-call on cloud compute (release 710: 3,375
-> resolved isolates, 197 resistant = 5.8%, as-of 2026-04-14), and that committed call table is
+> resolved isolates, 128 known-resistance panel carriers = 3.8% plus 69 variants of uncertain significance, as-of 2026-04-14), and that committed call table is
 > overlaid on the weekly live NCBI pull, so the public page is lit at ~85% coverage. Freshness
 > is honest, not real-time: the page shows the last committed fill with its as-of date, and a
 > non-billable monthly watchdog measures drift and rings for a human-gated refill once enough
@@ -362,7 +362,7 @@ have, and is the thing a public-health team would actually subscribe to.
 ### Honest status: the page is live
 
 **The live loop is closed.** The certified FKS1 caller has run a full-window re-call on cloud
-compute (release 710: **3,375 resolved isolates, 197 resistant = 5.8%**, as-of 2026-04-14 —
+compute (release 710: **3,375 resolved isolates, 128 known-resistance panel carriers = 3.8%**, plus 69 variants of uncertain significance reported separately, as-of 2026-04-14 —
 `data/earlywarning/fks1_calls/`), and that durable, git-tracked call table is overlaid on the
 weekly live NCBI pull, so the public page shows the real echinocandin-resistance picture at
 ~85% coverage instead of a day-0 "watching…" placeholder. Freshness is honest, not real-time:
