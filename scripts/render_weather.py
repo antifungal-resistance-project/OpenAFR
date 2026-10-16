@@ -32,7 +32,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from openafr import alert, weather  # noqa: E402
+from openafr import alert, weather, weather_feed  # noqa: E402
 from openafr import earlywarning as ew  # noqa: E402
 
 DIGEST_DIR = ROOT / "data" / "earlywarning" / "digest"
@@ -252,16 +252,24 @@ def main():
     # Certification is the caller's, not the fill's -- the azole research arm has no such
     # concordance record, so only the echinocandin product surfaces the badge.
     certification = _certification() if args.gene == "fks1" else None
-    page = weather.render_page(result, watching_since=watching_since,
-                               calls_provenance=_calls_provenance(args),
-                               certification=certification,
-                               release_trend=_release_trend(args),
-                               geo_breakdown=_geo_breakdown(records, args),
-                               page_url=PAGE_URL)
+    shared = dict(calls_provenance=_calls_provenance(args),
+                  certification=certification,
+                  release_trend=_release_trend(args),
+                  geo_breakdown=_geo_breakdown(records, args),
+                  page_url=PAGE_URL)
+    # One clock reading so the page and both feeds agree on "generated".
+    now = datetime.datetime.now(datetime.timezone.utc)
+    page = weather.render_page(result, now=now, watching_since=watching_since,
+                               feeds=True, **shared)
 
     out = pathlib.Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(page)
+    # Sibling machine-readable feeds (same inputs as the page, so they cannot disagree).
+    (out.parent / "data.json").write_text(json.dumps(
+        weather_feed.build_data(result, now=now, **shared), indent=2, sort_keys=True) + "\n")
+    (out.parent / "alerts.atom").write_text(
+        weather_feed.render_atom(result, now=now, page_url=PAGE_URL))
     n = len((result or {}).get("alerts") or [])
     print(f"wrote {out} — {n} alert(s), watching since {watching_since}.")
 

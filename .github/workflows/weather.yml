@@ -29,6 +29,7 @@ on:
     branches: [main]
     paths:
       - "openafr/weather.py"
+      - "openafr/weather_feed.py"
       - "scripts/render_weather.py"
       - ".github/workflows/weather.yml"
       - "docs/pockets/**"
