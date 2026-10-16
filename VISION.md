@@ -22,7 +22,7 @@ The drug-discovery work below (the CYP51 geometry triage tool) is the **research
 credibility arm** — a research instrument and the basis of the JCM manuscript. It is not the
 product. This bet reframes the whole backlog: the north star is a *live* surveillance page in
 front of one design partner. **The page is now live** — the certified caller has run a
-full-window cloud fill (release 710: 3,375 resolved isolates, 197 resistant = 5.8%) and that
+full-window cloud fill (release 710: 3,375 resolved isolates, 128 known-resistance panel carriers = 3.8%, plus 69 variants of uncertain significance reported separately) and that
 committed call table is overlaid on the weekly NCBI pull, so the page shows a real echinocandin
 picture, not a day-0 "watching…" placeholder. The operational cadence is settled too: a
 non-billable monthly watchdog measures drift and rings for a human-gated billable refill when

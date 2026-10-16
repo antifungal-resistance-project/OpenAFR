@@ -58,3 +58,35 @@ def test_page_links_feeds_only_when_asked():
     assert "alerts.atom" not in weather.render_page(None, now=NOW)
     page = weather.render_page(None, now=NOW, feeds=True)
     assert 'href="data.json"' in page and 'rel="alternate" type="application/atom+xml"' in page
+
+
+# ---- schema contract (docs/FEED_SPEC.md) -------------------------------------------------
+# A partner builds against these keys. Changing them is a schema_version bump, not a refactor.
+
+TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
+            "thresholds", "coverage", "alerts", "release_trend", "geography",
+            "calls_provenance", "certification"}
+ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
+              "emergence"}
+EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
+                  "recent_called", "baseline_count", "baseline_called", "recent_prop",
+                  "baseline_prop", "delta"}
+
+
+def test_data_json_schema_is_pinned():
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW)
+    assert set(data) == TOP_KEYS
+    for a in data["alerts"]:
+        assert ALERT_KEYS <= set(a)
+        assert set(a["emergence"]) == EMERGENCE_KEYS
+
+
+def test_release_trend_carries_panel_vs_vus_split_unchanged():
+    # #192: n_resistant is the panel-gated count and n_vus is reported separately; the feed
+    # must pass both through untouched so a consumer never has to re-derive "resistant".
+    trend = [{"release_tag": "PDG000000067.710", "as_of": "2026-04-14", "n_called": 3375,
+              "n_resistant": 128, "n_vus": 69, "prevalence": 128 / 3375}]
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW, release_trend=trend)
+    assert data["release_trend"] == trend
+    assert data["release_trend"][0]["prevalence"] == 128 / 3375
+    json.dumps(data)
