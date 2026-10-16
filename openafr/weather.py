@@ -396,7 +396,8 @@ def _structured_data(description, certification, provenance, page_url):
 
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
-                certification=None, release_trend=None, geo_breakdown=None, page_url=None):
+                certification=None, release_trend=None, geo_breakdown=None, page_url=None,
+                feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -417,6 +418,8 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     `geo_breakdown` -- {country: carrier_count} for the current release; renders the geography
                         section. None/empty omits it.
     `page_url` -- canonical URL for the shareable OpenGraph/Twitter card; None omits og:url.
+    `feeds` -- True links the sibling machine-readable `data.json` / `alerts.atom` (written by
+                        scripts/render_weather.py); off by default so a bare page has no dead links.
     Deterministic given its inputs -- no I/O, no network, no wall-clock unless `now` is None.
     """
     if now is None:
@@ -474,6 +477,10 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     share_desc = html.escape(share_desc_plain)
     jsonld_html = _structured_data(share_desc_plain, certification, calls_provenance, page_url)
     title = "C. auris Resistance Weather Report"
+    feeds_html = ('    Machine-readable: <a href="data.json">data.json</a> &middot; '
+                  '<a href="alerts.atom">alerts.atom</a> (Atom feed).\n' if feeds else "")
+    feed_link_tag = ('\n<link rel="alternate" type="application/atom+xml" '
+                     'title="Alerts" href="alerts.atom">' if feeds else "")
     og_url_tag = (f'\n<meta property="og:url" content="{html.escape(str(page_url))}">'
                   if page_url else "")
     canonical_tag = (f'\n<link rel="canonical" href="{html.escape(str(page_url))}">'
@@ -489,7 +496,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
-<link rel="icon" href="{favicon}">{canonical_tag}
+<link rel="icon" href="{favicon}">{canonical_tag}{feed_link_tag}
 <meta name="description" content="{share_desc}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{share_desc}">
@@ -574,7 +581,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
     states how current they are. Priority tiers and every number come straight from
     <code>openafr.alert</code>; this page renders that verdict, it never invents one.
-  </footer>
+{feeds_html}  </footer>
 </div>
 </body>
 </html>
