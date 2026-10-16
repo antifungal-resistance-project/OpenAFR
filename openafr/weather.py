@@ -282,9 +282,11 @@ def _trend_section(release_trend):
     of the latest move, or "" when there is no trajectory to show (fewer than two batches).
 
     `release_trend` -- the per-release series from render_weather (`as_of`, resolved
-    `n_called`, `n_resistant`, `prevalence`), ascending by release. Reproducible from the
-    committed call tables; passed in, never recomputed here. Degrades honestly: a single batch
-    is a point, not a trend, so the section is omitted until a second batch gives it meaning.
+    `n_called`, `n_resistant` = KNOWN-resistance panel carriers, `n_vus` = non-panel
+    variant-of-uncertain-significance carriers, `prevalence`), ascending by release.
+    Reproducible from the committed call tables; passed in, never recomputed here. Degrades
+    honestly: a single batch is a point, not a trend, so the section is omitted until a second
+    batch gives it meaning.
     """
     if not release_trend or len(release_trend) < 2:
         return ""
@@ -311,13 +313,21 @@ def _trend_section(release_trend):
             cls, line = "trend-flat", "&#9644; prevalence held steady since the previous batch."
         delta_html = f'    <p class="trend-delta {cls}">{line}</p>\n'
 
+    # Non-panel hot-spot variants (uncertain significance) in the latest batch -- surfaced so
+    # the reader sees they are tracked but deliberately NOT counted as known resistance.
+    n_vus = release_trend[-1].get("n_vus", 0)
+    vus_html = (f" A further {n_vus} resolved isolate(s) carry a non-panel FKS1 variant of "
+                "uncertain significance, tracked but not counted as known resistance."
+                ) if n_vus else ""
+
     return f"""  <section class="trend">
     <h2>Resistance trend</h2>
     <div class="grid">
 {rows}
     </div>
-{delta_html}    <p class="note">Echinocandin-resistant FKS1 carriers as a share of resolved
-      isolates, per committed re-call batch &mdash; reproducible from the committed call tables.</p>
+{delta_html}    <p class="note">Carriers of a <strong>known</strong> echinocandin-resistance FKS1
+      substitution as a share of resolved isolates, per committed re-call batch &mdash;
+      reproducible from the committed call tables.{vus_html}</p>
   </section>
 """
 

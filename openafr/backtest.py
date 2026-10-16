@@ -33,6 +33,7 @@ import datetime as _dt
 import math
 import re
 
+from openafr import earlywarning as _ew
 from openafr import emergence
 from openafr import fks1_caller
 from openafr import recaller
@@ -182,13 +183,18 @@ def month_steps(start, stop):
 
 
 def walk_forward(records, as_of_dates, target=None, window_days=180, min_count=3,
-                 min_delta=0.05, backlog_frac=0.5):
+                 min_delta=0.05, backlog_frac=0.5, call_field="erg11_call"):
     """Replay `records` as of each date in `as_of_dates`, running the detector.
 
     At each as-of date the detector sees the full record set but splits it by
     NCBI visibility date exactly as in production, so this is a faithful "what would
     we have said on that day" replay. Records the per-step outcome and, if `target`
     is given, the first as-of date at which `target` is flagged.
+
+    `call_field` selects which re-caller's column the detector reads -- `erg11_call`
+    (azole, the default, empty on every real snapshot -> the honest null) or
+    `fks1_call` (echinocandin, which the committed call tables populate with REAL
+    calls, so the replay is no longer a null). No other behaviour changes.
 
     Returns a dict:
       steps        -- list of {as_of, callable(bool), n_signals, target_flagged(bool)}
@@ -201,7 +207,7 @@ def walk_forward(records, as_of_dates, target=None, window_days=180, min_count=3
         as_of_iso = as_of.isoformat() if hasattr(as_of, "isoformat") else str(as_of)
         result = emergence.detect_emergence(
             records, as_of_iso, window_days=window_days, min_count=min_count,
-            min_delta=min_delta, backlog_frac=backlog_frac)
+            min_delta=min_delta, backlog_frac=backlog_frac, call_field=call_field)
         callable_step = "note" not in result
         any_callable = any_callable or callable_step
         muts = {s["mutation"] for s in result["signals"]}
@@ -437,3 +443,23 @@ def fks1_panel_prevalence(records):
         "n_called_nonpanel": n_called_nonpanel,
         "excluded": excluded,
     }
+
+
+# --------------------- committed FKS1 call table -> records ---------------------
+# The real-data FKS1 backtest reads the DURABLE committed call table directly
+# (data/earlywarning/fks1_calls/PDG...<N>.tsv), not a live NCBI pull or a gitignored
+# snapshot blob. Those calls are the billable re-caller output; replaying them offline
+# costs nothing and never touches the network. The table already carries the columns the
+# detector needs per isolate (fks1_call, fks1_resistance_source, target_creation_date), so
+# loading is just the call-table rows as a record list -- reusing the one reader that owns
+# that schema rather than re-parsing the TSV here.
+
+def load_fks1_call_table(path):
+    """Load a committed FKS1 call table into a record list for the FKS1 backtest.
+
+    Returns the table's rows (one per RESOLVED isolate) as plain dicts, each carrying at
+    least `isolate_key`, `fks1_call`, `fks1_resistance_source`, and `target_creation_date`
+    -- exactly what `fks1_panel_prevalence` and `walk_forward(call_field="fks1_call")`
+    consume. Delegates parsing to earlywarning.read_fks1_call_table so the schema has a
+    single owner. No network, no snapshot blob."""
+    return list(_ew.read_fks1_call_table(path).values())

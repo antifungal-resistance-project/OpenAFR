@@ -84,9 +84,12 @@ def _release_trend(args):
 
     Fully reproducible from committed data: one entry per committed fill, read from the calls
     INDEX (`release_tag`, `as_of`, resolved `n_called`) joined to that release's committed
-    table for the resistant-carrier count. Prevalence is resistant / resolved -- the same
-    resolved denominator the coverage fix uses. None for the erg11 arm or a written --snapshot
-    (which carries its own calls, not the committed series)."""
+    table for the resistant-carrier count. `n_resistant` is the KNOWN-resistance panel count
+    (not every FKS1 variant token): non-panel hot-spot variants are of uncertain significance
+    and are carried separately as `n_vus`, so the headline never overstates resistance (the
+    distinction the real-data backtest surfaced). Prevalence is panel-resistant / resolved --
+    the same resolved denominator the coverage fix uses. None for the erg11 arm or a written
+    --snapshot (which carries its own calls, not the committed series)."""
     if args.gene != "fks1" or args.snapshot:
         return None
     calls_dir = _calls_dir(args)
@@ -95,12 +98,13 @@ def _release_trend(args):
         tag = row.get("release_tag") or ""
         table = pathlib.Path(calls_dir) / f"{tag}.tsv"
         n_called = int(row.get("n_called") or 0)
-        n_resistant = ew.count_fks1_resistant(str(table))
+        n_resistant, n_vus = ew.count_fks1_panel_positive(str(table))
         trend.append({
             "release_tag": tag,
             "as_of": row.get("as_of") or "",
             "n_called": n_called,
             "n_resistant": n_resistant,
+            "n_vus": n_vus,
             "prevalence": (n_resistant / n_called) if n_called else None,
         })
     return trend or None
@@ -110,14 +114,18 @@ def _geo_breakdown(records, args):
     """Where the current release's resolved carriers are: {country: carrier_count}, or None.
 
     Zero-cost -- it reads the `country` the live NCBI pull already carries on each record
-    (normalize derives it); counts only resolved *carriers* (a non-empty FKS1 call). Reflects
-    the current release only, since the committed table does not yet carry geography -- the
-    section labels it as such. None for the erg11 arm, no records, or no located carriers."""
+    (normalize derives it); counts only resolved carriers of a KNOWN echinocandin-resistance
+    panel substitution (not every FKS1 variant token), matching the panel-gated headline so the
+    map never overstates resistance. Reflects the current release only, since the committed
+    table does not yet carry geography -- the section labels it as such. None for the erg11 arm,
+    no records, or no located panel carriers."""
     if args.gene != "fks1" or not records:
         return None
+    from openafr import emergence, fks1_caller
     counts = {}
     for rec in records:
-        if not (rec.get("fks1_call") or "").strip():
+        toks = emergence.parse_call(rec.get("fks1_call"))
+        if not any(fks1_caller.is_panel_token(t) for t in toks):
             continue
         country = (rec.get("country") or "").strip()
         if country:
