@@ -76,6 +76,13 @@ only to re-call the whole pending pool (e.g. for a concordance/prevalence study,
 
 ## Cadence
 
+**Decided:** monthly watchdog, refill when ≥25 new in-window isolates are uncalled. The
+non-billable half is automated — `scripts/fill_due_check.py` via
+`.github/workflows/fks1-fill-watchdog.yml` runs on the 1st of each month (free NCBI metadata
+pull only), measures the in-window re-call gap, and files/updates one `fks1-fill-due` issue when
+the gap crosses the threshold or the last fill has rolled off the window. That issue is the
+signal to run the billable steps below; the paid fill itself stays a human decision.
+
 **Monthly is enough.** NCBI's median arrival lag for *C. auris* is ~97 days, so new in-window
 isolates accrue slowly; a weekly fill would mostly re-pay for an unchanged window. The weekly
 `weather.yml` keeps *publishing* the latest committed table regardless — only the (billable) fill
