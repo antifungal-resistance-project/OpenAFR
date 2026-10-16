@@ -338,8 +338,12 @@ def utcnow_iso():
 # isolates the re-caller resolved, overlaid onto a fresh live pull by isolate_key at
 # render/alert time. Same "small git-tracked memory, big blob gitignored" split as INDEX.tsv.
 
+# `country` is forward-looking: the next fill carries it (normalize already derives it), so a
+# future render can break the picture down by geography reproducibly from the committed table.
+# Tables written before it was added (releases 709/710) simply omit the column -- read_* is
+# column-tolerant, so those stay valid and no backfill is needed.
 FKS1_CALLS_COLUMNS = ("isolate_key", "fks1_call", "fks1_resistance_source",
-                      "run_acc", "target_creation_date")
+                      "run_acc", "target_creation_date", "country")
 FKS1_CALLS_INDEX_COLUMNS = ("release_tag", "as_of", "window_days", "n_called",
                             "sha256", "written_at_utc")
 
@@ -473,3 +477,38 @@ def latest_fks1_calls_index_entry(calls_dir):
     if not rows:
         return None
     return max(rows, key=lambda r: _order(r["release_tag"]))
+
+
+def read_fks1_calls_index(calls_dir):
+    """All FKS1-calls provenance rows from `calls_dir`/INDEX.tsv, oldest release first.
+
+    `latest_fks1_calls_index_entry` keeps only the newest row (what the freshness clause
+    needs); the resistance-weather trend view needs the whole series, so this returns every
+    row ordered by release number (same "highest PDG release wins" ordering, ascending). A
+    missing/empty INDEX yields []."""
+    import os.path
+    index_path = os.path.join(calls_dir, "INDEX.tsv")
+
+    def _order(tag):
+        suffix = str(tag).split(".")[-1]
+        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, str(tag))
+
+    try:
+        with open(index_path, newline="") as fh:
+            rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("release_tag")]
+    except FileNotFoundError:
+        return []
+    return sorted(rows, key=lambda r: _order(r["release_tag"]))
+
+
+def count_fks1_resistant(path):
+    """Number of resistant carriers in a committed FKS1 call table -- rows whose `fks1_call`
+    holds a (non-empty) resistance token. Every row in the table is a *resolved* isolate (the
+    serializer only writes resolved calls), so this is the resistant count over a resolved
+    denominator. A missing table reads as 0 rather than raising, so a trend over a partially
+    committed history degrades honestly."""
+    try:
+        rows = read_fks1_call_table(path)
+    except FileNotFoundError:
+        return 0
+    return sum(1 for r in rows.values() if (r.get("fks1_call") or "").strip())

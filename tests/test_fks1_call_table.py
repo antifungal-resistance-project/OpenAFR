@@ -120,6 +120,54 @@ def test_latest_index_entry_none_when_missing_or_empty(tmp_path):
     assert ew.latest_fks1_calls_index_entry(str(tmp_path)) is None
 
 
+# --- country column + trend readers (deepening) ------------------------------
+
+def test_call_table_carries_country_forward():
+    # `country` is the newest schema column: a fill that has it writes it, so a future
+    # geo breakdown is reproducible from the committed table.
+    assert "country" in ew.FKS1_CALLS_COLUMNS
+    rec = _rec("A", "sra-fks1-recaller:called", call="S639F")
+    rec["country"] = "India"
+    text = ew.serialize_fks1_calls([rec])
+    assert "country" in text.splitlines()[0]   # header
+    assert "India" in text
+
+
+def test_reader_tolerates_pre_country_tables(tmp_path):
+    # Releases 709/710 were written before `country` existed: a 5-column table must still
+    # read, overlay and count cleanly (missing country simply absent).
+    path = tmp_path / "PDG000000067.700.tsv"
+    path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+                    "target_creation_date\n"
+                    "A\tS639F\tsra-fks1-recaller:called\tSRR1\t2025-02-01\n"
+                    "B\t\tsra-fks1-recaller:called\tSRR2\t2025-02-02\n")
+    table = ew.read_fks1_call_table(str(path))
+    assert set(table) == {"A", "B"} and "country" not in table["A"]
+    assert ew.count_fks1_resistant(str(path)) == 1   # only A carries a call token
+    live = [_rec("A", "pending:sra-fks1-recaller")]
+    assert ew.overlay_fks1_calls(live, str(path)) == 1 and live[0]["fks1_call"] == "S639F"
+
+
+def test_read_calls_index_returns_full_series_ascending(tmp_path):
+    idx = tmp_path / "INDEX.tsv"
+    for rel, as_of in (("710", "2026-04-14"), ("709", "2026-04-11"), ("12", "2024-01-01")):
+        ew.update_fks1_calls_index(str(idx), {"release_tag": f"PDG000000067.{rel}",
+                                              "as_of": as_of, "window_days": 180,
+                                              "n_called": 1, "sha256": "x",
+                                              "written_at_utc": "2026-10-07T00:00:00Z"})
+    rows = ew.read_fks1_calls_index(str(tmp_path))
+    assert [r["release_tag"] for r in rows] == [       # ascending by release number, not lexical
+        "PDG000000067.12", "PDG000000067.709", "PDG000000067.710"]
+
+
+def test_read_calls_index_empty_when_missing(tmp_path):
+    assert ew.read_fks1_calls_index(str(tmp_path)) == []
+
+
+def test_count_resistant_missing_table_is_zero(tmp_path):
+    assert ew.count_fks1_resistant(str(tmp_path / "nope.tsv")) == 0
+
+
 # --- windowed fill scope (recall_fks1.py) ------------------------------------
 
 def test_in_window_restricts_to_recent_partition():
