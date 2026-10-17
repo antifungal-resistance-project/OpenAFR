@@ -187,6 +187,29 @@ def test_count_panel_positive_missing_table_is_zero(tmp_path):
     assert ew.count_fks1_panel_positive(str(tmp_path / "nope.tsv")) == (0, 0)
 
 
+def test_vus_census_breaks_down_non_panel_variants_by_token(tmp_path):
+    # The per-variant detail behind count_fks1_panel_positive's n_vus: distinct non-panel
+    # tokens with carrier counts, descending by count then token. Panel tokens (incl. the
+    # low-PPV D642Y/M690I letters) are excluded.
+    path = tmp_path / "PDG000000067.800.tsv"
+    path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+                    "target_creation_date\n"
+                    "A\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-02-01\n"   # panel (excluded)
+                    "B\tD642Y\tsra-fks1-recaller:called\tSRR2\t2026-02-02\n"   # low-PPV panel (excluded)
+                    "C\tR1354H\tsra-fks1-recaller:called\tSRR3\t2026-02-03\n"  # VUS
+                    "D\tR1354H\tsra-fks1-recaller:called\tSRR4\t2026-02-04\n"  # VUS (same token)
+                    "E\tD642H\tsra-fks1-recaller:called\tSRR5\t2026-02-05\n"   # VUS
+                    "F\t\tsra-fks1-recaller:wild-type\tSRR6\t2026-02-06\n")    # wild-type
+    assert ew.fks1_vus_census(str(path)) == [
+        {"token": "R1354H", "carriers": 2},  # highest count first
+        {"token": "D642H", "carriers": 1},   # ties broken by token
+    ]
+
+
+def test_vus_census_missing_table_is_empty(tmp_path):
+    assert ew.fks1_vus_census(str(tmp_path / "nope.tsv")) == []
+
+
 # --- windowed fill scope (recall_fks1.py) ------------------------------------
 
 def test_in_window_restricts_to_recent_partition():

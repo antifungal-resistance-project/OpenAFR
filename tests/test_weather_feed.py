@@ -64,7 +64,7 @@ def test_page_links_feeds_only_when_asked():
 # A partner builds against these keys. Changing them is a schema_version bump, not a refactor.
 
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
-            "thresholds", "coverage", "alerts", "release_trend", "geography",
+            "thresholds", "coverage", "alerts", "release_trend", "geography", "vus_census",
             "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
@@ -89,4 +89,16 @@ def test_release_trend_carries_panel_vs_vus_split_unchanged():
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, release_trend=trend)
     assert data["release_trend"] == trend
     assert data["release_trend"][0]["prevalence"] == 128 / 3375
+    json.dumps(data)
+
+
+def test_vus_census_passes_through_with_position_context():
+    # The per-variant breakdown behind n_vus: token + carriers + geometry-free position context,
+    # passed through untouched so page and feed can't disagree. Absent -> empty list, not null.
+    assert weather_feed.build_data(_fks1_hit_result(), now=NOW)["vus_census"] == []
+    census = [{"token": "F635I", "carriers": 6,
+               "position_context": {"tier": "novel_substitution_at_panel_residue"},
+               "position_note": "It sits in hot-spot HS1, at the F635 anchor — ..."}]
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW, vus_census=census)
+    assert data["vus_census"] == census
     json.dumps(data)

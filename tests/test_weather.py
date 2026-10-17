@@ -396,6 +396,38 @@ def test_trend_and_geo_absent_by_default_without_crashing():
     assert 'class="geo"' not in page
 
 
+def _vus(*pairs):
+    """Build an enriched VUS census (token, carriers) the way render_weather does, via the
+    real geometry-free position-context tool so the fixture matches production wiring."""
+    from openafr import fks1_position
+    out = []
+    for token, carriers in pairs:
+        ctx = fks1_position.position_context(token)
+        out.append({"token": token, "carriers": carriers, "position_context": ctx,
+                    "position_note": f"It {fks1_position.describe(ctx)}"})
+    return out
+
+
+def test_vus_section_lists_each_variant_with_carriers_and_geography():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW, vus_census=_vus(("F635I", 6), ("R1354H", 4)))
+    assert 'class="vus"' in page
+    assert "Variants of uncertain significance" in page
+    assert "F635I" in page and "R1354H" in page
+    assert "6 carrier(s)" in page and "4 carrier(s)" in page
+    # the geography sentence rides in, and the tier label is shown
+    assert "hot-spot" in page
+    # detection-only boundary is restated: tracked, not counted as resistance
+    assert "NOT counted as known resistance" in page
+
+
+def test_vus_section_absent_without_census():
+    page = weather.render_page(_cov_result(200, 150), now=NOW)
+    assert 'class="vus"' not in page
+    page_empty = weather.render_page(_cov_result(200, 150), now=NOW, vus_census=[])
+    assert 'class="vus"' not in page_empty
+
+
 def test_trend_section_surfaces_vus_separately_from_resistant():
     # #192: non-panel variants of uncertain significance are tracked, never headlined as resistant.
     trend = _trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128))

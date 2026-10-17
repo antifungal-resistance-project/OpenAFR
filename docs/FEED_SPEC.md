@@ -26,6 +26,7 @@ Renaming, removing, or changing the meaning of a key bumps `schema_version` (cur
 | `alerts` | array | current alerts (below) |
 | `release_trend` | array | one entry per committed re-call release (below) |
 | `geography` | object | `{country: panel-carrier count}`, current release only, sorted by country |
+| `vus_census` | array | per-variant census of non-panel hot-spot variants of uncertain significance (below) |
 | `calls_provenance` | object | which committed call table(s) the page is built on |
 | `certification` | object \| null | caller certification (benchmark, concordance) |
 
@@ -46,6 +47,17 @@ FKS1 substitution. `n_vus` counts resolved isolates with a hot-spot variant *not
 (uncertain significance); they are tracked but are **not** resistance. `prevalence =
 n_resistant / n_called`, where `n_called` is resolved isolates. Do not sum `n_resistant` and
 `n_vus` to get "resistant".
+
+### vus_census[]
+
+The per-variant breakdown behind `release_trend[].n_vus`. One entry per distinct non-panel
+hot-spot FKS1 substitution in the latest committed call table, descending by `carriers`:
+`token`, `carriers` (isolates carrying it), `position_context`, `position_note`. The last two
+are the geometry-free hot-spot context (openafr/fks1_position): which hot-spot window, offset
+from the anchor, and tier (`novel_substitution_at_panel_residue` / `in_hotspot_adjacent_to_panel`
+/ `in_hotspot_background` / `known_low_ppv_marker`). These are **variants of uncertain
+significance** — tracked, **not** counted as known resistance — and the position fields are
+geography only, never a drug-fit or phenotype claim.
 
 ## alerts.atom
 

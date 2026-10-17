@@ -46,8 +46,8 @@ def _alert_record(a):
 
 
 def build_data(alert_result, *, now=None, calls_provenance=None, certification=None,
-               release_trend=None, geo_breakdown=None, page_url=None):
-    """The `data.json` document: status, alerts, coverage, trend, geography, provenance."""
+               release_trend=None, geo_breakdown=None, vus_census=None, page_url=None):
+    """The `data.json` document: status, alerts, coverage, trend, geography, VUS, provenance."""
     r = alert_result or {}
     return {
         "schema_version": SCHEMA_VERSION,
@@ -62,6 +62,7 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
         "alerts": [_alert_record(a) for a in (r.get("alerts") or [])],
         "release_trend": list(release_trend or []),
         "geography": dict(sorted((geo_breakdown or {}).items())),
+        "vus_census": list(vus_census or []),
         "calls_provenance": dict(calls_provenance or {}),
         "certification": dict(certification) if certification else None,
     }
