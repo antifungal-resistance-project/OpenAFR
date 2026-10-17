@@ -356,6 +356,39 @@ def _geo_section(geo_breakdown):
 """
 
 
+def _vus_section(vus_census):
+    """The 'variants of uncertain significance' section: the non-panel hot-spot FKS1 variants
+    the current table carries, each with how many isolates carry it and WHERE it sits relative
+    to the known resistance geography -- or "" when there are none (honest degradation, same as
+    trend/geo).
+
+    `vus_census` -- the enriched per-variant list from render_weather: each entry carries
+    `token`, `carriers`, `position_context` (geometry-free, openafr/fks1_position) and a
+    pre-rendered `position_note` sentence. Passed in, never recomputed here. This turns the
+    trend section's bare "a further N carry a variant of uncertain significance" count into the
+    per-variant detail behind it -- strictly geography, never a fit or phenotype claim.
+    """
+    if not vus_census:
+        return ""
+    rows = "\n".join(
+        f'      <div class="k"><code>{html.escape(str(v["token"]))}</code> '
+        f'<span class="vus-tier">{html.escape(str(v["position_context"]["tier"]))}</span></div>'
+        f'<div class="v">{v.get("carriers", 0)} carrier(s) &mdash; '
+        f'{html.escape(str(v.get("position_note") or ""))}</div>'
+        for v in vus_census)
+    return f"""  <section class="vus">
+    <h2>Variants of uncertain significance</h2>
+    <div class="grid">
+{rows}
+    </div>
+    <p class="note">Non-panel FKS1 hot-spot substitutions seen in the committed calls:
+      <strong>tracked but NOT counted as known resistance</strong>. The position line states
+      only where each residue sits relative to the known resistance geography (which hot-spot,
+      how far from the anchor) — it is not a drug-fit or phenotype claim. Detection only.</p>
+  </section>
+"""
+
+
 def _structured_data(description, certification, provenance, page_url):
     """A schema.org JSON-LD <script> block describing the page + dataset, for search and
     link-preview engines. Built from the same inputs already in scope -- no I/O. Always
@@ -406,8 +439,8 @@ def _structured_data(description, certification, provenance, page_url):
 
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
-                certification=None, release_trend=None, geo_breakdown=None, page_url=None,
-                feeds=False):
+                certification=None, release_trend=None, geo_breakdown=None, vus_census=None,
+                page_url=None, feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -427,6 +460,9 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
                         None/one batch omits it.
     `geo_breakdown` -- {country: carrier_count} for the current release; renders the geography
                         section. None/empty omits it.
+    `vus_census` -- the per-variant list of non-panel hot-spot variants (uncertain
+                        significance), each with `token`, `carriers`, `position_context`,
+                        `position_note`; renders the VUS section. None/empty omits it.
     `page_url` -- canonical URL for the shareable OpenGraph/Twitter card; None omits og:url.
     `feeds` -- True links the sibling machine-readable `data.json` / `alerts.atom` (written by
                         scripts/render_weather.py); off by default so a bare page has no dead links.
@@ -482,6 +518,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     cert_badge = _cert_badge(certification)
     trend_html = _trend_section(release_trend)
     geo_html = _geo_section(geo_breakdown)
+    vus_html = _vus_section(vus_census)
     methods_html = _methods_section(certification, calls_provenance, window)
     share_desc_plain = _share_description(status, coverage, calls_provenance)
     share_desc = html.escape(share_desc_plain)
@@ -548,7 +585,8 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .about .cert-grid {{ max-width:420px; margin:.6rem 0; }}
   h2 {{ font-size:.95rem; letter-spacing:.02em; text-transform:uppercase;
         color:var(--muted-strong); font-weight:600; margin:2.5rem 0 .6rem; }}
-  .trend, .geo {{ margin:0 0 1rem; }}
+  .trend, .geo, .vus {{ margin:0 0 1rem; }}
+  .vus-tier {{ color:var(--muted); font-size:.78rem; }}
   .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
   .trend-up {{ color:var(--tier-act-now); }}
   .trend-down {{ color:var(--accent); }}
@@ -585,7 +623,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{geo_html}{methods_html}  <footer>
+{trend_html}{geo_html}{vus_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above

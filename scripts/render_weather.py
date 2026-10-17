@@ -110,6 +110,37 @@ def _release_trend(args):
     return trend or None
 
 
+def _vus_census(args):
+    """The per-variant census of non-panel hot-spot FKS1 variants (uncertain significance) the
+    page/feed surface, each enriched with geometry-free position context, or None.
+
+    Reads the SAME latest committed table the page overlays (`fks1_vus_census`), so the census
+    is reproducible from committed data alone -- then attaches `position_context` + a
+    pre-rendered geography sentence (openafr/fks1_position) exactly as the alert composer does
+    (openafr/alert.py), keeping the view decoupled from the geometry derivation. A token the
+    tool cannot place (outside every hot-spot window, or malformed) is dropped, so the census
+    only lists variants it can honestly situate. None for the erg11 arm or a written --snapshot
+    (which carries its own calls, not the committed series)."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    from openafr import fks1_position
+    table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
+    if not table or not pathlib.Path(table).exists():
+        return None
+    out = []
+    for entry in ew.fks1_vus_census(table):
+        ctx = fks1_position.position_context(entry["token"])
+        if ctx is None:
+            continue
+        out.append({
+            "token": entry["token"],
+            "carriers": entry["carriers"],
+            "position_context": ctx,
+            "position_note": f"It {fks1_position.describe(ctx)}",
+        })
+    return out or None
+
+
 def _geo_breakdown(records, args):
     """Where the current release's resolved carriers are: {country: carrier_count}, or None.
 
@@ -264,6 +295,7 @@ def main():
                   certification=certification,
                   release_trend=_release_trend(args),
                   geo_breakdown=_geo_breakdown(records, args),
+                  vus_census=_vus_census(args),
                   page_url=PAGE_URL)
     # One clock reading so the page and both feeds agree on "generated".
     now = datetime.datetime.now(datetime.timezone.utc)

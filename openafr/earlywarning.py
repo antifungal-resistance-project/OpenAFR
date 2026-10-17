@@ -542,3 +542,33 @@ def count_fks1_panel_positive(path):
         else:
             n_vus += 1
     return n_panel, n_vus
+
+
+def fks1_vus_census(path):
+    """Per-variant census of NON-panel hot-spot FKS1 tokens in a committed call table.
+
+    The `(_, n_vus)` of `count_fks1_panel_positive` is a bare headcount; this breaks it down
+    by the actual variant. Returns a list of distinct non-panel tokens with how many isolates
+    carry each, descending by count then token:
+      [{"token": "D642H", "carriers": 6}, {"token": "R1354H", "carriers": 4}, ...]
+
+    A token is counted when it is NOT on the caller's known-resistance panel
+    (`fks1_caller.is_panel_token`, which includes the low-PPV D642Y/M690I letters) -- i.e. a
+    hot-spot-region substitution of **uncertain significance**, the bucket the real-data
+    backtest surfaced (work/RESULTS_fks1_backtest.md). Counts are per distinct token across
+    resolved rows (matching the backtest's "14 variants" framing), not per isolate. The same
+    token discipline as `count_fks1_panel_positive`, so the two can never disagree. This helper
+    stays geometry-free: the view layer attaches position context (openafr/fks1_position).
+    A missing table reads as `[]`."""
+    from openafr import emergence, fks1_caller
+    try:
+        rows = read_fks1_call_table(path)
+    except FileNotFoundError:
+        return []
+    counts = {}
+    for r in rows.values():
+        for tok in emergence.parse_call(r.get("fks1_call")):
+            if not fks1_caller.is_panel_token(tok):
+                counts[tok] = counts.get(tok, 0) + 1
+    return [{"token": tok, "carriers": n}
+            for tok, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
