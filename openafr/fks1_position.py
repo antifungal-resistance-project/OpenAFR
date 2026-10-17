@@ -1,4 +1,4 @@
-"""FKS1 novel-variant POSITION CONTEXT (moonshot #4, Rung 1).
+"""FKS1 novel-variant POSITION CONTEXT (moonshot #4, Rungs 1 + 2).
 
 The problem this closes
 -----------------------
@@ -16,8 +16,8 @@ reference numbering (openafr/fks1_caller.py: FKS1_WINDOWS / RESISTANCE_PANEL / L
 It answers "where does this novel residue sit relative to the known resistance geography?"
 and NOTHING more. It deliberately does NOT:
 
-  1. claim a drug-FIT change -- that needs a structure (Rung 2), and the azole heme-iron
-     pocket engine (openafr/structural.py) does NOT transfer to a metal-free glucan synthase;
+  1. claim a drug-FIT change -- the proximity tier (Rung 2) says where the residue sits
+     in 3D space relative to the drug, NOT whether the drug still fits;
   2. predict a phenotype (R/S) for the novel letter;
   3. emit a probability;
   4. populate the verdict's `structural` field -- that stays null for FKS1, by design.
@@ -137,7 +137,7 @@ def position_context(token):
     else:
         tier = HOTSPOT_BACKGROUND
 
-    return {
+    ctx = {
         "token": f"{wt}{pos}{mut}",
         "window": window.name,
         "anchor": f"{window.anchor_wt}{window.anchor_pos}",
@@ -148,6 +148,18 @@ def position_context(token):
         "distance_to_nearest": dist,
         "tier": tier,
     }
+
+    # Rung 2: add structural proximity from the 9WZU cryo-EM contact map when available.
+    # Import lazily so Rung 1 tests that do not install the contact map still pass.
+    try:
+        from openafr import fks1_structural
+        prox = fks1_structural.structural_proximity(token)
+        if prox is not None:
+            ctx["proximity"] = prox
+    except Exception:
+        pass  # contact map absent or malformed -- degrade gracefully to Rung-1-only
+
+    return ctx
 
 
 def describe(ctx):
