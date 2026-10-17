@@ -1,0 +1,252 @@
+{
+  "source_pdb": "9WZU",
+  "source_cif_sha256": "1de4c46b84f4caa958a82caa52aab1fff034d0d1b339ea10d62df5119dc45492",
+  "source_title": "Cryo-EM structure of Fks1 in complex with enfumafungin (9WZU, 2.97A)",
+  "drug_comp_id": "A1E06",
+  "drug_name": "Enfumafungin (same FKS1 binding site as echinocandins)",
+  "contact_cutoffs_A": {
+    "drug_contact": 5.0,
+    "pocket_adjacent": 8.0,
+    "pocket_proximate": 12.0
+  },
+  "alignment_offsets_sc_minus_ca": {
+    "HS1": 4,
+    "HS3": 4,
+    "HS2": 3
+  },
+  "note": "Minimum heavy-atom distance from each C. auris FKS1 hot-spot residue (via S. cerevisiae alignment, offset as above) to any enfumafungin heavy atom. NOT a phenotype prediction. See PREREGISTRATION_fks1_structural_proximity.md.",
+  "residues": {
+    "635": {
+      "ca_aa": "F",
+      "sc_pos": 639,
+      "sc_aa": "F",
+      "min_dist_to_drug_A": 2.941,
+      "tier": "drug_contact",
+      "window": "HS1"
+    },
+    "636": {
+      "ca_aa": "L",
+      "sc_pos": 640,
+      "sc_aa": "L",
+      "min_dist_to_drug_A": 8.216,
+      "tier": "pocket_proximate",
+      "window": "HS1"
+    },
+    "637": {
+      "ca_aa": "T",
+      "sc_pos": 641,
+      "sc_aa": "V",
+      "min_dist_to_drug_A": 8.299,
+      "tier": "pocket_proximate",
+      "window": "HS1"
+    },
+    "638": {
+      "ca_aa": "L",
+      "sc_pos": 642,
+      "sc_aa": "L",
+      "min_dist_to_drug_A": 2.823,
+      "tier": "drug_contact",
+      "window": "HS1"
+    },
+    "639": {
+      "ca_aa": "S",
+      "sc_pos": 643,
+      "sc_aa": "S",
+      "min_dist_to_drug_A": 7.16,
+      "tier": "pocket_adjacent",
+      "window": "HS1"
+    },
+    "640": {
+      "ca_aa": "L",
+      "sc_pos": 644,
+      "sc_aa": "L",
+      "min_dist_to_drug_A": 9.799,
+      "tier": "pocket_proximate",
+      "window": "HS1"
+    },
+    "641": {
+      "ca_aa": "R",
+      "sc_pos": 645,
+      "sc_aa": "R",
+      "min_dist_to_drug_A": 5.65,
+      "tier": "pocket_adjacent",
+      "window": "HS1"
+    },
+    "642": {
+      "ca_aa": "D",
+      "sc_pos": 646,
+      "sc_aa": "D",
+      "min_dist_to_drug_A": 11.335,
+      "tier": "pocket_proximate",
+      "window": "HS1"
+    },
+    "643": {
+      "ca_aa": "P",
+      "sc_pos": 647,
+      "sc_aa": "P",
+      "min_dist_to_drug_A": 13.144,
+      "tier": "distal",
+      "window": "HS1"
+    },
+    "1350": {
+      "ca_aa": "D",
+      "sc_pos": 1353,
+      "sc_aa": "D",
+      "min_dist_to_drug_A": 13.964,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1351": {
+      "ca_aa": "W",
+      "sc_pos": 1354,
+      "sc_aa": "W",
+      "min_dist_to_drug_A": 14.568,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1352": {
+      "ca_aa": "I",
+      "sc_pos": 1355,
+      "sc_aa": "V",
+      "min_dist_to_drug_A": 16.576,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1353": {
+      "ca_aa": "R",
+      "sc_pos": 1356,
+      "sc_aa": "R",
+      "min_dist_to_drug_A": 12.972,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1354": {
+      "ca_aa": "R",
+      "sc_pos": 1357,
+      "sc_aa": "R",
+      "min_dist_to_drug_A": 7.533,
+      "tier": "pocket_adjacent",
+      "window": "HS2"
+    },
+    "1355": {
+      "ca_aa": "Y",
+      "sc_pos": 1358,
+      "sc_aa": "Y",
+      "min_dist_to_drug_A": 14.67,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1356": {
+      "ca_aa": "T",
+      "sc_pos": 1359,
+      "sc_aa": "T",
+      "min_dist_to_drug_A": 16.433,
+      "tier": "distal",
+      "window": "HS2"
+    },
+    "1357": {
+      "ca_aa": "L",
+      "sc_pos": 1360,
+      "sc_aa": "L",
+      "min_dist_to_drug_A": 11.52,
+      "tier": "pocket_proximate",
+      "window": "HS2"
+    },
+    "1358": {
+      "ca_aa": "S",
+      "sc_pos": 1361,
+      "sc_aa": "S",
+      "min_dist_to_drug_A": 11.667,
+      "tier": "pocket_proximate",
+      "window": "HS2"
+    },
+    "688": {
+      "ca_aa": "T",
+      "sc_pos": 692,
+      "sc_aa": "T",
+      "min_dist_to_drug_A": 11.807,
+      "tier": "pocket_proximate",
+      "window": "HS3"
+    },
+    "689": {
+      "ca_aa": "Y",
+      "sc_pos": 693,
+      "sc_aa": "Y",
+      "min_dist_to_drug_A": 13.073,
+      "tier": "distal",
+      "window": "HS3"
+    },
+    "690": {
+      "ca_aa": "M",
+      "sc_pos": 694,
+      "sc_aa": "L",
+      "min_dist_to_drug_A": 9.459,
+      "tier": "pocket_proximate",
+      "window": "HS3"
+    },
+    "691": {
+      "ca_aa": "W",
+      "sc_pos": 695,
+      "sc_aa": "W",
+      "min_dist_to_drug_A": 3.659,
+      "tier": "drug_contact",
+      "window": "HS3"
+    },
+    "692": {
+      "ca_aa": "Y",
+      "sc_pos": 696,
+      "sc_aa": "Y",
+      "min_dist_to_drug_A": 10.796,
+      "tier": "pocket_proximate",
+      "window": "HS3"
+    },
+    "693": {
+      "ca_aa": "I",
+      "sc_pos": 697,
+      "sc_aa": "I",
+      "min_dist_to_drug_A": 11.695,
+      "tier": "pocket_proximate",
+      "window": "HS3"
+    },
+    "694": {
+      "ca_aa": "I",
+      "sc_pos": 698,
+      "sc_aa": "I",
+      "min_dist_to_drug_A": 7.244,
+      "tier": "pocket_adjacent",
+      "window": "HS3"
+    },
+    "695": {
+      "ca_aa": "C",
+      "sc_pos": 699,
+      "sc_aa": "V",
+      "min_dist_to_drug_A": 7.81,
+      "tier": "pocket_adjacent",
+      "window": "HS3"
+    },
+    "696": {
+      "ca_aa": "N",
+      "sc_pos": 700,
+      "sc_aa": "N",
+      "min_dist_to_drug_A": 11.734,
+      "tier": "pocket_proximate",
+      "window": "HS3"
+    },
+    "697": {
+      "ca_aa": "C",
+      "sc_pos": 701,
+      "sc_aa": "T",
+      "min_dist_to_drug_A": 12.217,
+      "tier": "distal",
+      "window": "HS3"
+    },
+    "698": {
+      "ca_aa": "V",
+      "sc_pos": 702,
+      "sc_aa": "I",
+      "min_dist_to_drug_A": 7.927,
+      "tier": "pocket_adjacent",
+      "window": "HS3"
+    }
+  }
+}

@@ -122,6 +122,16 @@ def _alert_card(a):
             ("Position",
              f"[{html.escape(str(ctx['tier']))}] "
              f"{html.escape(str(a.get('position_note') or ''))}"))
+    prox = ctx.get("proximity") if ctx else None
+    if prox:
+        tier_label = prox["proximity_tier"].replace("_", " ")
+        dist = prox.get("min_dist_to_drug_A")
+        dist_str = f"{dist:.1f}&thinsp;Å" if dist else "N/A"
+        rows.append(
+            ("Proximity",
+             f"[{html.escape(tier_label)}] "
+             f"{dist_str} from enfumafungin in {html.escape(prox.get('reference_structure',''))}"
+             f" — {html.escape(prox.get('note','')[:120])}"))
     rows_html = "\n".join(
         f'      <div class="k">{k}</div><div class="v">{v}</div>' for k, v in rows)
     headline = html.escape(str(a.get("headline") or ""))
@@ -370,12 +380,29 @@ def _vus_section(vus_census):
     """
     if not vus_census:
         return ""
-    rows = "\n".join(
-        f'      <div class="k"><code>{html.escape(str(v["token"]))}</code> '
-        f'<span class="vus-tier">{html.escape(str(v["position_context"]["tier"]))}</span></div>'
-        f'<div class="v">{v.get("carriers", 0)} carrier(s) &mdash; '
-        f'{html.escape(str(v.get("position_note") or ""))}</div>'
-        for v in vus_census)
+    def _vus_row(v):
+        token = html.escape(str(v["token"]))
+        ctx = v.get("position_context") or {}
+        tier_str = html.escape(str(ctx.get("tier", "")))
+        note = html.escape(str(v.get("position_note") or ""))
+        carriers = v.get("carriers", 0)
+        prox = ctx.get("proximity")
+        prox_html = ""
+        if prox:
+            tier_label = html.escape(prox["proximity_tier"].replace("_", " "))
+            dist = prox.get("min_dist_to_drug_A")
+            dist_str = f"{dist:.1f}&thinsp;Å" if dist else "N/A"
+            prox_html = (
+                f' <span class="prox-tier">[proximity: {tier_label}, '
+                f'{dist_str} from drug]</span>'
+            )
+        return (
+            f'      <div class="k"><code>{token}</code> '
+            f'<span class="vus-tier">{tier_str}</span>{prox_html}</div>'
+            f'<div class="v">{carriers} carrier(s) &mdash; {note}</div>'
+        )
+
+    rows = "\n".join(_vus_row(v) for v in vus_census)
     return f"""  <section class="vus">
     <h2>Variants of uncertain significance</h2>
     <div class="grid">
@@ -384,7 +411,9 @@ def _vus_section(vus_census):
     <p class="note">Non-panel FKS1 hot-spot substitutions seen in the committed calls:
       <strong>tracked but NOT counted as known resistance</strong>. The position line states
       only where each residue sits relative to the known resistance geography (which hot-spot,
-      how far from the anchor) — it is not a drug-fit or phenotype claim. Detection only.</p>
+      how far from the anchor); the proximity line shows the minimum heavy-atom distance to
+      enfumafungin (same FKS1 binding site as echinocandins) in the 9WZU cryo-EM structure.
+      Neither is a drug-fit or phenotype claim. Detection only.</p>
   </section>
 """
 

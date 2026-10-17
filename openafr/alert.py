@@ -332,10 +332,12 @@ def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=
         # Position context for a novel (uncharacterised) hot-spot variant; None for a known
         # core marker. Geography only -- never a fit verdict, so priority is untouched.
         ctx = fks1_position.position_context(signal["mutation"])
+        prox = ctx.get("proximity") if ctx else None
         base["priority"] = _fks1_priority(signal)
         base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"], ctx)
         base["position_context"] = ctx
         base["position_note"] = f"It {fks1_position.describe(ctx)}" if ctx else ""
+        base["proximity_context"] = prox   # Rung 2: structural proximity from 9WZU cryo-EM
         base["detection_only"] = True
         alerts.append(base)
 
@@ -484,6 +486,18 @@ def render_fks1_markdown(alert_result):
         if ctx:
             lines.append(f"- **Position (geometry-free):** [{ctx['tier']}] "
                          f"It {fks1_position.describe(ctx)}")
+        prox = a.get("proximity_context")
+        if prox:
+            from openafr.fks1_structural import DRUG_CONTACT, POCKET_ADJACENT
+            tier_label = prox["proximity_tier"].replace("_", " ")
+            dist = prox["min_dist_to_drug_A"]
+            dist_str = f"{dist:.1f} Å" if dist else "N/A"
+            source = prox["reference_structure"]
+            lines.append(
+                f"- **Structural proximity (Rung 2):** [{tier_label}] "
+                f"{dist_str} from enfumafungin in {source}. "
+                f"{prox['note']}"
+            )
         lines.append(f"- **Structural fit:** none claimed — {FKS1_DETECTION_ONLY_CAVEAT}")
         lines.append("")
 
