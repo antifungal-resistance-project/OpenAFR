@@ -1,4 +1,4 @@
-"""FKS1 novel-variant POSITION CONTEXT (moonshot #4, Rungs 1 + 2).
+"""FKS1 novel-variant POSITION CONTEXT (moonshot #4, Rungs 1 + 2 + 3).
 
 The problem this closes
 -----------------------
@@ -16,15 +16,17 @@ reference numbering (openafr/fks1_caller.py: FKS1_WINDOWS / RESISTANCE_PANEL / L
 It answers "where does this novel residue sit relative to the known resistance geography?"
 and NOTHING more. It deliberately does NOT:
 
-  1. claim a drug-FIT change -- the proximity tier (Rung 2) says where the residue sits
-     in 3D space relative to the drug, NOT whether the drug still fits;
+  1. claim a drug-FIT change -- the contact label (Rung 3) says where the residue sits
+     relative to the drug, NOT whether the drug still fits;
   2. predict a phenotype (R/S) for the novel letter;
   3. emit a probability;
-  4. populate the verdict's `structural` field -- that stays null for FKS1, by design.
+  4. claim ACT-NOW -- the `structural_verdict` carries `evidence_class: "proximity_label"`
+     which must NOT trigger ACT-NOW (that tier requires "docking" or "measured").
 
 So this is strictly MORE than the current `None`, while staying inside the project's
 detection-only boundary (openafr/alert.py, data/earlywarning/fks1_reference/PROVENANCE.md).
-See work/PREREGISTRATION_fks1_position_context.md for the frozen scope + non-claims.
+See work/PREREGISTRATION_fks1_position_context.md (Rungs 1+2) and
+work/PREREGISTRATION_fks1_structural_verdict.md (Rung 3) for the frozen scopes.
 
 Stdlib only, pure, offline. Reuses the caller's panel so the two can never disagree.
 """
@@ -104,6 +106,10 @@ def position_context(token):
       nearest_core_marker    nearest core-marker residue as '<pos>' (e.g. '639'), or None
       distance_to_nearest    |pos - nearest core position|, or None if no core marker in reach
       tier                   NOVEL_AT_PANEL_RESIDUE | ADJACENT_TO_PANEL | HOTSPOT_BACKGROUND
+      proximity              (Rung 2, when contact map present) structural proximity dict
+      structural_verdict     (Rung 3, when contact map present and tier is drug_contact /
+                              pocket_adjacent) spatial contact label dict; evidence_class
+                              "proximity_label" — NOT a resistance prediction
     """
     parsed = _parse(token)
     if parsed is None:
@@ -149,13 +155,16 @@ def position_context(token):
         "tier": tier,
     }
 
-    # Rung 2: add structural proximity from the 9WZU cryo-EM contact map when available.
-    # Import lazily so Rung 1 tests that do not install the contact map still pass.
+    # Rungs 2+3: add structural proximity and contact label from the 9WZU contact map when
+    # available. Import lazily so Rung-1-only tests still pass without the contact map.
     try:
         from openafr import fks1_structural
         prox = fks1_structural.structural_proximity(token)
         if prox is not None:
             ctx["proximity"] = prox
+        sv = fks1_structural.structural_verdict(token)
+        if sv is not None:
+            ctx["structural_verdict"] = sv
     except Exception:
         pass  # contact map absent or malformed -- degrade gracefully to Rung-1-only
 
