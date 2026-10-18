@@ -115,7 +115,7 @@ def test_forecast_passes_through_and_defaults_null():
 
 
 def test_vus_census_passes_through_with_position_context():
-    # The per-variant breakdown behind n_vus: token + carriers + geometry-free position context,
+    # The per-variant breakdown behind n_vus: token + carriers + position context (Rungs 1–3),
     # passed through untouched so page and feed can't disagree. Absent -> empty list, not null.
     assert weather_feed.build_data(_fks1_hit_result(), now=NOW)["vus_census"] == []
     census = [{"token": "F635I", "carriers": 6,
@@ -124,3 +124,36 @@ def test_vus_census_passes_through_with_position_context():
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, vus_census=census)
     assert data["vus_census"] == census
     json.dumps(data)
+
+
+def test_alert_position_context_with_structural_verdict_passes_through():
+    # Rung 3: when an alert carries a position_context dict that includes a structural_verdict
+    # sub-field (proximity_label), _alert_record must pass the whole dict through intact so the
+    # feed consumer can read evidence_class, label, and note without parsing the HTML page.
+    sv = {
+        "evidence_class": "proximity_label",
+        "proximity_tier": "drug_contact",
+        "min_dist_to_drug_A": 3.2,
+        "label": "at drug-contact residue",
+        "note": "Residue 637 in HS1 sits within direct contact distance of the enfumafungin binding site.",
+    }
+    ctx = {
+        "tier": "in_hotspot_adjacent_to_panel",
+        "window": "HS1",
+        "anchor": "S639",
+        "anchor_distance": -2,
+        "at_panel_residue": False,
+        "panel_letters_at_position": [],
+        "nearest_core_marker": "639",
+        "distance_to_nearest": 2,
+        "proximity": {"proximity_tier": "drug_contact", "min_dist_to_drug_A": 3.2},
+        "structural_verdict": sv,
+    }
+    res = _fks1_hit_result()
+    res["alerts"][0]["position_context"] = ctx
+    res["alerts"][0]["position_note"] = "It sits adjacent to S639 in HS1."
+    data = weather_feed.build_data(res, now=NOW)
+    rec = data["alerts"][0]
+    assert rec["position_context"]["structural_verdict"] == sv
+    assert rec["position_context"]["structural_verdict"]["evidence_class"] == "proximity_label"
+    json.dumps(data)  # must not raise
