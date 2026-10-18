@@ -462,6 +462,52 @@ def _geo_section(geo_breakdown):
 """
 
 
+def _geo_history_section(geo_history):
+    """Where resistant carriers have been across the committed call series: one location-ranked
+    block per release, or "" when there is no historical geography to show.
+
+    Distinct from `_geo_section`, which shows only the current live NCBI release. This reads the
+    committed call tables' `country` column (via render_weather's `_geo_history`), so it is
+    reproducible from committed data -- a release whose table predates that column is simply
+    absent, so the section only shows releases it can honestly place.
+
+    `geo_history` -- [{release_tag, as_of, geography: {country: carrier_count}}], oldest first;
+    passed in, not recomputed. None/empty renders nothing (honest degradation, same as the other
+    sections).
+    """
+    if not geo_history:
+        return ""
+    blocks = []
+    for entry in geo_history:
+        geo = entry.get("geography") or {}
+        if not geo:
+            continue
+        items = sorted(geo.items(), key=lambda kv: (-kv[1], kv[0]))
+        rows = "\n".join(
+            f'      <div class="k">{html.escape(str(loc))}</div><div class="v">{n}</div>'
+            for loc, n in items)
+        tag = html.escape(str(entry.get("release_tag") or ""))
+        as_of = html.escape(str(entry.get("as_of") or ""))
+        label = f"{tag} &middot; as of {as_of}" if as_of else tag
+        blocks.append(f"""    <div class="geo-release">
+      <p class="geo-release-label">{label}</p>
+      <div class="grid">
+{rows}
+      </div>
+    </div>""")
+    if not blocks:
+        return ""
+    return f"""  <section class="geo geo-history">
+    <h2>Where carriers are &middot; by release</h2>
+{chr(10).join(blocks)}
+    <p class="note">Known-resistance panel carriers by country for each committed re-call
+      release, reproducible from the committed call tables (country-level, as NCBI reported it;
+      isolates with no recorded country are omitted). Shown per release so the geographic
+      picture can be read over time, not just for the latest pull above.</p>
+  </section>
+"""
+
+
 def _vus_section(vus_census):
     """The 'variants of uncertain significance' section: the non-panel hot-spot FKS1 variants
     the current table carries, each with how many isolates carry it and WHERE it sits relative
@@ -571,8 +617,8 @@ def _structured_data(description, certification, provenance, page_url):
 
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
-                certification=None, release_trend=None, geo_breakdown=None, vus_census=None,
-                forecast=None, page_url=None, feeds=False):
+                certification=None, release_trend=None, geo_breakdown=None, geo_history=None,
+                vus_census=None, forecast=None, page_url=None, feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -592,6 +638,9 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
                         None/one batch omits it.
     `geo_breakdown` -- {country: carrier_count} for the current release; renders the geography
                         section. None/empty omits it.
+    `geo_history` -- [{release_tag, as_of, geography: {country: carrier_count}}], oldest first,
+                        from the committed call series; renders the per-release historical
+                        geography section. None/empty omits it.
     `vus_census` -- the per-variant list of non-panel hot-spot variants (uncertain
                         significance), each with `token`, `carriers`, `position_context`,
                         `position_note`; renders the VUS section. None/empty omits it.
@@ -651,6 +700,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     trend_html = _trend_section(release_trend)
     forecast_html = _forecast_section(forecast)
     geo_html = _geo_section(geo_breakdown)
+    geo_history_html = _geo_history_section(geo_history)
     vus_html = _vus_section(vus_census)
     methods_html = _methods_section(certification, calls_provenance, window)
     share_desc_plain = _share_description(status, coverage, calls_provenance)
@@ -719,6 +769,9 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   h2 {{ font-size:.95rem; letter-spacing:.02em; text-transform:uppercase;
         color:var(--muted-strong); font-weight:600; margin:2.5rem 0 .6rem; }}
   .trend, .geo, .vus {{ margin:0 0 1rem; }}
+  .geo-release {{ margin:.3rem 0 1rem; }}
+  .geo-release-label {{ color:var(--muted-strong); font-size:.82rem; font-weight:600;
+                        margin:.6rem 0 .3rem; }}
   .vus-tier {{ color:var(--muted); font-size:.78rem; }}
   .struct-label {{ color:var(--accent); font-size:.78rem; }}
   .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
@@ -757,7 +810,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{forecast_html}{geo_html}{vus_html}{methods_html}  <footer>
+{trend_html}{forecast_html}{geo_html}{geo_history_html}{vus_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above

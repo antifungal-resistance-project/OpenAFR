@@ -27,6 +27,7 @@ Renaming, removing, or changing the meaning of a key bumps `schema_version` (cur
 | `release_trend` | array | one entry per committed re-call release (below) |
 | `forecast` | object \| null | prevalence trajectory + near-term forecast (below) |
 | `geography` | object | `{country: panel-carrier count}`, current release only, sorted by country |
+| `geography_history` | array | per-release `{country: panel-carrier count}` over the committed series (below) |
 | `vus_census` | array | per-variant census of non-panel hot-spot variants of uncertain significance (below) |
 | `calls_provenance` | object | which committed call table(s) the page is built on |
 | `certification` | object \| null | caller certification (benchmark, concordance) |
@@ -62,6 +63,15 @@ showed the trend model beats both naive baselines (`work/RESULTS_fks1_forecast.m
 claimed (prevalence is roughly stationary near `projection.naive_pooled`). The axis is **deposit
 month, not epidemiological incidence** — deposit lags collection ~97 days and tracks sequencing
 volume, not transmission. Detection-only, research use.
+
+### geography_history[]
+
+One entry per committed re-call release that carries geography, oldest release first:
+`release_tag`, `as_of`, and `geography` (`{country: panel-carrier count}`, sorted by country,
+same panel gate as the top-level `geography`). `geography` is **country-level** (as NCBI reported
+it — no finer region), isolates with no recorded country are omitted, and a release whose call
+table predates the geography column is absent entirely (not a zero). Use this to read the
+geographic picture over time; the top-level `geography` is the current live pull only.
 
 ### vus_census[]
 

@@ -408,6 +408,64 @@ def read_fks1_call_table(path):
         return {r["isolate_key"]: r for r in csv.DictReader(fh, delimiter="\t")}
 
 
+def backfill_fks1_calls_country(table_path, geo_by_key):
+    """Populate the `country` column of a committed FKS1 call table from a
+    `{isolate_key: country}` map, rewriting the table canonically in place.
+
+    The `country` column is part of FKS1_CALLS_COLUMNS but was added after releases 709/710
+    were written, so their tables carry it empty; this fills it from a snapshot's geography
+    (keyed by isolate_key) so the page can break the historical series down by country
+    reproducibly from the committed table. An isolate_key absent from the map -- or mapped to
+    a blank -- is left blank, NEVER invented (same honest-degradation discipline as the
+    re-caller's pending state). The row SET is unchanged: this only adds a column value, so
+    `n_called` must match the table that went in.
+
+    Returns `(sha256, n_called, n_filled, missing_keys)` where `n_filled` is how many rows got
+    a non-empty country and `missing_keys` lists the resolved isolate_keys the map could not
+    place (for the caller to report)."""
+    rows = read_fks1_call_table(table_path)
+    n_filled = 0
+    missing = []
+    for key, row in rows.items():
+        country = (geo_by_key.get(key) or "").strip()
+        if country:
+            row["country"] = country
+            n_filled += 1
+        else:
+            row.setdefault("country", "")
+            missing.append(key)
+    sha, n_called = write_fks1_call_table(table_path, list(rows.values()))
+    return sha, n_called, n_filled, sorted(missing)
+
+
+def fks1_calls_geo_breakdown(path):
+    """Panel-positive resistant carriers by country in a committed FKS1 call table
+    -> `{country: carrier_count}`, or `{}`.
+
+    The historical-series counterpart to render_weather's live `_geo_breakdown`: it reads the
+    `country` column the table carries (country-level, as `normalize` derives it -- no finer
+    region, unlike the live pull's `display_geo`) and counts only carriers of a KNOWN
+    echinocandin-resistance panel substitution (`fks1_caller.is_panel_token`), matching the
+    panel-gated headline so the map never overstates resistance. A table written before the
+    `country` column existed (releases 709/710 pre-backfill) or one with no located panel
+    carriers yields `{}` -- honest degradation, same as `count_fks1_panel_positive`. A missing
+    table reads as `{}`."""
+    from openafr import emergence, fks1_caller
+    try:
+        rows = read_fks1_call_table(path)
+    except FileNotFoundError:
+        return {}
+    counts = {}
+    for r in rows.values():
+        toks = emergence.parse_call(r.get("fks1_call"))
+        if not any(fks1_caller.is_panel_token(t) for t in toks):
+            continue
+        country = (r.get("country") or "").strip()
+        if country:
+            counts[country] = counts.get(country, 0) + 1
+    return counts
+
+
 def overlay_fks1_calls(records, calls):
     """Overlay committed FKS1 calls onto live-pull records, IN PLACE, by isolate_key.
 

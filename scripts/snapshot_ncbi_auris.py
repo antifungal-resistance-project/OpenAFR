@@ -112,6 +112,38 @@ def cmd_diff(args):
         print(f"    ... and {len(d['added']) - args.show} more")
 
 
+FKS1_CALLS_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "earlywarning" / "fks1_calls"
+
+
+def cmd_backfill_geo(args):
+    """Fill the `country` column of a committed FKS1 call table from a snapshot's geography,
+    then re-pin the table's sha256 in the FKS1-calls INDEX. The snapshot is the gitignored,
+    sha-pinned NCBI pull (see `pull`); the call table + its INDEX hash are the committed,
+    durable artifacts that back the public page's historical geo breakdown."""
+    geo_by_key = {r["isolate_key"]: r.get("country") or "" for r in ew.read_snapshot(args.snapshot)}
+    table = pathlib.Path(args.call_table)
+    sha, n_called, n_filled, missing = ew.backfill_fks1_calls_country(str(table), geo_by_key)
+    print(f"backfilled {table.name}: {n_called} resolved isolate(s), "
+          f"country filled for {n_filled}, {len(missing)} unlocated (left blank)")
+    print(f"  new sha256: {sha}")
+    if missing[: args.show]:
+        print("  unlocated isolate_keys: " + ", ".join(missing[: args.show])
+              + (f" ... (+{len(missing) - args.show} more)" if len(missing) > args.show else ""))
+
+    index_path = table.parent / "INDEX.tsv"
+    tag = table.stem
+    existing = {r["release_tag"]: r for r in ew.read_fks1_calls_index(str(table.parent))}
+    entry = existing.get(tag)
+    if entry is None:
+        sys.exit(f"no INDEX.tsv row for {tag} under {index_path}; refusing to invent provenance")
+    before = entry.get("n_called")
+    if before is not None and int(before) != n_called:
+        sys.exit(f"row count changed ({before} -> {n_called}); backfill must only add a column. Aborting.")
+    entry["sha256"] = sha
+    ew.update_fks1_calls_index(str(index_path), entry)
+    print(f"re-pinned sha256 in {index_path}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -133,6 +165,13 @@ def main():
     p.add_argument("new")
     p.add_argument("--show", type=int, default=10, help="how many new isolates to list")
     p.set_defaults(func=cmd_diff)
+
+    p = sub.add_parser("backfill-geo",
+                       help="fill a committed FKS1 call table's country column from a snapshot")
+    p.add_argument("call_table", help="path to a data/earlywarning/fks1_calls/<release>.tsv")
+    p.add_argument("snapshot", help="path to the matching snapshot TSV (the geography source)")
+    p.add_argument("--show", type=int, default=10, help="how many unlocated isolate_keys to list")
+    p.set_defaults(func=cmd_backfill_geo)
 
     args = ap.parse_args()
     args.func(args)

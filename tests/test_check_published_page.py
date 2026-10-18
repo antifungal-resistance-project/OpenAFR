@@ -112,8 +112,8 @@ def _valid_data():
             "regions": [], "n_carriers_total": 3,
             "emergence": {k: None for k in gate.EMERGENCE_KEYS},
         }],
-        "release_trend": [], "forecast": None, "geography": {}, "vus_census": [],
-        "calls_provenance": {}, "certification": None,
+        "release_trend": [], "forecast": None, "geography": {}, "geography_history": [],
+        "vus_census": [], "calls_provenance": {}, "certification": None,
     }.items()}
 
 
@@ -127,6 +127,16 @@ def test_valid_schema_passes_without_a_table(tmp_path):
 def test_bumped_schema_version_fails(tmp_path):
     data = _valid_data()
     data["schema_version"] = weather_feed.SCHEMA_VERSION + 1
+    site = _write_site(tmp_path, data)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+def test_malformed_geography_history_fails(tmp_path):
+    # an entry missing its geography object must not slip through the gate
+    data = _valid_data()
+    data["geography_history"] = [{"release_tag": "PDG000000067.710", "as_of": "2026-04-14"}]
     site = _write_site(tmp_path, data)
     empty = tmp_path / "empty"
     empty.mkdir()
