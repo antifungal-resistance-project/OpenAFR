@@ -72,6 +72,7 @@ fully offline against the checked-in receptor/ligand.
 import json
 
 from openafr import emergence, fks1_position, mapping, structural
+from openafr.earlywarning import display_geo
 
 # So-what priority tiers, strongest first. `rank` orders the rendered alert list.
 PRIORITY = {"act-now": 0, "watch": 1, "context": 2}
@@ -102,8 +103,13 @@ def _first_seen(carriers):
 
 
 def _regions(carriers):
-    """Sorted distinct countries among a set of carrier records (blanks dropped)."""
-    return sorted({c["country"] for c in carriers if (c.get("country") or "").strip()})
+    """Sorted distinct finest-available locations among carrier records (blanks dropped).
+
+    Uses `display_geo` so a card shows the most specific place NCBI gave us
+    ('USA: California'), not just the country, falling back to country where that is
+    all that is available.
+    """
+    return sorted({g for c in carriers if (g := display_geo(c))})
 
 
 def _priority(signal, verdict):

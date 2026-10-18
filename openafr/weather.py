@@ -69,6 +69,27 @@ def _fmt_days_since(iso_date, now_date):
     return (now_date - then).days
 
 
+def _fmt_first_seen(fs):
+    """Human-readable 'First seen' value from the {collected, visible} dict.
+
+    collected keeps the raw NCBI granularity (bare year / year-month / ISO, on purpose);
+    `visible` is when the isolate surfaced in NCBI, and the gap between the two is the
+    backlog tell -- so we show both rather than collapse them. Falls back gracefully when
+    only one is present, or 'unknown' for anything empty/unexpected.
+    """
+    if not isinstance(fs, dict):
+        return str(fs) if fs else "unknown"
+    collected = (fs.get("collected") or "").strip()
+    visible = (fs.get("visible") or "").strip()
+    if collected and visible:
+        return f"{collected} (visible {visible})"
+    if collected:
+        return collected
+    if visible:
+        return f"visible {visible}"
+    return "unknown"
+
+
 def _status_line(alerts, watching_since, now_date):
     """The one-line headline that names which of the three states the page is in."""
     if alerts:
@@ -105,7 +126,7 @@ def _alert_card(a):
         ("Geography",
          f"{a.get('n_regions', 0)} region(s): {html.escape(regions)} "
          f"({a.get('n_carriers_total', 0)} carrier(s))"),
-        ("First seen", html.escape(str(a.get("first_seen") or "unknown"))),
+        ("First seen", html.escape(_fmt_first_seen(a.get("first_seen")))),
     ]
     if s:
         rows.append(
@@ -343,25 +364,27 @@ def _trend_section(release_trend):
 
 
 def _geo_section(geo_breakdown):
-    """Where the current release's resistant carriers are: a country-ranked list, or "" when
+    """Where the current release's resistant carriers are: a location-ranked list, or "" when
     there is nothing located. Labelled 'current release' because geography comes from the live
-    NCBI pull, not the committed historical series (the call table does not yet carry country).
+    NCBI pull, not the committed historical series (the call table does not yet carry geography).
 
-    `geo_breakdown` -- {country: carrier_count} from render_weather; passed in, not recomputed.
+    `geo_breakdown` -- {location: carrier_count} from render_weather, keyed by the finest
+    geography NCBI gave us (region where available, else country); passed in, not recomputed.
     """
     if not geo_breakdown:
         return ""
     items = sorted(geo_breakdown.items(), key=lambda kv: (-kv[1], kv[0]))
     rows = "\n".join(
-        f'      <div class="k">{html.escape(str(country))}</div><div class="v">{n}</div>'
-        for country, n in items)
+        f'      <div class="k">{html.escape(str(location))}</div><div class="v">{n}</div>'
+        for location, n in items)
     return f"""  <section class="geo">
     <h2>Where carriers are &middot; current release</h2>
     <div class="grid">
 {rows}
     </div>
-    <p class="note">Resistant FKS1 carriers by country in the current NCBI release's metadata
-      (not the committed historical series). Isolates with no country are omitted.</p>
+    <p class="note">Resistant FKS1 carriers by location in the current NCBI release's metadata
+      (finest geography reported -- region where available, else country; not the committed
+      historical series). Isolates with no location are omitted.</p>
   </section>
 """
 

@@ -58,6 +58,20 @@ def test_alert_carries_the_epidemiology_the_detector_dropped():
     assert a["n_regions"] == 1
 
 
+def test_regions_use_finest_geography_falling_back_to_country():
+    # When NCBI reports sub-country detail in geo_loc_name, the alert surfaces the
+    # finer location; carriers with only a country still show the country. Mixed
+    # granularity is expected and distinct values are deduped/sorted.
+    carriers = [
+        {"country": "USA", "geo_loc_name": "USA: California"},
+        {"country": "USA", "geo_loc_name": "USA:California"},   # spacing normalized -> same
+        {"country": "USA", "geo_loc_name": ""},                 # country-only fallback
+        {"country": "China", "geo_loc_name": "China: Beijing"},
+        {"country": "", "geo_loc_name": ""},                    # unlocated -> dropped
+    ]
+    assert alert._regions(carriers) == ["China: Beijing", "USA", "USA: California"]
+
+
 # ---- first-seen: all carriers, collected vs visible kept apart ---------------
 
 def test_first_seen_spans_all_carriers_not_just_recent_window():
