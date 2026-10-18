@@ -142,14 +142,15 @@ def _vus_census(args):
 
 
 def _geo_breakdown(records, args):
-    """Where the current release's resolved carriers are: {country: carrier_count}, or None.
+    """Where the current release's resolved carriers are: {location: carrier_count}, or None.
 
-    Zero-cost -- it reads the `country` the live NCBI pull already carries on each record
-    (normalize derives it); counts only resolved carriers of a KNOWN echinocandin-resistance
-    panel substitution (not every FKS1 variant token), matching the panel-gated headline so the
-    map never overstates resistance. Reflects the current release only, since the committed
-    table does not yet carry geography -- the section labels it as such. None for the erg11 arm,
-    no records, or no located panel carriers."""
+    Zero-cost -- it reads the finest geography the live NCBI pull already carries on each
+    record (ew.display_geo prefers the raw geo_loc_name's region over the bare country);
+    counts only resolved carriers of a KNOWN echinocandin-resistance panel substitution (not
+    every FKS1 variant token), matching the panel-gated headline so the map never overstates
+    resistance. Reflects the current release only, since the committed table does not yet carry
+    geography -- the section labels it as such. None for the erg11 arm, no records, or no located
+    panel carriers."""
     if args.gene != "fks1" or not records:
         return None
     from openafr import emergence, fks1_caller
@@ -158,9 +159,9 @@ def _geo_breakdown(records, args):
         toks = emergence.parse_call(rec.get("fks1_call"))
         if not any(fks1_caller.is_panel_token(t) for t in toks):
             continue
-        country = (rec.get("country") or "").strip()
-        if country:
-            counts[country] = counts.get(country, 0) + 1
+        loc = ew.display_geo(rec)
+        if loc:
+            counts[loc] = counts.get(loc, 0) + 1
     return counts or None
 
 

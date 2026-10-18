@@ -124,6 +124,23 @@ def _isolate_key(target_acc):
     return target_acc.split(".")[0] if target_acc else ""
 
 
+def display_geo(rec):
+    """Finest available location for a record, for display.
+
+    The raw NCBI `geo_loc_name` carries country plus any region/locality after a
+    colon (e.g. 'USA: California'); `country` is only its pre-colon prefix. Prefer
+    the raw string so the page shows the most specific place NCBI gave us, falling
+    back to the derived country, then '' when nothing is located. ': ' spacing is
+    normalized so 'USA:California' and 'USA: California' collapse to one value.
+    """
+    geo = (rec.get("geo_loc_name") or "").strip()
+    if geo:
+        country, _, rest = geo.partition(":")
+        rest = rest.strip()
+        return f"{country.strip()}: {rest}" if rest else country.strip()
+    return (rec.get("country") or "").strip()
+
+
 def normalize(rows):
     """Turn raw NCBI metadata dicts into snapshot records (list of dicts).
 

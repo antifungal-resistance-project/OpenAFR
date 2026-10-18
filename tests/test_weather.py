@@ -89,6 +89,22 @@ def test_hit_status_line_leads_with_resistance():
     assert "RESISTANCE SEEN" in page
 
 
+def test_first_seen_renders_collected_with_visible_not_a_raw_dict():
+    assert weather._fmt_first_seen(
+        {"collected": "2023", "visible": "2024-03-01"}) == "2023 (visible 2024-03-01)"
+    assert weather._fmt_first_seen({"collected": "2023", "visible": ""}) == "2023"
+    assert weather._fmt_first_seen(
+        {"collected": "", "visible": "2024-03-01"}) == "visible 2024-03-01"
+    assert weather._fmt_first_seen({"collected": "", "visible": ""}) == "unknown"
+    assert weather._fmt_first_seen(None) == "unknown"
+
+
+def test_hit_page_never_shows_raw_first_seen_dict():
+    # Regression: the "First seen" row once rendered str(dict) -> {'collected': ...}.
+    page = weather.render_page(_hit_result(), now=NOW)
+    assert "'collected'" not in page and "&#x27;collected&#x27;" not in page
+
+
 # ---- FKS1 (echinocandin, detection-only) HIT --------------------------------
 
 def test_fks1_hit_page_renders_detection_only_cards():
