@@ -4,8 +4,12 @@
 (hash re-checked by the grader before this file was written). Fully local — committed call
 table read offline, no GCP.
 
-- **Source table:** `/Users/jacobjensen/conductor/workspaces/openafr/guangzhou/data/earlywarning/fks1_calls/PDG000000067.710.tsv`
-  sha256 `14758b14d5cd274e3b32eb18d166d84ca9ddb0544b44b42d89c5447f8019a4ed`
+- **Source table:** `data/earlywarning/fks1_calls/PDG000000067.710.tsv`
+  sha256 `14758b14d5cd274e3b32eb18d166d84ca9ddb0544b44b42d89c5447f8019a4ed` at the time of this run.
+  (Later re-pinned to `01e6e4f010e34606225ba7e2561d1f1a7c0f32841d8012ea409aae8223cdd58f` when the
+  `country` column was backfilled for the historical-geography view — a new column only; the
+  `fks1_call`/deposit-month inputs this forecast reads are unchanged, so the series above is
+  unaffected.)
 - **Series depth:** 7 deposit-month bins (2026-04 → 2026-10).
 
 ## P1 — monthly panel-gated prevalence (deposit date)

@@ -261,3 +261,63 @@ def test_overlay_lights_up_the_page(tmp_path):
     after = alert.compose_fks1_alerts(live, as_of, window_days=window,
                                       min_count=3, min_delta=0.05)
     assert after["alerts"], "overlaying the committed FKS1 calls should light up the page"
+
+
+# --- geography backfill + historical breakdown (issue #170) ------------------
+# The `country` column was added to the call-table schema after releases 709/710 were written,
+# so their tables carry it empty; `backfill_fks1_calls_country` fills it from a snapshot's
+# geography and `fks1_calls_geo_breakdown` reads it back, panel-gated, for the page's
+# per-release historical geography.
+
+def _geo_rec(key, call, source="sra-fks1-recaller:called", country=""):
+    r = _rec(key, source, call=call)
+    r["country"] = country
+    return r
+
+
+def test_backfill_fills_country_from_map_and_leaves_unknown_blank(tmp_path):
+    path = tmp_path / "PDG000000067.709.tsv"
+    ew.write_fks1_call_table(str(path), [
+        _rec("A", "sra-fks1-recaller:called", call="S639F"),
+        _rec("B", "sra-fks1-recaller:called", call="F635I"),
+    ])
+    sha, n, filled, missing = ew.backfill_fks1_calls_country(
+        str(path), {"A": "USA", "B": ""})   # B maps to blank -> unlocated, never invented
+    assert n == 2 and filled == 1 and missing == ["B"]
+    table = ew.read_fks1_call_table(str(path))
+    assert table["A"]["country"] == "USA"
+    assert table["B"]["country"] == ""
+    # row set unchanged, and byte-stable: re-reading + re-serializing is identical
+    sha2, _ = ew.write_fks1_call_table(str(path), list(table.values()))
+    assert sha2 == sha
+
+
+def test_backfill_preserves_row_count_and_other_columns(tmp_path):
+    path = tmp_path / "PDG000000067.709.tsv"
+    ew.write_fks1_call_table(str(path), [_rec("A", "sra-fks1-recaller:called", call="S639F")])
+    ew.backfill_fks1_calls_country(str(path), {"A": "China"})
+    table = ew.read_fks1_call_table(str(path))
+    assert set(table) == {"A"}                       # no rows added or dropped
+    assert table["A"]["fks1_call"] == "S639F"         # existing columns intact
+    assert table["A"]["run_acc"] == "SRR1"
+
+
+def test_geo_breakdown_counts_panel_carriers_by_country(tmp_path):
+    path = tmp_path / "PDG000000067.710.tsv"
+    ew.write_fks1_call_table(str(path), [
+        _geo_rec("A", "S639F", country="USA"),      # panel -> counted
+        _geo_rec("B", "S639F", country="USA"),      # panel -> counted
+        _geo_rec("C", "W691L", country="China"),    # panel -> counted
+        _geo_rec("D", "F635I", country="USA"),      # non-panel VUS -> NOT counted
+        _geo_rec("E", "S639F", country=""),         # located nowhere -> omitted
+    ])
+    assert ew.fks1_calls_geo_breakdown(str(path)) == {"USA": 2, "China": 1}
+
+
+def test_geo_breakdown_empty_when_country_absent(tmp_path):
+    # a pre-backfill table (country cells blank) yields {} -- honest degradation, and a
+    # missing table reads as {} rather than raising
+    path = tmp_path / "PDG000000067.700.tsv"
+    ew.write_fks1_call_table(str(path), [_rec("A", "sra-fks1-recaller:called", call="S639F")])
+    assert ew.fks1_calls_geo_breakdown(str(path)) == {}
+    assert ew.fks1_calls_geo_breakdown(str(tmp_path / "missing.tsv")) == {}

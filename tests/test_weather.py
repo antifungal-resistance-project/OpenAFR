@@ -450,6 +450,36 @@ def test_trend_and_geo_absent_by_default_without_crashing():
     page = weather.render_page(_cov_result(200, 150), now=NOW)
     assert 'class="trend"' not in page
     assert 'class="geo"' not in page
+    assert 'class="geo geo-history"' not in page
+
+
+def test_geo_history_renders_one_ranked_block_per_release():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        geo_history=[
+            {"release_tag": "PDG000000067.709", "as_of": "2026-04-11",
+             "geography": {"USA": 8, "China": 1}},
+            {"release_tag": "PDG000000067.710", "as_of": "2026-04-14",
+             "geography": {"USA": 111, "China": 14, "Colombia": 1}},
+        ])
+    assert 'class="geo geo-history"' in page
+    assert "by release" in page
+    # both releases appear, each labelled with its as-of date
+    assert "PDG000000067.709 &middot; as of 2026-04-11" in page
+    assert "PDG000000067.710 &middot; as of 2026-04-14" in page
+    # within a release, countries rank by count desc -> USA (111) before China (14)
+    block = page[page.index("PDG000000067.710"):]
+    assert block.index("USA") < block.index("China") < block.index("Colombia")
+
+
+def test_geo_history_absent_without_data_and_skips_empty_releases():
+    assert 'class="geo geo-history"' not in weather.render_page(
+        _cov_result(200, 150), now=NOW, geo_history=None)
+    # a release whose table carried no country (empty breakdown) contributes nothing
+    assert 'class="geo geo-history"' not in weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        geo_history=[{"release_tag": "PDG000000067.709", "as_of": "2026-04-11",
+                      "geography": {}}])
 
 
 def _vus(*pairs):

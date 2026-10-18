@@ -65,7 +65,7 @@ def test_page_links_feeds_only_when_asked():
 
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
-            "vus_census", "calls_provenance", "certification"}
+            "geography_history", "vus_census", "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -88,6 +88,18 @@ def test_release_trend_carries_panel_vs_vus_split_unchanged():
               "n_resistant": 128, "n_vus": 69, "prevalence": 128 / 3375}]
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, release_trend=trend)
     assert data["release_trend"] == trend
+
+
+def test_geography_history_passes_through_sorted_and_defaults_empty():
+    # Absent by default (backward-compatible addition), and each release's geography is sorted
+    # by country so the feed is byte-stable regardless of input order.
+    assert weather_feed.build_data(_fks1_hit_result(), now=NOW)["geography_history"] == []
+    hist = [{"release_tag": "PDG000000067.709", "as_of": "2026-04-11",
+             "geography": {"USA": 8, "China": 1}}]
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW, geo_history=hist)
+    assert data["geography_history"] == [
+        {"release_tag": "PDG000000067.709", "as_of": "2026-04-11",
+         "geography": {"China": 1, "USA": 8}}]
 
 
 def test_forecast_passes_through_and_defaults_null():

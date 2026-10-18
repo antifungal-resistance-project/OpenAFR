@@ -48,7 +48,7 @@ DEFAULT_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
 # and the unit test enforce exactly the same keys (changing either is a schema_version bump).
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
-            "vus_census", "calls_provenance", "certification"}
+            "geography_history", "vus_census", "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -88,6 +88,10 @@ def _validate_schema(data, failures):
     _check(isinstance(data.get("coverage"), dict), "coverage is an object", failures)
     _check(isinstance(data.get("release_trend"), list), "release_trend is a list", failures)
     _check(isinstance(data.get("geography"), dict), "geography is an object", failures)
+    gh = data.get("geography_history")
+    if _check(isinstance(gh, list), "geography_history is a list", failures):
+        _check(all(isinstance(e, dict) and isinstance(e.get("geography"), dict) for e in gh),
+               "geography_history entries carry a geography object", failures)
     _check(isinstance(data.get("vus_census"), list), "vus_census is a list", failures)
     for i, a in enumerate(data.get("alerts") or []):
         if not _check(ALERT_KEYS <= set(a), f"alert[{i}] has all required keys", failures):

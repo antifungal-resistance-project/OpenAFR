@@ -197,6 +197,32 @@ def _geo_breakdown(records, args):
     return counts or None
 
 
+def _geo_history(args):
+    """Per-release historical geography the page/feed surface, oldest release first, or None.
+
+    The historical counterpart to `_geo_breakdown` (current release only): walks the committed
+    calls INDEX (same source as `_release_trend`) and, for each release table, reads the
+    panel-positive resistant carriers by `country` straight from the committed table
+    (`ew.fks1_calls_geo_breakdown` -- same panel gate as the headline, so geography never
+    overstates resistance). A release whose table predates the `country` column (709/710 before
+    backfill) contributes an empty breakdown and is dropped, so the section only shows releases
+    it can honestly place -- honest degradation, same as the live geo. None for the erg11 arm or
+    a written --snapshot (which carries its own calls, not the committed series)."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    calls_dir = _calls_dir(args)
+    out = []
+    for row in ew.read_fks1_calls_index(calls_dir):
+        tag = row.get("release_tag") or ""
+        table = pathlib.Path(calls_dir) / f"{tag}.tsv"
+        breakdown = ew.fks1_calls_geo_breakdown(str(table))
+        if not breakdown:
+            continue
+        out.append({"release_tag": tag, "as_of": row.get("as_of") or "",
+                    "geography": breakdown})
+    return out or None
+
+
 def _certification(runlog_path=CONCORDANCE_RUNLOG):
     """Certification verdict for the FKS1 caller, scored live from the committed concordance
     runlog through the SAME scorer (`openafr.concordance.evaluate` + `apply_bar`) the CI
@@ -328,6 +354,7 @@ def main():
                   certification=certification,
                   release_trend=_release_trend(args),
                   geo_breakdown=_geo_breakdown(records, args),
+                  geo_history=_geo_history(args),
                   vus_census=_vus_census(args),
                   forecast=_forecast(args),
                   page_url=PAGE_URL)
