@@ -1,29 +1,25 @@
-"""FKS1 structural proximity (moonshot #4, Rung 2).
+"""FKS1 structural proximity and contact label (moonshot #4, Rungs 2 + 3).
 
-Maps a novel FKS1 hot-spot substitution to its structural proximity to the
-echinocandin / enfumafungin binding site, using a pre-derived contact map
-computed from the 9WZU cryo-EM structure (Fks1 + enfumafungin, 2.97 Å,
-S. cerevisiae sequence aligned to C. auris via SW alignment).
+Rung 2 — `structural_proximity(token)`: minimum heavy-atom distance from each
+novel FKS1 hot-spot position to the enfumafungin binding site in the 9WZU
+cryo-EM structure (*S. cerevisiae* aligned to *C. auris*).
 
-What this claims — and what it DOES NOT
-----------------------------------------
-`structural_proximity(token)` is a LOOKUP over the pre-derived contact map.
-For a hot-spot token it reports how close (in Angstroms, minimum heavy-atom
-distance) the equivalent S. cerevisiae residue is to the bound enfumafungin.
-Enfumafungin occupies the same FKS1 binding site as echinocandins.
+Rung 3 — `structural_verdict(token)`: a certifiable **structural contact label**
+for tokens in `drug_contact` or `pocket_adjacent` proximity tier.  The label
+claims spatial co-location only — NOT a resistance prediction, NOT ΔΔG, NOT a
+probability. `evidence_class: "proximity_label"` explicitly must NOT trigger
+ACT-NOW in alert.py (that tier requires `"docking"` or `"measured"`).
 
-It deliberately does NOT:
-  1. predict phenotype (R/S) for the variant;
-  2. emit a resistance probability;
-  3. predict binding affinity or ΔΔG;
-  4. populate the verdict `structural` field — that remains null for FKS1
-     (Rung 3, not in scope here);
-  5. extend claims beyond the S. cerevisiae cryo-EM structure alignment.
+Both functions return None for core panel markers (those carry
+RESISTANCE_MARKER_DETECTED already), tokens outside hot-spot windows, and
+malformed tokens.
 
-The `structural` field for FKS1 verdicts stays null; proximity lives in
-`position_context[*].proximity` (see openafr/fks1_position.py).
+Pre-registrations:
+  Rung 2 — work/PREREGISTRATION_fks1_structural_proximity.md (frozen 2026-10-17)
+  Rung 3 — work/PREREGISTRATION_fks1_structural_verdict.md (frozen 2026-10-18)
+  Cert result — work/RESULTS_fks1_structural_verdict.md (PASS: 4/4 core panel
+                positions in drug_contact/pocket_adjacent, 100% ≥ 80% bar)
 
-See work/PREREGISTRATION_fks1_structural_proximity.md for the frozen scope.
 Stdlib only, offline, pure. The contact map (data/structures/fks1_contact_map.json)
 is pre-computed by scripts/derive_fks1_contact_map.py and ships pinned in the repo.
 """
@@ -133,6 +129,58 @@ def structural_proximity(token):
         "sc_position": sc_pos,
         "sc_aa": sc_aa,
         "reference_structure": source,
+        "note": note,
+    }
+
+
+def structural_verdict(token):
+    """Structural contact label for a FKS1 VUS token (moonshot #4, Rung 3), or None.
+
+    Returns a verdict dict for tokens in `drug_contact` or `pocket_adjacent` proximity
+    tier; None for all others (including core panel markers, `pocket_proximate`, `distal`,
+    `no_structure`, out-of-window, malformed).
+
+    The returned dict:
+      evidence_class      "proximity_label" — NOT "docking" or "measured"; must NOT
+                          trigger ACT-NOW in alert.py
+      proximity_tier      "drug_contact" | "pocket_adjacent"
+      min_dist_to_drug_A  float Angstroms
+      label               human-readable co-location claim (spatial only)
+      note                one sentence; states non-claim explicitly
+
+    Pre-registered cert PASS (4/4 core panel positions in contact zone, 100% ≥ 80% bar).
+    See work/PREREGISTRATION_fks1_structural_verdict.md and
+    work/RESULTS_fks1_structural_verdict.md.
+    """
+    prox = structural_proximity(token)
+    if prox is None:
+        return None
+    tier = prox["proximity_tier"]
+    dist = prox["min_dist_to_drug_A"]
+    pos = prox["position"]
+    window = prox["window"]
+    dist_str = f"{dist:.1f} Å" if dist is not None else "N/A"
+    src = prox["reference_structure"]
+    caveat = f"S. cerevisiae proxy, ±1–2 Å; spatial co-location only — not a resistance prediction"
+    if tier == DRUG_CONTACT:
+        label = "at drug-contact residue"
+        note = (
+            f"Residue {pos} in {window} sits within direct contact distance of the "
+            f"enfumafungin binding site ({dist_str} in {src}; {caveat})."
+        )
+    elif tier == POCKET_ADJACENT:
+        label = "adjacent to drug-contact residues"
+        note = (
+            f"Residue {pos} in {window} is adjacent to the enfumafungin binding site "
+            f"({dist_str} in {src}; {caveat})."
+        )
+    else:
+        return None
+    return {
+        "evidence_class": "proximity_label",
+        "proximity_tier": tier,
+        "min_dist_to_drug_A": dist,
+        "label": label,
         "note": note,
     }
 

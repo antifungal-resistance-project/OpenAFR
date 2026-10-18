@@ -1,8 +1,8 @@
-"""Tests for openafr/fks1_structural.py (moonshot #4, Rung 2).
+"""Tests for openafr/fks1_structural.py (moonshot #4, Rungs 2 + 3).
 
 Correctness and sanity checks for the pre-derived FKS1 contact map and the
-structural_proximity() function. No phenotype or resistance claims are tested
-here -- the module makes none. The tests verify:
+structural_proximity() and structural_verdict() functions. No phenotype or
+resistance claims are tested here -- the module makes none. The tests verify:
 
   1. The contact map is present and has the expected SHA-256 (integrity gate).
   2. Known CORE panel residues (F635, S639, W691, R1354) land in drug_contact or
@@ -15,6 +15,11 @@ here -- the module makes none. The tests verify:
   6. The proximity dict has the required keys and the tier is a valid PROXIMITY_TIER.
   7. The contact map metadata keys are present.
   8. fks1_position.position_context enriches non-core tokens with a `proximity` key.
+  9. (Rung 3) structural_verdict() returns a label dict for drug_contact/pocket_adjacent
+     tokens and None for all others; the dict has required keys and evidence_class
+     "proximity_label" (never "docking" or "measured").
+  10. (Rung 3) fks1_position.position_context includes `structural_verdict` for tokens
+      at drug_contact/pocket_adjacent positions.
 """
 import hashlib
 import os
@@ -34,6 +39,7 @@ from openafr.fks1_structural import (
     PROXIMITY_TIERS,
     contact_map_meta,
     structural_proximity,
+    structural_verdict,
 )
 
 
@@ -197,3 +203,92 @@ def test_position_context_proximity_consistent():
     assert ctx is not None
     assert "proximity" in ctx
     assert ctx["proximity"]["proximity_tier"] == DRUG_CONTACT
+
+
+# ── Rung 3: structural_verdict() ──────────────────────────────────────────────
+
+@pytest.mark.parametrize("token,expected_tier", [
+    ("F635L", DRUG_CONTACT),    # F635 site: 2.94 Å drug_contact
+    ("L638A", DRUG_CONTACT),    # L638: 2.82 Å drug_contact (non-panel in-window)
+    ("W691A", DRUG_CONTACT),    # W691 site: 3.66 Å drug_contact
+    ("S639L", POCKET_ADJACENT), # S639 site: 7.16 Å pocket_adjacent
+    ("R1354A", POCKET_ADJACENT),# R1354 site: 7.53 Å pocket_adjacent
+])
+def test_structural_verdict_contact_zone_returns_dict(token, expected_tier):
+    sv = structural_verdict(token)
+    assert sv is not None, f"{token} (tier {expected_tier}) should return a verdict dict"
+    assert sv["proximity_tier"] == expected_tier
+    assert sv["evidence_class"] == "proximity_label"
+
+
+def test_structural_verdict_distal_returns_none():
+    """Distal positions do not earn a structural label."""
+    sv = structural_verdict("P643A")  # distal in HS1
+    assert sv is None
+
+
+def test_structural_verdict_pocket_proximate_returns_none():
+    """pocket_proximate does not earn a structural label (D642Y: 11.34 Å)."""
+    sv = structural_verdict("D642Y")  # low-PPV, pocket_proximate
+    assert sv is None
+
+
+@pytest.mark.parametrize("token", [
+    "S639F",   # core panel marker
+    "F635C",   # core panel marker
+    "W691L",   # core panel marker
+    "R1354S",  # core panel marker
+])
+def test_structural_verdict_core_panel_returns_none(token):
+    """Core panel markers already carry RESISTANCE_MARKER_DETECTED."""
+    assert structural_verdict(token) is None
+
+
+def test_structural_verdict_dict_shape():
+    sv = structural_verdict("F635L")  # drug_contact
+    required = {"evidence_class", "proximity_tier", "min_dist_to_drug_A", "label", "note"}
+    assert required <= set(sv.keys()), f"Missing keys: {required - set(sv.keys())}"
+    assert sv["evidence_class"] == "proximity_label"
+    assert sv["proximity_tier"] == DRUG_CONTACT
+    assert isinstance(sv["min_dist_to_drug_A"], float)
+    assert sv["label"] == "at drug-contact residue"
+    assert "not a resistance prediction" in sv["note"]
+
+
+def test_structural_verdict_pocket_adjacent_label():
+    sv = structural_verdict("S639L")  # pocket_adjacent
+    assert sv is not None
+    assert sv["label"] == "adjacent to drug-contact residues"
+    assert sv["evidence_class"] == "proximity_label"
+
+
+def test_structural_verdict_out_of_window_returns_none():
+    assert structural_verdict("A100G") is None
+    assert structural_verdict(None) is None
+    assert structural_verdict("") is None
+
+
+# ── Rung 3: position_context includes structural_verdict ──────────────────────
+
+def test_position_context_includes_structural_verdict_for_drug_contact():
+    from openafr.fks1_position import position_context
+    ctx = position_context("W691A")  # drug_contact
+    assert ctx is not None
+    assert "structural_verdict" in ctx, "Rung 3 structural_verdict missing from position_context"
+    assert ctx["structural_verdict"]["evidence_class"] == "proximity_label"
+    assert ctx["structural_verdict"]["proximity_tier"] == DRUG_CONTACT
+
+
+def test_position_context_includes_structural_verdict_for_pocket_adjacent():
+    from openafr.fks1_position import position_context
+    ctx = position_context("S639L")  # pocket_adjacent
+    assert ctx is not None
+    assert "structural_verdict" in ctx
+    assert ctx["structural_verdict"]["proximity_tier"] == POCKET_ADJACENT
+
+
+def test_position_context_no_structural_verdict_for_distal():
+    from openafr.fks1_position import position_context
+    ctx = position_context("P643A")  # distal
+    assert ctx is not None
+    assert "structural_verdict" not in ctx, "Distal position should not have structural_verdict"

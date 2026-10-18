@@ -71,7 +71,7 @@ fully offline against the checked-in receptor/ligand.
 """
 import json
 
-from openafr import emergence, fks1_position, mapping, structural
+from openafr import emergence, fks1_position, fks1_structural, mapping, structural
 from openafr.earlywarning import display_geo
 
 # So-what priority tiers, strongest first. `rank` orders the rendered alert list.
@@ -275,8 +275,10 @@ FKS1_DETECTION_ONLY_CAVEAT = (
 
 def _fks1_priority(signal):
     """Detection-only so-what tier: backlog -> context, otherwise watch. There is no
-    act-now for FKS1 because that tier requires a structural weaker-fit verdict the
-    detection-only track deliberately does not claim."""
+    act-now for FKS1 because that tier requires a structural verdict with evidence_class
+    "docking" or "measured". Rung 3 adds "proximity_label" but that is explicitly
+    insufficient to cross the ACT-NOW gate (see PREREGISTRATION_fks1_structural_verdict.md).
+    """
     return "context" if signal["possible_backlog"] else "watch"
 
 
@@ -339,11 +341,14 @@ def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=
         # core marker. Geography only -- never a fit verdict, so priority is untouched.
         ctx = fks1_position.position_context(signal["mutation"])
         prox = ctx.get("proximity") if ctx else None
+        # Rung 3: structural contact label (evidence_class "proximity_label"; NOT ACT-NOW).
+        sv = fks1_structural.structural_verdict(signal["mutation"])
         base["priority"] = _fks1_priority(signal)
         base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"], ctx)
         base["position_context"] = ctx
         base["position_note"] = f"It {fks1_position.describe(ctx)}" if ctx else ""
         base["proximity_context"] = prox   # Rung 2: structural proximity from 9WZU cryo-EM
+        base["structural"] = sv            # Rung 3: None unless drug_contact/pocket_adjacent
         base["detection_only"] = True
         alerts.append(base)
 

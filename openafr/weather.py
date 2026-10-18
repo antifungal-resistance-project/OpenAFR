@@ -492,9 +492,14 @@ def _vus_section(vus_census):
                 f' <span class="prox-tier">[proximity: {tier_label}, '
                 f'{dist_str} from drug]</span>'
             )
+        sv = ctx.get("structural_verdict")
+        sv_html = ""
+        if sv:
+            label = html.escape(sv.get("label", ""))
+            sv_html = f' <span class="struct-label">[structural: {label}]</span>'
         return (
             f'      <div class="k"><code>{token}</code> '
-            f'<span class="vus-tier">{tier_str}</span>{prox_html}</div>'
+            f'<span class="vus-tier">{tier_str}</span>{prox_html}{sv_html}</div>'
             f'<div class="v">{carriers} carrier(s) &mdash; {note}</div>'
         )
 
@@ -508,8 +513,10 @@ def _vus_section(vus_census):
       <strong>tracked but NOT counted as known resistance</strong>. The position line states
       only where each residue sits relative to the known resistance geography (which hot-spot,
       how far from the anchor); the proximity line shows the minimum heavy-atom distance to
-      enfumafungin (same FKS1 binding site as echinocandins) in the 9WZU cryo-EM structure.
-      Neither is a drug-fit or phenotype claim. Detection only.</p>
+      enfumafungin (same FKS1 binding site as echinocandins) in the 9WZU cryo-EM structure;
+      the structural line, when present, is a spatial co-location label for drug-contact or
+      adjacent positions (S. cerevisiae proxy, ±1&#8211;2&thinsp;Å; not a drug-fit or
+      phenotype claim). Detection only.</p>
   </section>
 """
 
@@ -713,6 +720,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
         color:var(--muted-strong); font-weight:600; margin:2.5rem 0 .6rem; }}
   .trend, .geo, .vus {{ margin:0 0 1rem; }}
   .vus-tier {{ color:var(--muted); font-size:.78rem; }}
+  .struct-label {{ color:var(--accent); font-size:.78rem; }}
   .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
   .trend-up {{ color:var(--tier-act-now); }}
   .trend-down {{ color:var(--accent); }}
