@@ -110,6 +110,38 @@ def _release_trend(args):
     return trend or None
 
 
+def _forecast(args):
+    """The prevalence trajectory + near-term forecast bundle the page/feed surface, or None.
+
+    Reproducible from the SAME latest committed call table the page overlays: build the
+    resolved-denominator, panel-gated per-deposit-month series (openafr.forecast), run the
+    pre-registered walk-forward skill test, and only mark `skill=True` when the trend model
+    beat both naive baselines on held-out months. The page renders a projection only on skill;
+    otherwise it shows the trajectory and says no skill was demonstrated -- the honest
+    degradation the backtest enforces. None for the erg11 arm or a written --snapshot (which
+    carries its own calls, not the committed series)."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    from openafr import forecast
+    table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
+    if not table or not pathlib.Path(table).exists():
+        return None
+    records = list(ew.read_fks1_call_table(str(table)).values())
+    series = forecast.monthly_prevalence_series(records)
+    if len(series) < 2:
+        return None
+    bt = forecast.backtest(series, min_train=3, horizon=1)
+    return {
+        "series": series,
+        "skill": forecast.has_skill(bt),
+        "n_folds": bt["n_folds"],
+        "model_mae": bt["model_mae"],
+        "naive_last_mae": bt["naive_last_mae"],
+        "naive_pooled_mae": bt["naive_pooled_mae"],
+        "projection": forecast.forecast_next(series, horizon=1),
+    }
+
+
 def _vus_census(args):
     """The per-variant census of non-panel hot-spot FKS1 variants (uncertain significance) the
     page/feed surface, each enriched with geometry-free position context, or None.
@@ -296,6 +328,7 @@ def main():
                   release_trend=_release_trend(args),
                   geo_breakdown=_geo_breakdown(records, args),
                   vus_census=_vus_census(args),
+                  forecast=_forecast(args),
                   page_url=PAGE_URL)
     # One clock reading so the page and both feeds agree on "generated".
     now = datetime.datetime.now(datetime.timezone.utc)

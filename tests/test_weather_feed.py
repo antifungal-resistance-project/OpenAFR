@@ -64,8 +64,8 @@ def test_page_links_feeds_only_when_asked():
 # A partner builds against these keys. Changing them is a schema_version bump, not a refactor.
 
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
-            "thresholds", "coverage", "alerts", "release_trend", "geography", "vus_census",
-            "calls_provenance", "certification"}
+            "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
+            "vus_census", "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -88,8 +88,18 @@ def test_release_trend_carries_panel_vs_vus_split_unchanged():
               "n_resistant": 128, "n_vus": 69, "prevalence": 128 / 3375}]
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, release_trend=trend)
     assert data["release_trend"] == trend
-    assert data["release_trend"][0]["prevalence"] == 128 / 3375
-    json.dumps(data)
+
+
+def test_forecast_passes_through_and_defaults_null():
+    # Absent by default (backward-compatible addition), and passed through verbatim so a
+    # consumer reads `forecast.skill` before trusting `forecast.projection`.
+    assert weather_feed.build_data(_fks1_hit_result(), now=NOW)["forecast"] is None
+    fc = {"series": [{"month": "2026-04", "n_resolved": 369, "n_resistant": 19,
+                      "prevalence": 19 / 369}],
+          "skill": False, "projection": {"naive_pooled": 0.038}}
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW, forecast=fc)
+    assert data["forecast"] == fc
+    json.dumps(data)  # must not raise
 
 
 def test_vus_census_passes_through_with_position_context():

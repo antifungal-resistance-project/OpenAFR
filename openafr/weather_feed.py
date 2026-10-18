@@ -46,8 +46,11 @@ def _alert_record(a):
 
 
 def build_data(alert_result, *, now=None, calls_provenance=None, certification=None,
-               release_trend=None, geo_breakdown=None, vus_census=None, page_url=None):
-    """The `data.json` document: status, alerts, coverage, trend, geography, VUS, provenance."""
+               release_trend=None, geo_breakdown=None, vus_census=None, forecast=None,
+               page_url=None):
+    """The `data.json` document: status, alerts, coverage, trend, forecast, geography, VUS,
+    provenance. `forecast` is the openafr.forecast bundle (monthly series + walk-forward skill
+    + one-step projection); a consumer reads `forecast.skill` before trusting `projection`."""
     r = alert_result or {}
     return {
         "schema_version": SCHEMA_VERSION,
@@ -61,6 +64,7 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
         "coverage": r.get("coverage") or {},
         "alerts": [_alert_record(a) for a in (r.get("alerts") or [])],
         "release_trend": list(release_trend or []),
+        "forecast": dict(forecast) if forecast else None,
         "geography": dict(sorted((geo_breakdown or {}).items())),
         "vus_census": list(vus_census or []),
         "calls_provenance": dict(calls_provenance or {}),
