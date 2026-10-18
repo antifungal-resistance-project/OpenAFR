@@ -78,6 +78,14 @@ jobs:
             cp -f docs/pockets/*.png site/pockets/ 2>/dev/null || true
           fi
 
+      - name: Validate the rendered page (fail-closed on a silent regression)
+        # render_weather is fail-open by design (a quiet week renders the day-0 watching page
+        # instead of crashing). This gate refuses to DEPLOY an *unexpected* regression: once a
+        # fill is committed, the page must come out lit, and data.json must match its pinned
+        # schema. A failure here fails the job, so deploy-pages never runs and the last good
+        # page stays live.
+        run: python3 scripts/check_published_page.py --site site
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
