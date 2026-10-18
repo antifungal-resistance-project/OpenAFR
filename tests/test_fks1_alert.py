@@ -48,9 +48,14 @@ def test_reads_the_fks1_call_column_not_erg11():
     assert _compose()["alerts"], "should flag FKS1 signals from the fks1_call column"
 
 
-def test_no_alert_carries_a_structural_verdict():
+def test_no_alert_carries_a_fit_verdict():
+    # Rung 3 wires `structural` onto every alert (None for core-panel markers, a
+    # proximity_label dict for novel drug_contact/pocket_adjacent variants).  The
+    # invariant is that no structural verdict can trigger ACT-NOW — i.e. evidence_class
+    # is never "measured".
     for a in _compose()["alerts"]:
-        assert "structural" not in a
+        sv = a.get("structural")
+        assert sv is None or sv.get("evidence_class") == "proximity_label"
         assert a["detection_only"] is True
 
 
