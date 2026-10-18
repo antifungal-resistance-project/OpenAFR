@@ -72,7 +72,12 @@ def test_prevalence_is_over_the_resolved_denominator_not_carriers(tmp_path):
     # hotspot call, each variant's recent prevalence must read ~its true share of ALL
     # re-called isolates (low single digits), never ~its share of carriers-only (~25%).
     _, page, n_resistant = _render(tmp_path, resistant_frac=0.08)
-    shares = [float(x) for x in re.findall(r"(\d+\.\d+)%", page)]
+    # Scope the scan to the emergence/coverage region: the forecast section (openafr.forecast)
+    # breaks the window into per-deposit-MONTH bins, where a legitimately low-count month can
+    # show a higher share than the window-wide fraction -- a different, valid statistic, not the
+    # carriers-vs-resolved denominator bug guarded here (that series uses emergence.resolved too).
+    body = page.split('<section class="trend forecast">')[0]
+    shares = [float(x) for x in re.findall(r"(\d+\.\d+)%", body)]
     assert shares, "expected at least one prevalence percentage on the page"
     # No single hotspot can be more prevalent than the whole resistant fraction of the window.
     ceiling = 100.0 * n_resistant / N + 0.5

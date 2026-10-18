@@ -395,6 +395,46 @@ def test_trend_section_omitted_for_a_single_batch():
     assert "Resistance trend" not in page
 
 
+def _fc_series(*points):
+    # points: (month, n_resolved, n_resistant) oldest-first; prevalence derived.
+    return [{"month": m, "n_resolved": nr, "n_resistant": np,
+             "prevalence": (np / nr) if nr else None} for (m, nr, np) in points]
+
+
+def test_forecast_section_shows_projection_only_when_skill_certified():
+    fc = {"series": _fc_series(("2026-04", 200, 4), ("2026-05", 200, 8), ("2026-06", 200, 14)),
+          "skill": True,
+          "projection": {"next_month": "2026-07", "point": 0.09, "lo": 0.05, "hi": 0.15,
+                         "naive_pooled": 0.043}}
+    page = weather.render_page(_cov_result(200, 150), now=NOW, forecast=fc)
+    assert 'class="trend forecast"' in page
+    assert "Prevalence trajectory &amp; forecast" in page
+    assert "4 of 200 resolved" in page and "14 of 200 resolved" in page
+    assert "Projected" in page and "<code>2026-07</code>" in page and "9.0%" in page
+    assert "95% PI 5.0%&ndash;15.0%" in page
+    assert "trend-up" in page
+
+
+def test_forecast_section_degrades_to_trajectory_when_no_skill():
+    fc = {"series": _fc_series(("2026-04", 369, 19), ("2026-05", 481, 19), ("2026-06", 651, 18)),
+          "skill": False,
+          "projection": {"next_month": "2026-07", "point": 0.03, "lo": 0.004, "hi": 0.15,
+                         "naive_pooled": 0.038}}
+    page = weather.render_page(_cov_result(200, 150), now=NOW, forecast=fc)
+    assert 'class="trend forecast"' in page
+    assert "No forecast skill demonstrated" in page
+    assert "roughly stationary near 3.8%" in page
+    # no projected number is claimed on the no-skill path
+    assert "Projected" not in page
+
+
+def test_forecast_section_omitted_below_two_months():
+    fc = {"series": _fc_series(("2026-06", 651, 18)), "skill": False, "projection": None}
+    page = weather.render_page(_cov_result(200, 150), now=NOW, forecast=fc)
+    assert "forecast" not in page
+    assert "Prevalence trajectory" not in page
+
+
 def test_geo_section_ranks_countries_and_labels_current_release():
     page = weather.render_page(
         _cov_result(200, 150), now=NOW,

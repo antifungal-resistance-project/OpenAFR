@@ -25,6 +25,7 @@ Renaming, removing, or changing the meaning of a key bumps `schema_version` (cur
 | `coverage` | object | genotyping coverage (resolved isolates over total) |
 | `alerts` | array | current alerts (below) |
 | `release_trend` | array | one entry per committed re-call release (below) |
+| `forecast` | object \| null | prevalence trajectory + near-term forecast (below) |
 | `geography` | object | `{country: panel-carrier count}`, current release only, sorted by country |
 | `vus_census` | array | per-variant census of non-panel hot-spot variants of uncertain significance (below) |
 | `calls_provenance` | object | which committed call table(s) the page is built on |
@@ -47,6 +48,20 @@ FKS1 substitution. `n_vus` counts resolved isolates with a hot-spot variant *not
 (uncertain significance); they are tracked but are **not** resistance. `prevalence =
 n_resistant / n_called`, where `n_called` is resolved isolates. Do not sum `n_resistant` and
 `n_vus` to get "resistant".
+
+### forecast
+
+`series[]` — one entry per NCBI **deposit month**, ascending: `month` (`YYYY-MM`), `n_resolved`,
+`n_resistant` (panel-gated), `prevalence`. `skill` (bool) — whether a pre-registered walk-forward
+showed the trend model beats both naive baselines (`work/RESULTS_fks1_forecast.md`). `projection`
+— the one-deposit-month-ahead `forecast_next` dict (`next_month`, `point`, `lo`/`hi` 95% PI,
+`naive_last`, `naive_pooled`, `slope_logit`, `n_months`, `has_interval`), or `null`.
+
+**How to read it:** trust `projection.point`/`lo`/`hi` as a *forecast* **only** when `skill` is
+`true`. When `skill` is `false` the series is still a real trajectory, but no projection is
+claimed (prevalence is roughly stationary near `projection.naive_pooled`). The axis is **deposit
+month, not epidemiological incidence** — deposit lags collection ~97 days and tracks sequencing
+volume, not transmission. Detection-only, research use.
 
 ### vus_census[]
 

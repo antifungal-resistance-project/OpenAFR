@@ -363,6 +363,79 @@ def _trend_section(release_trend):
 """
 
 
+def _forecast_section(forecast):
+    """The prevalence trajectory + near-term forecast block, or "" when there is no trajectory
+    to show (fewer than two deposit-month bins).
+
+    `forecast` -- the dict render_weather assembles from openafr.forecast: `series` (ascending
+    per-deposit-month {month, n_resolved, n_resistant, prevalence}), `skill` (did the
+    walk-forward backtest certify the model beats both naive baselines?), and `projection` (the
+    one-step-ahead forecast_next dict, or None). Passed in, never recomputed here -- the same
+    decoupling the trend/VUS sections use.
+
+    Honest degradation is the whole point: the projected number renders ONLY when `skill` is
+    True. With no demonstrated skill the section shows the monthly trajectory alone and says so
+    plainly, naming the flat (pooled) prevalence the model could not beat -- never a forecast
+    the backtest did not earn.
+    """
+    if not forecast:
+        return ""
+    series = forecast.get("series") or []
+    if len(series) < 2:
+        return ""
+
+    def _prev(x):
+        return "&mdash;" if x is None else f"{100 * x:.1f}%"
+
+    rows = "\n".join(
+        f'      <div class="k"><code>{html.escape(str(e.get("month") or "—"))}</code></div>'
+        f'<div class="v">{e.get("n_resistant", 0)} of {e.get("n_resolved", 0)} resolved '
+        f'&middot; {_prev(e.get("prevalence"))}</div>'
+        for e in series)
+
+    proj = forecast.get("projection") or {}
+    if forecast.get("skill") and proj.get("point") is not None:
+        last = series[-1].get("prevalence")
+        point = proj["point"]
+        if last is not None and point - last > 0.001:
+            cls, arrow = "trend-up", "&#9650;"
+        elif last is not None and last - point > 0.001:
+            cls, arrow = "trend-down", "&#9660;"
+        else:
+            cls, arrow = "trend-flat", "&#9644;"
+        pi = ""
+        if proj.get("lo") is not None and proj.get("hi") is not None:
+            pi = f" (95% PI {_prev(proj['lo'])}&ndash;{_prev(proj['hi'])})"
+        fc_html = (f'    <p class="trend-delta {cls}">{arrow} Projected '
+                   f'<code>{html.escape(str(proj.get("next_month") or "next month"))}</code>: '
+                   f"{_prev(point)}{pi}.</p>\n")
+        note = ("One-deposit-month-ahead projection, surfaced because a pre-registered "
+                "walk-forward showed the trend model out-predicts naive persistence "
+                "(work/RESULTS_fks1_forecast.md). Deposit-month axis, not epidemiological "
+                "incidence.")
+    else:
+        pooled = proj.get("naive_pooled")
+        pooled_str = _prev(pooled) if pooled is not None else "the series mean"
+        fc_html = (f'    <p class="trend-delta trend-flat">&#9644; No forecast skill '
+                   f"demonstrated over a flat baseline at this series depth; showing the "
+                   f"trajectory only (prevalence is roughly stationary near "
+                   f"{pooled_str}).</p>\n")
+        note = ("A pre-registered walk-forward did not show the trend model beating a flat "
+                "baseline on held-out months (work/RESULTS_fks1_forecast.md), so no projection "
+                "is claimed. Deposit-month axis, not epidemiological incidence.")
+
+    return f"""  <section class="trend forecast">
+    <h2>Prevalence trajectory &amp; forecast</h2>
+    <div class="grid">
+{rows}
+    </div>
+{fc_html}    <p class="note">Panel-gated known-resistance carriers as a share of resolved
+      isolates, per NCBI deposit month &mdash; reproducible from the committed call table.
+      {html.escape(note)}</p>
+  </section>
+"""
+
+
 def _geo_section(geo_breakdown):
     """Where the current release's resistant carriers are: a location-ranked list, or "" when
     there is nothing located. Labelled 'current release' because geography comes from the live
@@ -492,7 +565,7 @@ def _structured_data(description, certification, provenance, page_url):
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
                 certification=None, release_trend=None, geo_breakdown=None, vus_census=None,
-                page_url=None, feeds=False):
+                forecast=None, page_url=None, feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -569,6 +642,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
 
     cert_badge = _cert_badge(certification)
     trend_html = _trend_section(release_trend)
+    forecast_html = _forecast_section(forecast)
     geo_html = _geo_section(geo_breakdown)
     vus_html = _vus_section(vus_census)
     methods_html = _methods_section(certification, calls_provenance, window)
@@ -675,7 +749,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{geo_html}{vus_html}{methods_html}  <footer>
+{trend_html}{forecast_html}{geo_html}{vus_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
