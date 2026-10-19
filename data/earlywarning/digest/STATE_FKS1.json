@@ -1,8 +1,13 @@
 {
   "delivered": {
     "F635L": "watch",
+    "F635Y": "watch",
+    "L638F": "watch",
+    "R1354C": "watch",
     "R1354H": "watch",
-    "S639F": "watch"
+    "R641G": "watch",
+    "S639F": "watch",
+    "S639P": "context"
   },
-  "updated": "2026-04-15"
+  "updated": "2026-04-22"
 }
