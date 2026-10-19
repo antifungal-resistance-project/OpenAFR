@@ -88,13 +88,17 @@ right; each module has a `work/RESULTS_*.md` write-up.
 | delivery + schedule | `openafr/delivery.py` | `scripts/deliver_alert.py` | deliver only on genuine new news; a GitHub Action runs it |
 | backtest / validation | `openafr/backtest.py` | `scripts/backtest_earlywarning.py` | the pre-registered credibility test for the whole track |
 | **ERG11 re-caller** | `openafr/recaller.py` | `scripts/recall_erg11.py` | reads → azole-resistance call. **Built and run** (80.4% azole event frequency). |
-| **FKS1 re-caller (v2)** | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin-resistance call. **Detection-only** — no structural so-what. |
+| **FKS1 re-caller (v2)** | `openafr/fks1_caller.py` | `scripts/recall_fks1.py` | reads → echinocandin-resistance call. **Detection-only** — no fit verdict. |
+| **FKS1 VUS position context** | `openafr/fks1_position.py` | — | Rung 1: where a novel hot-spot variant sits in the resistance geography. Rungs 2–3 sub-fields added lazily from `fks1_structural.py`. |
+| **FKS1 structural proximity + contact label** | `openafr/fks1_structural.py` | — | Rung 2: min distance to the drug (9WZU cryo-EM). Rung 3: `proximity_label` contact verdict for drug-contact/adjacent positions. |
 | run provenance log | `openafr/runlog.py` | (used by the above) | append-only record of the un-reproducible tool/network runs |
 
 The emergence, alert, and delivery stages are **gene-parameterized**: the same
 `detect_emergence(call_field=…)` and delivery machinery serve ERG11 and FKS1, and the two genes
-deliver independently (their own digests + state files). The structural so-what stage is
-deliberately **ERG11-only** — see the FKS1 section below for why.
+deliver independently (their own digests + state files). The structural *fit verdict* (ACT-NOW)
+is **ERG11-only** — see the FKS1 section below. The FKS1 track separately has a *position
+context* layer (Rungs 1–3) that enriches VUS alerts without claiming a fit verdict — see the
+"FKS1 novel-variant position context" section below.
 
 ---
 
@@ -404,15 +408,79 @@ diagnostics engine pass (see below).
 
 **Detection-only, enforced end-to-end.** Echinocandins do **not** coordinate a metal — FKS1 is a
 1,3-β-glucan synthase, not a heme enzyme — so the CYP51/heme-iron structural moat *does not
-transfer*. The FKS1 half therefore claims **no structural so-what**, and that scope is enforced
-through composition (`alert.compose_fks1_alerts` emits **WATCH/CONTEXT only, never ACT-NOW**),
-rendering (`render_fks1_markdown`), and delivery (its own `DIGEST_FKS1.md` / `STATE_FKS1.json`).
-The `structural.py` stage stays ERG11-only by design; a FKS1 structural verdict is *deferred, not
-merely unbuilt* (revisit only if a PI asks). **The two numbers that were once open are now
-measured:** a real FKS1 `fill` put `fks1_panel_prevalence` at **10/443 = 2.3%** (Wilson 95% CI
-1.2–4.1%, `work/RESULTS_fks1_prevalence.md`) — low and non-saturated, the useful regime — and the
-caller is **certified 100% token-accurate** against a published 98-genome benchmark
+transfer*. The FKS1 half therefore claims **no structural fit verdict** (ACT-NOW), and that scope
+is enforced through composition (`alert.compose_fks1_alerts` emits **WATCH/CONTEXT only, never
+ACT-NOW**), rendering (`render_fks1_markdown`), and delivery (its own `DIGEST_FKS1.md` /
+`STATE_FKS1.json`). `openafr/structural.py` stays ERG11-only; a full FKS1 *fit verdict* (a docking
+protocol over a glucan-synthase structure) remains a future Rung 4.
+
+A separate, narrower context layer **has** shipped: `openafr/fks1_position.py` and
+`openafr/fks1_structural.py` implement moonshot #4 Rungs 1–3, which enrich VUS alert cards with
+positional and structural proximity context — where a novel variant sits relative to the drug
+binding site — without claiming a resistance prediction. These are `evidence_class:
+"proximity_label"` and explicitly cannot trigger ACT-NOW. See the "FKS1 novel-variant position
+context" section below.
+
+**The two numbers that were once open are now measured:** a real FKS1 `fill` put
+`fks1_panel_prevalence` at **10/443 = 2.3%** (Wilson 95% CI 1.2–4.1%,
+`work/RESULTS_fks1_prevalence.md`) — low and non-saturated, the useful regime — and the caller is
+**certified 100% token-accurate** against a published 98-genome benchmark
 (`work/RESULTS_fks1_concordance.md`).
+
+## FKS1 novel-variant position context (moonshot #4, Rungs 1–3)
+
+The *detection* track tells you a novel variant exists and is rising. The *position context*
+layer tells you **where it sits** in the known resistance geography and, when the structural
+contact map covers that position, **how close it is to the drug binding site**. This is a
+distinct, additive layer — it enriches VUS alert cards and the weather page without re-deciding
+the emergence signal or claiming a resistance verdict.
+
+**Why it stops short of a fit verdict.** The FKS1 structural so-what (ACT-NOW) would require a
+docking protocol over a glucan-synthase structure — a new pre-registered run, separate from the
+CYP51 geometry work. Rungs 1–3 stay strictly on the spatial side: "this residue sits X Å from the
+enfumafungin binding site" is the strongest claim they make.
+
+**Three modules, three rungs:**
+
+`openafr/fks1_position.py` — **`position_context(token)`** (Rungs 1–3 integrated)
+
+Returns `None` for core panel markers (already `RESISTANCE_MARKER_DETECTED`) and tokens outside
+hot-spot windows. For everything else — novel VUS, low-PPV panel letters — it returns a dict with:
+
+- **Rung 1 (always present):** `tier` (`novel_substitution_at_panel_residue` /
+  `in_hotspot_adjacent_to_panel` / `in_hotspot_background` / `known_low_ppv_marker`),
+  `window` (HS1/HS2/HS3), `anchor`, `anchor_distance`, `at_panel_residue`,
+  `panel_letters_at_position`, `nearest_core_marker`, `distance_to_nearest`.
+- **Rung 2 (when contact map present):** `proximity` sub-dict — `proximity_tier`
+  (`drug_contact` / `pocket_adjacent` / `pocket_proximate` / `distal`),
+  `min_dist_to_drug_A` (float Å), and provenance (`sc_position`, `reference_structure`, …).
+- **Rung 3 (when Rung 2 tier is `drug_contact` or `pocket_adjacent`):** `structural_verdict`
+  sub-dict — `evidence_class: "proximity_label"`, `proximity_tier`, `min_dist_to_drug_A`,
+  `label`, `note`. **Cannot trigger ACT-NOW** (that tier requires `"docking"` or `"measured"`).
+
+Rungs 2+3 are imported lazily from `openafr/fks1_structural.py`; a missing contact map degrades
+gracefully to Rung-1-only output.
+
+`openafr/fks1_structural.py` — **`structural_proximity(token)`** (Rung 2) and
+**`structural_verdict(token)`** (Rung 3)
+
+Reads the pinned 9WZU cryo-EM contact map (`data/structures/fks1_contact_map.json`,
+SHA-256 `6a2033ac…`), pre-computed by `scripts/derive_fks1_contact_map.py`. Stdlib-only, offline,
+pure. Rung 3 is pre-registered and certified (`work/PREREGISTRATION_fks1_structural_verdict.md`,
+cert result `work/RESULTS_fks1_structural_verdict.md`: 4/4 core panel positions in
+drug_contact/pocket_adjacent, 100% ≥ 80% bar).
+
+**Where it surfaces.** VUS cards on the weather page render the structural contact label when
+present (`openafr/weather.py` lines ~541–563). The machine-readable feed (`data.json`) carries the
+full `position_context` dict — including `proximity` and `structural_verdict` sub-fields — verbatim
+in each alert record and in each VUS census entry (see `docs/FEED_SPEC.md` for the sub-field spec).
+
+**What it does not claim:** drug fit, phenotype prediction, resistance verdict, MIC consequence,
+or ACT-NOW. A `novel_substitution_at_panel_residue` + `drug_contact` verdict means "a never-seen
+change sits on a residue in direct contact with the drug — worth characterising", not "this
+variant confers resistance."
+
+---
 
 ## From detection to a genotype→verdict diagnostics engine
 
@@ -501,11 +569,12 @@ small batches), see [TODOS.md](../TODOS.md), `work/RUNBOOK_recaller_run.md` (ERG
   **but a fully *validated warning* still needs a wet-lab-anchored backtest truth set** (published
   clade/mutation panels; few NCBI isolates carry AST phenotype). The scaffold and the mechanism
   are proven; end-to-end validation against ground truth is the remaining step.
-- **The FKS1 track is detection-only** (no structural verdict — echinocandins coordinate no
-  metal). Its prevalence is now measured (2.3%) and the caller is certified, and the
-  diagnostics engine's **echinocandin verdict arm passes** a pre-registered accuracy bar — but
-  under a *scoped* claim (detection over high-PPV markers, not a full R/S classifier), at a
-  declared 10.2% abstention.
+- **The FKS1 track is detection-only** (no *fit verdict* or ACT-NOW — echinocandins coordinate no
+  metal). Its prevalence is now measured (2.3%) and the caller is certified, and the diagnostics
+  engine's **echinocandin verdict arm passes** a pre-registered accuracy bar — but under a *scoped*
+  claim (detection over high-PPV markers, not a full R/S classifier), at a declared 10.2%
+  abstention. A *positional/proximity context* layer (Rungs 1–3) does enrich VUS alerts with
+  spatial co-location labels (`evidence_class: "proximity_label"`) — not a fit verdict, not ACT-NOW.
 - **The azole verdict arm is underpowered and the calibrated-probability track is blocked** on
   the absence of a public paired genotype+MIC *Candida* collection. No probability is emitted
   until that track produces a measured, held-out reliability.

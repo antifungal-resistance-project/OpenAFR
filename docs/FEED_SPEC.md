@@ -37,8 +37,26 @@ Renaming, removing, or changing the meaning of a key bumps `schema_version` (cur
 `mutation`, `priority` (`watch` / `context` / `act now`), `headline`, `first_seen`, `regions[]`,
 `n_carriers_total`, and `emergence` with: `first_appearance`, `rising`, `possible_backlog`,
 `recent_count`, `recent_called`, `baseline_count`, `baseline_called`, `recent_prop`,
-`baseline_prop`, `delta`. Optional: `position_context`, `position_note` (geometry-free
-hot-spot context for novel variants; not a structural claim).
+`baseline_prop`, `delta`. Optional: `position_context`, `position_note` (hot-spot context for
+novel variants — where in the resistance geography this variant lands, plus structural proximity
+when the contact map is available; not a resistance prediction, not a fit verdict).
+
+**`position_context` sub-fields** (moonshot #4, Rungs 1–3; all fields derived, never invented):
+
+| sub-field | type | meaning |
+|---|---|---|
+| `tier` | string | `novel_substitution_at_panel_residue` / `in_hotspot_adjacent_to_panel` / `in_hotspot_background` / `known_low_ppv_marker` |
+| `window` | string | `HS1` / `HS2` / `HS3` |
+| `anchor` | string | window anchor as `<wt><pos>` (e.g. `S639`) |
+| `anchor_distance` | int | signed residue offset from anchor |
+| `at_panel_residue` | bool | true if any panel letter falls at this residue |
+| `panel_letters_at_position` | array | known panel mutant letters at this residue (empty if none) |
+| `nearest_core_marker` | string \| null | position of the nearest core marker (e.g. `"639"`) |
+| `distance_to_nearest` | int \| null | residue distance to nearest core marker |
+| `proximity` | object \| absent | **(Rung 2)** structural proximity from 9WZU cryo-EM; present when the contact map covers this position. Keys: `proximity_tier` (`drug_contact` / `pocket_adjacent` / `pocket_proximate` / `distal`), `min_dist_to_drug_A` (float Å), `position`, `window`, `sc_position`, `sc_aa`, `reference_structure`, `note` |
+| `structural_verdict` | object \| absent | **(Rung 3)** spatial co-location label; present only for `drug_contact` or `pocket_adjacent` positions. Keys: `evidence_class` (`"proximity_label"` — **NOT** `"docking"` or `"measured"`; must not be read as ACT-NOW), `proximity_tier`, `min_dist_to_drug_A`, `label`, `note` |
+
+The `evidence_class: "proximity_label"` constraint is enforced: `structural_verdict` cannot trigger ACT-NOW (that tier requires `"docking"` or `"measured"`). This is a spatial co-location label, not a phenotype prediction.
 
 ### release_trend[]
 
@@ -77,12 +95,10 @@ geographic picture over time; the top-level `geography` is the current live pull
 
 The per-variant breakdown behind `release_trend[].n_vus`. One entry per distinct non-panel
 hot-spot FKS1 substitution in the latest committed call table, descending by `carriers`:
-`token`, `carriers` (isolates carrying it), `position_context`, `position_note`. The last two
-are the geometry-free hot-spot context (openafr/fks1_position): which hot-spot window, offset
-from the anchor, and tier (`novel_substitution_at_panel_residue` / `in_hotspot_adjacent_to_panel`
-/ `in_hotspot_background` / `known_low_ppv_marker`). These are **variants of uncertain
-significance** — tracked, **not** counted as known resistance — and the position fields are
-geography only, never a drug-fit or phenotype claim.
+`token`, `carriers` (isolates carrying it), `position_context`, `position_note`. `position_context`
+carries the same sub-fields documented under `alerts[]` above (Rungs 1–3 when available). These
+are **variants of uncertain significance** — tracked, **not** counted as known resistance — and
+the position fields are spatial context only, never a drug-fit or phenotype claim.
 
 ## alerts.atom
 
