@@ -210,14 +210,23 @@ def _coverage_clause(coverage, provenance):
     total = coverage.get("recent_total") or 0
     called = coverage.get("recent_called") or 0
     if total == 0:
-        # No isolates in the window at all -- a genuinely quiet window, not a stale fill.
-        # The calm "watching since" copy carries this; a coverage % would be meaningless.
+        # No isolates in the window -- the NCBI release predates the window (stale release).
+        # Show fill provenance so the reader knows data exists, just not in this window.
+        n_fill = (provenance or {}).get("n_called")
+        through = (provenance or {}).get("as_of")
+        if n_fill and through:
+            return (f"echinocandin calls: {int(n_fill):,} isolates called &middot; "
+                    f"release current through <code>{html.escape(str(through))}</code>")
         return ""
     through = (provenance or {}).get("as_of")
     through_html = (f" &middot; calls current through <code>{html.escape(str(through))}</code>"
                     if through else "")
     if called == 0:
-        return f'<span class="stale">echinocandin calls: awaiting re-call{through_html}</span>'
+        n_fill = (provenance or {}).get("n_called")
+        fill_size = (f" &middot; last fill: {int(n_fill):,} isolate(s) called"
+                     if n_fill else "")
+        return (f'<span class="stale">echinocandin calls: awaiting re-call'
+                f'{fill_size}{through_html}</span>')
     pct = round(100 * called / total)
     return (f"echinocandin calls: {called} of {total} window isolates re-called "
             f"({pct}%){through_html}")
@@ -677,6 +686,20 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
         note = r.get("note")
         note_html = (f'<p class="note">{html.escape(str(note))}</p>' if note else "")
         calm_headline, calm_body = _calm_copy(r.get("gene"))
+        latest_fill = (release_trend or [{}])[-1] if release_trend else {}
+        n_fill = latest_fill.get("n_called")
+        n_res = latest_fill.get("n_resistant")
+        prev = latest_fill.get("prevalence")
+        if n_fill is not None and prev is not None:
+            prev_pct = f"{prev * 100:.1f}%"
+            n_res_part = (f" ({n_res} panel-positive carrier(s))"
+                          if n_res is not None else "")
+            fill_note = (
+                f'<p class="meta-detail">Most recent fill: {int(n_fill):,} isolates called'
+                f' &middot; {prev_pct} resistance prevalence{n_res_part}.</p>'
+            )
+        else:
+            fill_note = ""
         if _is_awaiting(coverage):
             # A window exists but nothing in it is re-called yet: a lapsed / not-yet-current
             # fill, not a never-started watch. Frame it by the last batch, not day-0.
@@ -691,6 +714,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
         body = f"""    <article class="card calm">
       <p class="headline">{calm_headline}</p>
       <p>{watch_line}</p>
+      {fill_note}
       {note_html}
     </article>"""
 

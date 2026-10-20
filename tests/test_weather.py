@@ -387,10 +387,14 @@ def test_meta_freshness_leads_on_its_own_line_when_covered():
     assert "Last checked" in page
 
 
-def test_meta_omits_freshness_line_when_window_is_quiet():
+def test_meta_shows_fill_provenance_when_window_is_quiet():
+    # When recent_total == 0 (NCBI release predates the window), the meta-fresh line
+    # should still surface the fill provenance so the reader knows data exists.
     page = weather.render_page(_cov_result(0, 0), now=NOW,
                                calls_provenance={"as_of": "2026-04-11", "n_called": 300})
-    assert 'class="meta-fresh"' not in page
+    assert 'class="meta-fresh"' in page
+    assert "3,375" not in page or "300" in page  # uses provenance n_called
+    assert "2026-04-11" in page
     assert 'class="meta-detail"' in page
 
 
