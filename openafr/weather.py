@@ -114,7 +114,13 @@ def _alert_card(a):
     tier_txt = _TIER.get(a["priority"], a["priority"].upper())
     tier_cls = f"tier-{a['priority']}"
     e = a["emergence"]
+    # Only the ERG11 composer attaches a fluconazole fit verdict here. Guard on its shape so a
+    # differently-shaped `structural` dict (e.g. a FKS1 contact label) can never crash the
+    # render -- render_page runs outside render_weather's fail-open guard, so a KeyError here
+    # would fail the deploy. The FKS1 Rung-3 label rides in via position_context instead.
     s = a.get("structural")
+    if not (isinstance(s, dict) and "fluconazole_fit_verdict" in s):
+        s = None
     mut = html.escape(str(a["mutation"]))
     regions = ", ".join(a.get("regions") or []) or "undisclosed"
     rows = [

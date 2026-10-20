@@ -15,17 +15,20 @@ disk, and turns that open decision into an evidence-backed one.
 measured confusion (TP=36 FN=4 FP=1 TN=46, VME 4/40 = 10.0%) exactly and uses the same
 `openafr.backtest.wilson_interval` CI math as the measured run. Nothing here is hand-authored.
 
-## Headline — the 4 misses are all FKS1 HS3, a hotspot the caller never reads
+## Headline — the 4 misses were all FKS1 HS3, a hotspot the v1 caller did not read
 
-The caller (`openafr/fks1_caller.py`) reads exactly two windows — **HS1 (635–643)** and
-**HS2 (1350–1358)**. There is **no HS3 window**. So a substitution around W691 is invisible: the
-caller reads HS1/HS2 wild-type, finds nothing, and returns `NO_KNOWN_MARKER` — scored as a VME.
+At the time of this measurement the caller (`openafr/fks1_caller.py`) read exactly two windows
+— **HS1 (635–643)** and **HS2 (1350–1358)**. There was **no HS3 window**. So a substitution
+around W691 was invisible: the caller read HS1/HS2 wild-type, found nothing, and returned
+`NO_KNOWN_MARKER` — scored as a VME. (The v2 extension has since added HS3 (688–698, anchor
+W691) and widened the HS1/HS2 panels — see the Implementation update below and `FKS1_WINDOWS`
+in the caller. The v1 numbers in this record stand as the frozen measurement that motivated it.)
 
-| VME isolate | mechanism (`paper_mut`) | hotspot | caller reads it? |
+| VME isolate | mechanism (`paper_mut`) | hotspot | v1 caller read it? |
 |---|---|---|---|
-| B19617 | W691L | **HS3** | ✗ no HS3 window |
-| B19618 | W691L | **HS3** | ✗ no HS3 window |
-| B22769 | W691C | **HS3** | ✗ no HS3 window |
+| B19617 | W691L | **HS3** | ✗ no HS3 window (v1) |
+| B19618 | W691L | **HS3** | ✗ no HS3 window (v1) |
+| B22769 | W691C | **HS3** | ✗ no HS3 window (v1) |
 | B21978 | none (footnote: M690I, outside the paper's MycoSNP-nf read region) | HS3-adjacent | not read by anyone |
 
 **None of the 4 misses is efflux, ERG3, TR, or any off-*FKS1* mechanism.** Three are FKS1 HS3
