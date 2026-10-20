@@ -264,10 +264,21 @@ after `validate_gate2.py` passes.
 >    the prevalence fill (`work/RUNBOOK_fks1_run.md`). PASS → fold the measured accuracy into
 >    `work/RESULTS_fks1_prevalence.md`; FAIL → a named, reproducible caller defect that blocks
 >    promoting the track past detection-of-record.
-> 4. **T5 — the FKS1 structural so-what: still DEFERRED BY DESIGN**, not merely unbuilt.
->    Echinocandins coordinate no metal; the CYP51 geometry moat does not transfer to a
->    glucan synthase. Revisit only if a PI asks for it. The detection-only label is the
->    honest scope, and it is now enforced through composition, rendering, and delivery.
+> 4. **T5 — the FKS1 structural so-what: SHIPPED as a geometry-free context layer (Rungs 1–3),
+>    NOT the ERG11 docking verdict.** The original deferral was right about the moat: echinocandins
+>    coordinate no metal, so the CYP51 docking/fit verdict does not transfer to a glucan synthase,
+>    and `verdict.structural` stays **null for FKS1 by design**. What was built instead is a
+>    deterministic position/proximity layer that needs no docking:
+>    - Rung 1 — `openafr/fks1_position.py`: hot-spot position context (`position_context`),
+>      prereg `work/PREREGISTRATION_fks1_position_context.md`.
+>    - Rung 2 — `openafr/fks1_structural.py` `structural_proximity`: distance to the drug from the
+>      SHA-pinned 9WZU contact map `data/structures/fks1_contact_map.json`, prereg
+>      `work/PREREGISTRATION_fks1_structural_proximity.md`.
+>    - Rung 3 — same module `structural_verdict`: a certifiable `evidence_class: "proximity_label"`
+>      contact label (cert PASS 4/4 core-panel positions, `work/RESULTS_fks1_structural_verdict.md`).
+>    The honesty boundary is preserved and enforced: `proximity_label` is spatial co-location only,
+>    must **not** trip ACT-NOW, and the ERG11 fluconazole-fit channel is never populated on the FKS1
+>    path (regression-guarded in `tests/test_weather.py` / `tests/test_weather_artifacts_agree.py`).
 
 **What:** Extend the resistance early-warning track (issues #20-27) to detect
 emerging FKS1/echinocandin resistance in C. auris, in addition to azole/ERG11.
@@ -294,13 +305,15 @@ already largely azole-resistant at baseline") is now **confirmed by data**, and 
 is the justified next direction. The arrival budget is adequate (H1: median deposit lag
 97 d, PASS-arrival).
 
-**Context / where to start:** detection (extract FKS1 hot-spot regions, call the
-S639/F-region mutations) is tractable and mirrors the ERG11 re-caller (T1). The
-blocker is the STRUCTURAL layer: there is no FKS1 pocket tooling in the repo (the
-whole moat is CYP51/ERG11 azole-docking). Widening detection without a structural
-so-what turns the FKS1 half into a bare novelty feed — so v2 needs FKS1 structural
-tooling built from scratch, or an honest "detection-only, no structural verdict"
-label for that half.
+**Context / where to start — DONE.** Detection (extract FKS1 hot-spot regions, call the
+S639/F-region mutations) mirrored the ERG11 re-caller (T1) and the caller is now externally
+certified (98/98 concordance PASS, item 3 above). The original worry was the STRUCTURAL layer:
+there was no FKS1 pocket tooling and the CYP51/ERG11 azole-docking moat does not transfer. That
+was resolved *without* docking — a geometry-free position/proximity layer (Rungs 1–3; see item 4
+above) now gives the FKS1 half a certifiable structural *context* so-what, while the ERG11-style
+fluconazole-fit verdict stays null by design and the detection-only / proximity-label discipline
+is enforced through composition, rendering, and delivery. The FKS1 half is no longer a bare
+novelty feed.
 
 **Depends on / blocked by:** azole MVP shipped (#20-27) + backtest event-frequency
 result. Do NOT start before the MVP tells you whether azole emergence fires.
