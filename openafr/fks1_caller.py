@@ -83,7 +83,8 @@ class Window:
     """A FKS1 resistance hot-spot: an inclusive 1-based residue range + an anchor residue
     whose wild-type letter the reference MUST translate to (the per-window numbering check).
     `panel` maps a residue position -> set of known-resistance mutant letters to TAG; an
-    empty panel means the window is reported but not yet panel-tagged (HS2)."""
+    empty panel would mean the window is reported but not yet panel-tagged (every window in
+    `FKS1_WINDOWS` currently carries at least one panel residue)."""
 
     def __init__(self, name, start_res, end_res, anchor_pos, anchor_wt, panel):
         self.name = name

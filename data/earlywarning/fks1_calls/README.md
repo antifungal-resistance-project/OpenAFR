@@ -30,10 +30,10 @@ data/earlywarning/fks1_calls/
 reached is simply absent. `isolate_key` is the version-stripped `target_acc`, so the table
 overlays cleanly onto a later live pull even after NCBI re-processes an isolate.
 
-`country` is the latest column: it lets a future render break resistance down by geography
-**reproducibly** from the committed table (not just the current live pull). Tables written
-before it was added (releases 709/710) simply omit it and stay valid — the readers are
-column-tolerant and no backfill is done.
+`country` is the latest column: it lets a render break resistance down by geography
+**reproducibly** from the committed table (not just the current live pull). The committed
+tables (releases 709 and 710) carry it. The readers stay column-tolerant, so any older table
+written before it was added remains valid (geography simply falls back to the live pull).
 
 ## How it is produced and consumed
 

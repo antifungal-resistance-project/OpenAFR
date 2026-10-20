@@ -126,6 +126,51 @@ def test_fks1_hit_page_has_no_pocket_image():
     assert 'class="pocket"' not in page
 
 
+def _fks1_contact_zone_records():
+    """A snapshot where a real non-core HS3 variant (W691C) emerges over threshold.
+
+    W691C sits in the enfumafungin drug-contact zone, so fks1_structural.structural_verdict
+    returns a non-None contact-label dict for it. That dict has the FKS1 shape
+    (evidence_class/proximity_tier/label/...), NOT the ERG11 fluconazole-fit shape the page's
+    _alert_card reads from a `structural` field -- the collision this test guards against.
+    """
+    recs = []
+
+    def add(key, created, collected, call):
+        recs.append({
+            "isolate_key": key, "target_acc": key + ".1",
+            "target_creation_date": created, "collection_date": collected,
+            "country": "Pakistan", "fks1_call": call,
+            "run_acc": "SRR" + key[-3:], "fks1_resistance_source": "recalled",
+        })
+
+    for i in range(10):
+        add(f"PDB{i:03d}", "2024-03-01", "2023", "")      # baseline, uncalled
+    for i in range(4):
+        add(f"PDR1{i:02d}", "2025-02-01", "2024", "W691C")  # genuine first-appearance
+    return recs
+
+
+def test_fks1_contact_zone_variant_renders_without_crashing():
+    # Regression: a FKS1 alert for a contact-zone variant once put the FKS1 structural_verdict
+    # dict on the `structural` channel the ERG11 renderer reads as a fluconazole fit -> KeyError
+    # inside _alert_card -> failed the deploy (render_page is outside render_weather's fail-open
+    # guard). The composer must not populate that channel on the FKS1 path.
+    result = alert.compose_fks1_alerts(_fks1_contact_zone_records(), AS_OF,
+                                       window_days=180, min_count=3, min_delta=0.05)
+    assert any(a["mutation"] == "W691C" for a in result["alerts"]), \
+        "fixture must flag the contact-zone variant"
+    w = next(a for a in result["alerts"] if a["mutation"] == "W691C")
+    assert "structural" not in w, "FKS1 path must not populate the ERG11 fit channel"
+    page = weather.render_page(result, now=NOW)  # must not raise
+    # detection-only discipline holds: no fit row, no pocket asset
+    assert "Structural fit" not in page
+    assert "pockets/" not in page and 'class="pocket"' not in page
+    # the Rung-3 contact label still reaches the card via position_context
+    assert "spatial co-location only" in page
+    assert "at drug-contact residue" in page
+
+
 def test_alert_card_shows_rung3_structural_verdict_when_present():
     # Rung 3: an alert card for a drug_contact variant must show the structural_verdict label
     # (matches the _vus_section rendering discipline). No label when no structural_verdict.

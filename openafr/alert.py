@@ -71,7 +71,7 @@ fully offline against the checked-in receptor/ligand.
 """
 import json
 
-from openafr import emergence, fks1_position, fks1_structural, mapping, structural
+from openafr import emergence, fks1_position, mapping, structural
 from openafr.earlywarning import display_geo
 
 # So-what priority tiers, strongest first. `rank` orders the rendered alert list.
@@ -341,14 +341,14 @@ def compose_fks1_alerts(records, as_of, window_days=180, min_count=3, min_delta=
         # core marker. Geography only -- never a fit verdict, so priority is untouched.
         ctx = fks1_position.position_context(signal["mutation"])
         prox = ctx.get("proximity") if ctx else None
-        # Rung 3: structural contact label (evidence_class "proximity_label"; NOT ACT-NOW).
-        sv = fks1_structural.structural_verdict(signal["mutation"])
         base["priority"] = _fks1_priority(signal)
         base["headline"] = _fks1_headline(signal, base["regions"], base["first_seen"], ctx)
         base["position_context"] = ctx
         base["position_note"] = f"It {fks1_position.describe(ctx)}" if ctx else ""
         base["proximity_context"] = prox   # Rung 2: structural proximity from 9WZU cryo-EM
-        base["structural"] = sv            # Rung 3: None unless drug_contact/pocket_adjacent
+        # NB: no `structural` field on the FKS1 path. That channel is the ERG11 fluconazole
+        # fit verdict (a different schema); the renderers read it as such. The FKS1 Rung-3
+        # contact label rides through position_context["structural_verdict"] instead.
         base["detection_only"] = True
         alerts.append(base)
 
