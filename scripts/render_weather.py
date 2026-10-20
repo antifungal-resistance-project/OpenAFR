@@ -34,6 +34,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from openafr import alert, weather, weather_feed  # noqa: E402
 from openafr import earlywarning as ew  # noqa: E402
+from openafr import fill_status  # noqa: E402
 
 DIGEST_DIR = ROOT / "data" / "earlywarning" / "digest"
 DEFAULT_STATE = DIGEST_DIR / "STATE.json"
@@ -294,6 +295,30 @@ def _watching(args):
     return {"gene": "FKS1" if args.gene == "fks1" else "ERG11", "alerts": []}
 
 
+def _resolve_window(args):
+    """Fill in the --as-of / --window sentinels IN PLACE.
+
+    The live fks1 page shows a frozen, git-tracked fill; a trailing-`today` window would slowly age
+    the fill's isolates out and silently decay the page toward "awaiting re-call". So when the user
+    did NOT pin --as-of/--window, the fks1 arm anchors the displayed window to the committed fill's
+    own window (fill_status.display_window), keeping the page lit at full coverage with an honest
+    "calls current through <fill date>" clause. A written --snapshot / raw --tsv carries its own
+    calls (not the committed series), so those are left on the plain today/180 default -- mirroring
+    the snapshot guards in _calls_provenance / _release_trend. An explicit flag always wins."""
+    today = datetime.date.today().isoformat()
+    anchor = (args.gene == "fks1" and not args.snapshot and not args.tsv)
+    if anchor and (args.as_of is None or args.window is None):
+        as_of, window = fill_status.display_window(_calls_dir(args), today, 180)
+        if args.as_of is None:
+            args.as_of = as_of
+        if args.window is None:
+            args.window = window
+    if args.as_of is None:
+        args.as_of = today
+    if args.window is None:
+        args.window = 180
+
+
 def _compose(args):
     """Compose the current alert result and return (result, records); on no/failed data, an
     empty gene-marked result with records=None (-> the calm watching page for the selected
@@ -331,9 +356,12 @@ def main():
     ap.add_argument("--fks1-calls", default=None,
                     help="committed FKS1 call table to overlay onto a live pull / --tsv "
                          "(default: newest in data/earlywarning/fks1_calls; fks1 arm only)")
-    ap.add_argument("--as-of", default=datetime.date.today().isoformat(),
-                    help="baseline cut date, ISO (default: today)")
-    ap.add_argument("--window", type=int, default=180, help="recent-window days")
+    ap.add_argument("--as-of", default=None,
+                    help="baseline cut date, ISO (default: the fks1 arm anchors to the latest "
+                         "committed fill's window; otherwise today)")
+    ap.add_argument("--window", type=int, default=None,
+                    help="recent-window days (default: the fks1 arm anchors to the committed "
+                         "fill's window; otherwise 180)")
     ap.add_argument("--min-count", type=int, default=3, help="min recent carriers to flag")
     ap.add_argument("--min-delta", type=float, default=0.05, help="min share increase for RISING")
     ap.add_argument("--backlog-frac", type=float, default=0.5,
@@ -344,6 +372,7 @@ def main():
                     help="fallback watch-start date when nothing has been delivered yet")
     ap.add_argument("--out", default="site/index.html", help="output HTML path")
     args = ap.parse_args()
+    _resolve_window(args)
 
     result, records = _compose(args)
     watching_since = _watching_since(args.state, args.watching_start)

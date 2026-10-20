@@ -58,19 +58,15 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Compute rolling baseline cut date
-        id: dates
-        run: |
-          echo "as_of=$(python3 -c "import datetime;print((datetime.date.today()-datetime.timedelta(days=180)).isoformat())")" >> "$GITHUB_OUTPUT"
-
       - name: Render the page
         run: |
           # render_weather.py never crashes on a data hiccup -- it falls back to the
           # watching page -- so a quiet or offline run still publishes a valid page.
+          # The fks1 arm anchors its own display window to the committed fill (no --as-of/--window
+          # here): a trailing-today window would slowly age the frozen fill's isolates out and
+          # silently decay the page toward "awaiting re-call".
           python3 scripts/render_weather.py \
             --gene fks1 \
-            --as-of "${{ steps.dates.outputs.as_of }}" \
-            --window 180 \
             --out site/index.html
           # Ship the pre-rendered pocket images alongside the page, if any are committed.
           if [ -d docs/pockets ]; then
