@@ -126,6 +126,44 @@ def test_fks1_hit_page_has_no_pocket_image():
     assert 'class="pocket"' not in page
 
 
+def test_alert_card_shows_rung3_structural_verdict_when_present():
+    # Rung 3: an alert card for a drug_contact variant must show the structural_verdict label
+    # (matches the _vus_section rendering discipline). No label when no structural_verdict.
+    sv = {
+        "evidence_class": "proximity_label",
+        "proximity_tier": "drug_contact",
+        "min_dist_to_drug_A": 2.9,
+        "label": "at drug-contact residue",
+        "note": "Residue 635 sits within direct contact distance of the enfumafungin binding site.",
+    }
+    ctx = {
+        "tier": "novel_substitution_at_panel_residue",
+        "window": "HS1",
+        "anchor": "S639",
+        "anchor_distance": -4,
+        "at_panel_residue": True,
+        "panel_letters_at_position": ["C", "Y"],
+        "proximity": {"proximity_tier": "drug_contact", "min_dist_to_drug_A": 2.9,
+                      "reference_structure": "PDB 9WZU", "note": "direct contact"},
+        "structural_verdict": sv,
+    }
+    result = _fks1_hit_result()
+    result["alerts"][0]["position_context"] = ctx
+    result["alerts"][0]["position_note"] = "It sits at a panel residue in HS1."
+    page = weather.render_page(result, now=NOW)
+    assert "Structural label" in page
+    assert "at drug-contact residue" in page
+    assert "spatial co-location only" in page
+    # absence: an alert without structural_verdict must not show the label
+    result2 = _fks1_hit_result()
+    ctx2 = dict(ctx)
+    del ctx2["structural_verdict"]
+    result2["alerts"][0]["position_context"] = ctx2
+    result2["alerts"][0]["position_note"] = "It sits at a panel residue in HS1."
+    page2 = weather.render_page(result2, now=NOW)
+    assert "Structural label" not in page2
+
+
 # ---- QUIET framing -----------------------------------------------------------
 
 def test_quiet_framing_counts_days_since_watch_start():
