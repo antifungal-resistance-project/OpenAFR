@@ -153,6 +153,13 @@ def _alert_card(a):
              f"[{html.escape(tier_label)}] "
              f"{dist_str} from enfumafungin in {html.escape(prox.get('reference_structure',''))}"
              f" — {html.escape(prox.get('note','')[:120])}"))
+    sv = ctx.get("structural_verdict") if ctx else None
+    if sv:
+        label = html.escape(sv.get("label", ""))
+        rows.append(
+            ("Structural label",
+             f"[proximity_label] {label} "
+             f"&#x2014; spatial co-location only, not a resistance prediction"))
     rows_html = "\n".join(
         f'      <div class="k">{k}</div><div class="v">{v}</div>' for k, v in rows)
     headline = html.escape(str(a.get("headline") or ""))
