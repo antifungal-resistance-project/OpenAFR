@@ -95,6 +95,17 @@ just reference it. PyMOL never touches the Action. This is the same "repo is the
 model as 1A.
 
 ## Open Questions
+> **Status update (2026-10-19).** This doc is the original ERG11/azole-framed design; the
+> shipped product leads with the **FKS1/echinocandin surveillance arm**. The three questions
+> below are resolved: deposit frequency is adequate (arrival budget PASS); compute placement
+> is settled — the heavy re-call runs as an offloaded GCP fill that commits a durable call
+> table, and the GitHub Action only renders the page over that committed result (never calls
+> PyMOL); headless render is confirmed out-of-band only. Two things also landed that this doc
+> treats as future: the **machine-readable feeds** (`data.json` + `alerts.atom`, #191 — see
+> "NOT in Scope" below) and, for the FKS1 arm, a **geometry-free Rung 1–3 structural context
+> layer** (`openafr/fks1_position.py`, `openafr/fks1_structural.py`, the SHA-pinned 9WZU
+> contact map) — *not* the ERG11 docking verdict, which stays null for FKS1 by design. The
+> ERG11 "pocket PNG" assets (Next Step 3) remain unbuilt; `docs/pockets/` is still empty.
 - **Deposit frequency** (Premise 1): how often do new *C. auris* genomes actually appear
   in NCBI? Decides update cadence and whether the "weather" metaphor holds.
 - **Compute placement** (Premise 3): can the daily re-call run inside a GitHub Action, or
@@ -167,7 +178,9 @@ feed / bot (the deferred "make it emit" unlock) so the page pings instead of bei
 - In-browser 3D pocket viewer (3Dmol.js) — deferred (2B); graft onto the static PNG later.
 - Auto-triggering the PyMOL render from CI — deferred; render stays a manual/VM out-of-band step
   until burst frequency justifies automating the trigger.
-- RSS/bot "make it emit" — deferred (original doc); the static page ships first.
+- RSS/bot "make it emit" — **partly shipped (#191):** the page now emits machine-readable
+  feeds (`data.json` + `alerts.atom`, `openafr/weather_feed.py`) built from the same composed
+  result as the page. A push bot/notifier on top of the feeds is still deferred.
 
 ## Data Contract (view layer, 1A) — verified against code 2026-09-17
 The page reads `alert.render_json(compose_alerts(records, as_of))` (alert.py:341,149) → dict:
