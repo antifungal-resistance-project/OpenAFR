@@ -616,3 +616,51 @@ def test_trend_section_omits_vus_note_when_none():
         _cov_result(200, 150), now=NOW,
         release_trend=_trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128)))
     assert "uncertain significance" not in page
+
+
+# ---- Presentation / accessibility / plain-language polish --------------------
+
+def test_page_offers_light_scheme_and_print_styles():
+    # The page must be legible on a bright clinical screen and on paper, not dark-only.
+    page = weather.render_page(_empty_result(), now=NOW)
+    assert "color-scheme: light dark" in page
+    assert "@media (prefers-color-scheme: light)" in page
+    assert "@media print" in page
+
+
+def test_page_uses_a_main_landmark():
+    # Content sits inside a <main> landmark, not a bare <div>, for screen-reader navigation.
+    page = weather.render_page(_empty_result(), now=NOW)
+    assert "<main class=\"wrap\">" in page
+    assert "</main>" in page
+    assert "<div class=\"wrap\">" not in page
+
+
+def test_key_value_blocks_are_semantic_description_lists():
+    # Alert-card and section key/value rows render as <dl>/<dt>/<dd>, not styled <div>s.
+    page = weather.render_page(_fks1_hit_result(), now=NOW)
+    assert "<dl class=\"grid\">" in page
+    assert "<dt>" in page and "<dd>" in page
+    assert 'class="k"' not in page and 'class="v"' not in page
+
+
+def test_plain_language_lede_frames_the_page_for_a_lay_reader():
+    # A zero-background reader gets a plain "what this is / not a clinical result" lede up front.
+    page = weather.render_page(_empty_result(), now=NOW)
+    assert 'class="lede"' in page
+    assert "early-warning triage aid" in page
+    assert "not a clinical test result" in page
+
+
+def test_jargon_terms_carry_a_plain_language_gloss():
+    # "Prevalence" and "variants of uncertain significance" each get a one-line plain gloss.
+    trend_page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 300, 15), ("2026-04-14", 3375, 197)))
+    assert 'class="gloss"' in trend_page
+    assert "share of successfully called isolates" in trend_page
+    vus_page = weather.render_page(
+        _cov_result(200, 150), now=NOW, vus_census=_vus(("F635I", 6)))
+    assert 'class="gloss"' in vus_page
+    assert "<em>not yet</em> known" in vus_page
+    assert "not counted as resistant" in vus_page
