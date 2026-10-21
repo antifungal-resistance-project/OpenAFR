@@ -174,18 +174,14 @@ def _vus_census(args):
     return out or None
 
 
-def _geo_breakdown(records, args):
-    """Where the current release's resolved carriers are: {location: carrier_count}, or None.
+def _geo_from_records(records):
+    """Panel-positive carriers by finest location from live-pull records: {location: count}.
 
-    Zero-cost -- it reads the finest geography the live NCBI pull already carries on each
-    record (ew.display_geo prefers the raw geo_loc_name's region over the bare country);
-    counts only resolved carriers of a KNOWN echinocandin-resistance panel substitution (not
-    every FKS1 variant token), matching the panel-gated headline so the map never overstates
-    resistance. Reflects the current release only, since the committed table does not yet carry
-    geography -- the section labels it as such. None for the erg11 arm, no records, or no located
-    panel carriers."""
-    if args.gene != "fks1" or not records:
-        return None
+    Reads the finest geography each record carries (`ew.display_geo` prefers the raw
+    geo_loc_name's region over the bare country); counts only carriers of a KNOWN echinocandin-
+    resistance panel substitution, matching the panel-gated headline so the map never overstates
+    resistance. The fallback source for `_geo_breakdown` when the committed table carries no
+    geography, and the source for a written --snapshot (which carries its own calls)."""
     from openafr import emergence, fks1_caller
     counts = {}
     for rec in records:
@@ -195,7 +191,30 @@ def _geo_breakdown(records, args):
         loc = ew.display_geo(rec)
         if loc:
             counts[loc] = counts.get(loc, 0) + 1
-    return counts or None
+    return counts
+
+
+def _geo_breakdown(records, args):
+    """Where the current release's resolved carriers are: {location: carrier_count}, or None.
+
+    Reproducible from committed data: it reads the finest geography (`display_geo`: region after
+    a colon when present, else country) straight from the committed call table the page overlays
+    -- the SAME source as the panel-gated headline and the historical map -- so the current-release
+    map no longer depends on a fresh live NCBI pull. Counts only carriers of a KNOWN echinocandin-
+    resistance panel substitution so the map never overstates resistance. Honest degradation: a
+    committed table written before its geography columns were backfilled carries no place, so the
+    breakdown falls back to the finest geography the live pull itself carries; a written --snapshot
+    carries its own calls, so it reads from those records directly. None for the erg11 arm, no
+    records, or no located panel carriers."""
+    if args.gene != "fks1" or not records:
+        return None
+    if not args.snapshot:
+        table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
+        if table and pathlib.Path(table).exists():
+            counts = ew.fks1_calls_geo_breakdown(str(table), finest=True)
+            if counts:
+                return counts
+    return _geo_from_records(records) or None
 
 
 def _geo_history(args):
@@ -207,7 +226,7 @@ def _geo_history(args):
     (`ew.fks1_calls_geo_breakdown` -- same panel gate as the headline, so geography never
     overstates resistance). A release whose table predates the `country` column (709/710 before
     backfill) contributes an empty breakdown and is dropped, so the section only shows releases
-    it can honestly place -- honest degradation, same as the live geo. None for the erg11 arm or
+    it can honestly place -- honest degradation, same as `_geo_breakdown`. None for the erg11 arm or
     a written --snapshot (which carries its own calls, not the committed series)."""
     if args.gene != "fks1" or args.snapshot:
         return None

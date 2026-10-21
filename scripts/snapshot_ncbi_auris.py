@@ -116,11 +116,16 @@ FKS1_CALLS_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "earl
 
 
 def cmd_backfill_geo(args):
-    """Fill the `country` column of a committed FKS1 call table from a snapshot's geography,
-    then re-pin the table's sha256 in the FKS1-calls INDEX. The snapshot is the gitignored,
-    sha-pinned NCBI pull (see `pull`); the call table + its INDEX hash are the committed,
-    durable artifacts that back the public page's historical geo breakdown."""
-    geo_by_key = {r["isolate_key"]: r.get("country") or "" for r in ew.read_snapshot(args.snapshot)}
+    """Fill the `country` and raw `geo_loc_name` columns of a committed FKS1 call table from a
+    snapshot's geography, then re-pin the table's sha256 in the FKS1-calls INDEX. The snapshot is
+    the gitignored, sha-pinned NCBI pull (see `pull`); the call table + its INDEX hash are the
+    committed, durable artifacts that back the public page's current and historical geo breakdowns.
+    Carrying `geo_loc_name` lets the current-release map render at region granularity reproducibly
+    from the committed table instead of a fresh live pull."""
+    geo_by_key = {
+        r["isolate_key"]: {"country": r.get("country") or "", "geo_loc_name": r.get("geo_loc_name") or ""}
+        for r in ew.read_snapshot(args.snapshot)
+    }
     table = pathlib.Path(args.call_table)
     sha, n_called, n_filled, missing = ew.backfill_fks1_calls_country(str(table), geo_by_key)
     print(f"backfilled {table.name}: {n_called} resolved isolate(s), "
