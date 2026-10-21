@@ -269,9 +269,10 @@ def test_overlay_lights_up_the_page(tmp_path):
 # geography and `fks1_calls_geo_breakdown` reads it back, panel-gated, for the page's
 # per-release historical geography.
 
-def _geo_rec(key, call, source="sra-fks1-recaller:called", country=""):
+def _geo_rec(key, call, source="sra-fks1-recaller:called", country="", geo_loc_name=""):
     r = _rec(key, source, call=call)
     r["country"] = country
+    r["geo_loc_name"] = geo_loc_name
     return r
 
 
@@ -321,3 +322,49 @@ def test_geo_breakdown_empty_when_country_absent(tmp_path):
     ew.write_fks1_call_table(str(path), [_rec("A", "sra-fks1-recaller:called", call="S639F")])
     assert ew.fks1_calls_geo_breakdown(str(path)) == {}
     assert ew.fks1_calls_geo_breakdown(str(tmp_path / "missing.tsv")) == {}
+
+
+def test_backfill_fills_geo_loc_name_from_dict_map(tmp_path):
+    # a dict-valued map restores the finest place (geo_loc_name) alongside country; a blank
+    # country leaves geo_loc_name blank too (never a region without its country)
+    path = tmp_path / "PDG000000067.710.tsv"
+    ew.write_fks1_call_table(str(path), [
+        _rec("A", "sra-fks1-recaller:called", call="S639F"),
+        _rec("B", "sra-fks1-recaller:called", call="W691L"),
+    ])
+    sha, n, filled, missing = ew.backfill_fks1_calls_country(str(path), {
+        "A": {"country": "USA", "geo_loc_name": "USA: California"},
+        "B": {"country": "", "geo_loc_name": "Somewhere"},   # unlocated country -> both blank
+    })
+    assert n == 2 and filled == 1 and missing == ["B"]
+    table = ew.read_fks1_call_table(str(path))
+    assert table["A"]["country"] == "USA"
+    assert table["A"]["geo_loc_name"] == "USA: California"
+    assert table["B"]["country"] == "" and table["B"]["geo_loc_name"] == ""
+    # column-add-only + byte-stable
+    sha2, _ = ew.write_fks1_call_table(str(path), list(table.values()))
+    assert sha2 == sha
+
+
+def test_backfill_string_map_stays_country_only(tmp_path):
+    # legacy string-valued map still works and leaves geo_loc_name blank
+    path = tmp_path / "PDG000000067.709.tsv"
+    ew.write_fks1_call_table(str(path), [_rec("A", "sra-fks1-recaller:called", call="S639F")])
+    ew.backfill_fks1_calls_country(str(path), {"A": "USA"})
+    table = ew.read_fks1_call_table(str(path))
+    assert table["A"]["country"] == "USA" and table["A"]["geo_loc_name"] == ""
+
+
+def test_geo_breakdown_finest_prefers_region_else_country(tmp_path):
+    path = tmp_path / "PDG000000067.710.tsv"
+    ew.write_fks1_call_table(str(path), [
+        _geo_rec("A", "S639F", country="USA", geo_loc_name="USA: California"),  # region kept
+        _geo_rec("B", "S639F", country="USA", geo_loc_name="USA: California"),  # region kept
+        _geo_rec("C", "W691L", country="USA", geo_loc_name="USA: Texas"),       # distinct region
+        _geo_rec("D", "S639F", country="China", geo_loc_name=""),               # falls back to country
+        _geo_rec("E", "F635I", country="USA", geo_loc_name="USA: California"),  # non-panel -> omitted
+    ])
+    assert ew.fks1_calls_geo_breakdown(str(path), finest=True) == {
+        "USA: California": 2, "USA: Texas": 1, "China": 1}
+    # the default (country-level) view collapses the regions
+    assert ew.fks1_calls_geo_breakdown(str(path)) == {"USA": 3, "China": 1}

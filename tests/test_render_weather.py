@@ -136,3 +136,47 @@ def test_vus_census_drops_unplaceable_token(tmp_path):
     tokens = {e["token"] for e in (census or [])}
     assert "S639L" in tokens
     assert "A100V" not in tokens
+
+
+# --- _geo_breakdown: reproducible current-release map from the committed table ----------------
+
+def _panel_rec(key, geo_loc_name):
+    """A minimal live-pull record carrying a panel-positive FKS1 call and finest geography."""
+    return {"isolate_key": key, "fks1_call": "S639F", "geo_loc_name": geo_loc_name}
+
+
+def test_geo_breakdown_reads_region_from_committed_table(tmp_path):
+    # The committed table carries geo_loc_name -> the map is region-level and reproducible,
+    # independent of whatever the (stand-in) live records say.
+    table = tmp_path / "PDG000000067.999.tsv"
+    header = ("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+              "target_creation_date\tcountry\tgeo_loc_name")
+    rows = [
+        "iso1\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-05-01\tUSA\tUSA: California",
+        "iso2\tS639F\tsra-fks1-recaller:called\tSRR2\t2026-05-02\tUSA\tUSA: California",
+        "iso3\tW691L\tsra-fks1-recaller:called\tSRR3\t2026-05-03\tIndia\tIndia",
+        "iso4\tF635I\tsra-fks1-recaller:called\tSRR4\t2026-05-04\tUSA\tUSA: Texas",  # non-panel
+    ]
+    table.write_text(header + "\n" + "\n".join(rows) + "\n")
+    args = _args(fks1_calls=str(table))
+    # live records disagree; the committed table must win
+    records = [_panel_rec("iso9", "Narnia")]
+    assert rw._geo_breakdown(records, args) == {"USA: California": 2, "India": 1}
+
+
+def test_geo_breakdown_falls_back_to_live_when_table_has_no_geography(tmp_path):
+    # a pre-backfill table (no country/geo_loc_name) -> honest degradation: use the finest
+    # geography the live records themselves carry, so the map never regresses to blank.
+    table = tmp_path / "PDG000000067.998.tsv"
+    header = ("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+              "target_creation_date\tcountry\tgeo_loc_name")
+    table.write_text(header + "\n"
+                     + "iso1\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-05-01\t\t\n")
+    args = _args(fks1_calls=str(table))
+    records = [_panel_rec("iso1", "USA: Oregon"), _panel_rec("iso2", "USA: Oregon")]
+    assert rw._geo_breakdown(records, args) == {"USA: Oregon": 2}
+
+
+def test_geo_breakdown_none_for_erg11_and_no_records(tmp_path):
+    assert rw._geo_breakdown([], _args()) is None
+    assert rw._geo_breakdown([_panel_rec("iso1", "USA")], _args(gene="erg11")) is None

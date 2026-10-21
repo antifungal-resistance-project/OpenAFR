@@ -355,12 +355,14 @@ def utcnow_iso():
 # isolates the re-caller resolved, overlaid onto a fresh live pull by isolate_key at
 # render/alert time. Same "small git-tracked memory, big blob gitignored" split as INDEX.tsv.
 
-# `country` is forward-looking: the next fill carries it (normalize already derives it), so a
-# future render can break the picture down by geography reproducibly from the committed table.
-# Tables written before it was added (releases 709/710) simply omit the column -- read_* is
-# column-tolerant, so those stay valid and no backfill is needed.
+# `country` and `geo_loc_name` carry the committed fill's geography so a render can break the
+# picture down by place reproducibly from the committed table -- `country` for the country-level
+# view, raw `geo_loc_name` for the finest place NCBI gave us (region after a colon; see
+# `display_geo`). `normalize` already derives both, so the next fill captures them automatically.
+# Tables written before a column was added carry it empty; `read_*` is column-tolerant, so those
+# stay valid, and `backfill_fks1_calls_country` can fill them in from a re-pulled snapshot.
 FKS1_CALLS_COLUMNS = ("isolate_key", "fks1_call", "fks1_resistance_source",
-                      "run_acc", "target_creation_date", "country")
+                      "run_acc", "target_creation_date", "country", "geo_loc_name")
 FKS1_CALLS_INDEX_COLUMNS = ("release_tag", "as_of", "window_days", "n_called",
                             "sha256", "written_at_utc")
 
@@ -409,16 +411,18 @@ def read_fks1_call_table(path):
 
 
 def backfill_fks1_calls_country(table_path, geo_by_key):
-    """Populate the `country` column of a committed FKS1 call table from a
-    `{isolate_key: country}` map, rewriting the table canonically in place.
+    """Populate the `country` (and, when given, raw `geo_loc_name`) columns of a committed FKS1
+    call table from a `{isolate_key: geography}` map, rewriting the table canonically in place.
 
-    The `country` column is part of FKS1_CALLS_COLUMNS but was added after releases 709/710
-    were written, so their tables carry it empty; this fills it from a snapshot's geography
-    (keyed by isolate_key) so the page can break the historical series down by country
-    reproducibly from the committed table. An isolate_key absent from the map -- or mapped to
-    a blank -- is left blank, NEVER invented (same honest-degradation discipline as the
-    re-caller's pending state). The row SET is unchanged: this only adds a column value, so
-    `n_called` must match the table that went in.
+    `geo_by_key[key]` is either a bare country string (country-only backfill) or a dict carrying
+    `country` and/or `geo_loc_name` -- so a re-pulled snapshot can restore the finest place NCBI
+    gave us, not just the country. The geography columns are part of FKS1_CALLS_COLUMNS but were
+    added after earlier releases were written, so their tables carry them empty; this fills them
+    from a snapshot's geography (keyed by isolate_key) so the page can break both the current and
+    historical series down by place reproducibly from the committed table. An isolate_key absent
+    from the map -- or mapped to a blank country -- is left blank, NEVER invented (same honest-
+    degradation discipline as the re-caller's pending state). The row SET is unchanged: this only
+    adds column values, so `n_called` must match the table that went in.
 
     Returns `(sha256, n_called, n_filled, missing_keys)` where `n_filled` is how many rows got
     a non-empty country and `missing_keys` lists the resolved isolate_keys the map could not
@@ -427,28 +431,38 @@ def backfill_fks1_calls_country(table_path, geo_by_key):
     n_filled = 0
     missing = []
     for key, row in rows.items():
-        country = (geo_by_key.get(key) or "").strip()
+        geo = geo_by_key.get(key)
+        if isinstance(geo, dict):
+            country = (geo.get("country") or "").strip()
+            geo_loc_name = (geo.get("geo_loc_name") or "").strip()
+        else:
+            country = (geo or "").strip()
+            geo_loc_name = ""
         if country:
             row["country"] = country
             n_filled += 1
         else:
             row.setdefault("country", "")
             missing.append(key)
+        # Keep geo_loc_name consistent with country: only the finest form of a placed isolate,
+        # never a region without its country.
+        row["geo_loc_name"] = geo_loc_name if country else ""
     sha, n_called = write_fks1_call_table(table_path, list(rows.values()))
     return sha, n_called, n_filled, sorted(missing)
 
 
-def fks1_calls_geo_breakdown(path):
-    """Panel-positive resistant carriers by country in a committed FKS1 call table
-    -> `{country: carrier_count}`, or `{}`.
+def fks1_calls_geo_breakdown(path, finest=False):
+    """Panel-positive resistant carriers by place in a committed FKS1 call table
+    -> `{place: carrier_count}`, or `{}`.
 
-    The historical-series counterpart to render_weather's live `_geo_breakdown`: it reads the
-    `country` column the table carries (country-level, as `normalize` derives it -- no finer
-    region, unlike the live pull's `display_geo`) and counts only carriers of a KNOWN
-    echinocandin-resistance panel substitution (`fks1_caller.is_panel_token`), matching the
-    panel-gated headline so the map never overstates resistance. A table written before the
-    `country` column existed (releases 709/710 pre-backfill) or one with no located panel
-    carriers yields `{}` -- honest degradation, same as `count_fks1_panel_positive`. A missing
+    Reads the committed table's geography and counts only carriers of a KNOWN echinocandin-
+    resistance panel substitution (`fks1_caller.is_panel_token`), matching the panel-gated
+    headline so the map never overstates resistance. `finest=False` (the default, used for the
+    historical series) keys on the country-level `country` column; `finest=True` keys on the
+    finest place NCBI gave us via `display_geo` (region after a colon when present, else country)
+    -- the reproducible, committed-table source for render_weather's current-release map. A table
+    written before its geography columns were filled (pre-backfill), or one with no located panel
+    carriers, yields `{}` -- honest degradation, same as `count_fks1_panel_positive`. A missing
     table reads as `{}`."""
     from openafr import emergence, fks1_caller
     try:
@@ -460,9 +474,9 @@ def fks1_calls_geo_breakdown(path):
         toks = emergence.parse_call(r.get("fks1_call"))
         if not any(fks1_caller.is_panel_token(t) for t in toks):
             continue
-        country = (r.get("country") or "").strip()
-        if country:
-            counts[country] = counts.get(country, 0) + 1
+        place = display_geo(r) if finest else (r.get("country") or "").strip()
+        if place:
+            counts[place] = counts.get(place, 0) + 1
     return counts
 
 

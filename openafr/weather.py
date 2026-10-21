@@ -460,8 +460,9 @@ def _forecast_section(forecast):
 
 def _geo_section(geo_breakdown):
     """Where the current release's resistant carriers are: a location-ranked list, or "" when
-    there is nothing located. Labelled 'current release' because geography comes from the live
-    NCBI pull, not the committed historical series (the call table does not yet carry geography).
+    there is nothing located. Labelled 'current release' to distinguish it from the per-release
+    historical series below; the breakdown itself is read reproducibly from the committed call
+    table's geography (falling back to the live pull only when a table predates the backfill).
 
     `geo_breakdown` -- {location: carrier_count} from render_weather, keyed by the finest
     geography NCBI gave us (region where available, else country); passed in, not recomputed.
@@ -477,9 +478,9 @@ def _geo_section(geo_breakdown):
     <div class="grid">
 {rows}
     </div>
-    <p class="note">Resistant FKS1 carriers by location in the current NCBI release's metadata
-      (finest geography reported -- region where available, else country; not the committed
-      historical series). Isolates with no location are omitted.</p>
+    <p class="note">Resistant FKS1 carriers by location in the current release (finest geography
+      reported -- region where available, else country; read from the committed call table).
+      Isolates with no location are omitted.</p>
   </section>
 """
 
