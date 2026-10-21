@@ -66,6 +66,32 @@ def _window_aged_out(committed_as_of, committed_window_days, current_as_of):
     return committed_end <= start
 
 
+def display_window(calls_dir, fallback_as_of, fallback_window):
+    """The (as_of, window_days) the PAGE should display, anchored to the latest committed fill.
+
+    The page shows a frozen, git-tracked fill whose called isolates sit in a fixed date range.
+    A trailing-`today` window marches forward and slowly ages those isolates out, so the page
+    silently decays toward "awaiting re-call" even though the fill is the freshest data we have.
+    Anchoring the DISPLAY window to the fill's own covered window `(fill_as_of, fill_as_of +
+    window_days]` keeps the page showing the fill at full coverage, with an honest "calls current
+    through <fill date>" clause, until a newer fill is committed. Returns (as_of, window_days) as
+    (str, int); falls back to (fallback_as_of, fallback_window) when no committed fill exists.
+
+    This is DISPLAY-only. `fill_due` deliberately stays `today`-relative: its job is to measure the
+    real new-deposit gap against now and decide when the billable refill pays off."""
+    idx = ew.latest_fks1_calls_index_entry(calls_dir)
+    if not idx:
+        return fallback_as_of, fallback_window
+    as_of = idx.get("as_of") or None
+    try:
+        window_days = int(idx.get("window_days"))
+    except (TypeError, ValueError):
+        window_days = None
+    if as_of is None or window_days is None:
+        return fallback_as_of, fallback_window
+    return as_of, window_days
+
+
 def fill_due(records, calls_dir, as_of, window_days=180, threshold=DEFAULT_THRESHOLD):
     """Measure the FKS1 fill gap for `records` (a fresh pull/snapshot) against the committed
     calls in `calls_dir`, scoped to the trailing-`window_days` window ending after `as_of`.
