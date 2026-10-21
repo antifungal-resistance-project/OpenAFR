@@ -167,7 +167,7 @@ def _alert_card(a):
              f"[proximity_label] {label} "
              f"&#x2014; spatial co-location only, not a resistance prediction"))
     rows_html = "\n".join(
-        f'      <div class="k">{k}</div><div class="v">{v}</div>' for k, v in rows)
+        f"      <dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
     headline = html.escape(str(a.get("headline") or ""))
     img_html = ""
     if s:
@@ -180,9 +180,9 @@ def _alert_card(a):
       <header><span class="badge">{tier_txt}</span>
         <code class="mut">{mut}</code></header>
       <p class="headline">{headline}</p>
-      <div class="grid">
+      <dl class="grid">
 {rows_html}
-      </div>{img_html}
+      </dl>{img_html}
     </article>"""
 
 
@@ -316,12 +316,12 @@ def _methods_section(certification, calls_provenance, window):
     <p><b>Certified caller.</b> The FKS1 re-caller is graded on a frozen external benchmark
       (<code>{bench}</code>, PMC12323592) on every change, through the same scorer this
       verdict uses:</p>
-    <div class="grid cert-grid">
-      <div class="k">Verdict</div><div class="v">{verdict} ({n_res}/{n} isolates resolved)</div>
-      <div class="k">Sensitivity</div><div class="v">{sens}</div>
-      <div class="k">Specificity</div><div class="v">{spec}</div>
-      <div class="k">Exact-token identity</div><div class="v">{ident}</div>
-    </div>
+    <dl class="grid cert-grid">
+      <dt>Verdict</dt><dd>{verdict} ({n_res}/{n} isolates resolved)</dd>
+      <dt>Sensitivity</dt><dd>{sens}</dd>
+      <dt>Specificity</dt><dd>{spec}</dd>
+      <dt>Exact-token identity</dt><dd>{ident}</dd>
+    </dl>
     <p class="note">Detection only &mdash; the echinocandin arm reports whether a known
       resistance variant is present, not a structural fit verdict. Research use only: a
       triage aid, not a clinical claim. Priority tiers and every number come straight from
@@ -348,9 +348,9 @@ def _trend_section(release_trend):
         return "&mdash;" if x is None else f"{100 * x:.1f}%"
 
     rows = "\n".join(
-        f'      <div class="k"><code>{html.escape(str(e.get("as_of") or "—"))}</code></div>'
-        f'<div class="v">{e.get("n_resistant", 0)} of {e.get("n_called", 0)} resolved '
-        f'&middot; {_prev(e.get("prevalence"))}</div>'
+        f'      <dt><code>{html.escape(str(e.get("as_of") or "—"))}</code></dt>'
+        f'<dd>{e.get("n_resistant", 0)} of {e.get("n_called", 0)} resolved '
+        f'&middot; {_prev(e.get("prevalence"))}</dd>'
         for e in release_trend)
 
     pts = [e["prevalence"] for e in release_trend if e.get("prevalence") is not None]
@@ -375,9 +375,11 @@ def _trend_section(release_trend):
 
     return f"""  <section class="trend">
     <h2>Resistance trend</h2>
-    <div class="grid">
+    <p class="gloss">&ldquo;Prevalence&rdquo; is the share of successfully called isolates
+      carrying a known resistance marker &mdash; not a count of cases.</p>
+    <dl class="grid">
 {rows}
-    </div>
+    </dl>
 {delta_html}    <p class="note">Carriers of a <strong>known</strong> echinocandin-resistance FKS1
       substitution as a share of resolved isolates, per committed re-call batch &mdash;
       reproducible from the committed call tables.{vus_html}</p>
@@ -410,9 +412,9 @@ def _forecast_section(forecast):
         return "&mdash;" if x is None else f"{100 * x:.1f}%"
 
     rows = "\n".join(
-        f'      <div class="k"><code>{html.escape(str(e.get("month") or "—"))}</code></div>'
-        f'<div class="v">{e.get("n_resistant", 0)} of {e.get("n_resolved", 0)} resolved '
-        f'&middot; {_prev(e.get("prevalence"))}</div>'
+        f'      <dt><code>{html.escape(str(e.get("month") or "—"))}</code></dt>'
+        f'<dd>{e.get("n_resistant", 0)} of {e.get("n_resolved", 0)} resolved '
+        f'&middot; {_prev(e.get("prevalence"))}</dd>'
         for e in series)
 
     proj = forecast.get("projection") or {}
@@ -448,9 +450,9 @@ def _forecast_section(forecast):
 
     return f"""  <section class="trend forecast">
     <h2>Prevalence trajectory &amp; forecast</h2>
-    <div class="grid">
+    <dl class="grid">
 {rows}
-    </div>
+    </dl>
 {fc_html}    <p class="note">Panel-gated known-resistance carriers as a share of resolved
       isolates, per NCBI deposit month &mdash; reproducible from the committed call table.
       {html.escape(note)}</p>
@@ -471,13 +473,13 @@ def _geo_section(geo_breakdown):
         return ""
     items = sorted(geo_breakdown.items(), key=lambda kv: (-kv[1], kv[0]))
     rows = "\n".join(
-        f'      <div class="k">{html.escape(str(location))}</div><div class="v">{n}</div>'
+        f"      <dt>{html.escape(str(location))}</dt><dd>{n}</dd>"
         for location, n in items)
     return f"""  <section class="geo">
     <h2>Where carriers are &middot; current release</h2>
-    <div class="grid">
+    <dl class="grid">
 {rows}
-    </div>
+    </dl>
     <p class="note">Resistant FKS1 carriers by location in the current release (finest geography
       reported -- region where available, else country; read from the committed call table).
       Isolates with no location are omitted.</p>
@@ -507,16 +509,16 @@ def _geo_history_section(geo_history):
             continue
         items = sorted(geo.items(), key=lambda kv: (-kv[1], kv[0]))
         rows = "\n".join(
-            f'      <div class="k">{html.escape(str(loc))}</div><div class="v">{n}</div>'
+            f"      <dt>{html.escape(str(loc))}</dt><dd>{n}</dd>"
             for loc, n in items)
         tag = html.escape(str(entry.get("release_tag") or ""))
         as_of = html.escape(str(entry.get("as_of") or ""))
         label = f"{tag} &middot; as of {as_of}" if as_of else tag
         blocks.append(f"""    <div class="geo-release">
       <p class="geo-release-label">{label}</p>
-      <div class="grid">
+      <dl class="grid">
 {rows}
-      </div>
+      </dl>
     </div>""")
     if not blocks:
         return ""
@@ -567,17 +569,19 @@ def _vus_section(vus_census):
             label = html.escape(sv.get("label", ""))
             sv_html = f' <span class="struct-label">[structural: {label}]</span>'
         return (
-            f'      <div class="k"><code>{token}</code> '
-            f'<span class="vus-tier">{tier_str}</span>{prox_html}{sv_html}</div>'
-            f'<div class="v">{carriers} carrier(s) &mdash; {note}</div>'
+            f'      <dt><code>{token}</code> '
+            f'<span class="vus-tier">{tier_str}</span>{prox_html}{sv_html}</dt>'
+            f"<dd>{carriers} carrier(s) &mdash; {note}</dd>"
         )
 
     rows = "\n".join(_vus_row(v) for v in vus_census)
     return f"""  <section class="vus">
     <h2>Variants of uncertain significance</h2>
-    <div class="grid">
+    <p class="gloss">Hot-spot DNA changes we have detected but that are <em>not yet</em> known
+      to cause resistance &mdash; flagged and watched, deliberately not counted as resistant.</p>
+    <dl class="grid">
 {rows}
-    </div>
+    </dl>
     <p class="note">Non-panel FKS1 hot-spot substitutions seen in the committed calls:
       <strong>tracked but NOT counted as known resistance</strong>. The position line states
       only where each residue sits relative to the known resistance geography (which hot-spot,
@@ -774,13 +778,26 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
 <meta name="twitter:description" content="{share_desc}">
 {jsonld_html}<style>
   :root {{
-    color-scheme: dark;
+    color-scheme: light dark;
     --bg:#0d1017; --surface:#151a23; --surface-accent:#132019; --text:#e6e9ef;
     --muted:#8a94a6; --muted-strong:#9aa4b2; --border:#232a36; --code:#c3cad6;
     --accent:#4dd6a0; --accent-border:#2a5a47; --link:#7aa2ff; --stale:#e0b050;
     --footer:#5c6675;
     --tier-act-now:#ff5c5c; --tier-watch:#ffcc4d; --tier-context:#8a94a6;
     --accent-page:{page_accent};
+  }}
+  /* Light palette for bright clinical screens / daytime reading. Every rule reads the
+     tokens above, so re-defining them here is the whole theme -- no other rule changes.
+     Values clear WCAG AA contrast on --text/--muted over --bg and keep the tier hues
+     (act-now red / watch amber / context grey) legible on a light surface. */
+  @media (prefers-color-scheme: light) {{
+    :root {{
+      --bg:#f7f8fa; --surface:#ffffff; --surface-accent:#eef7f1; --text:#1a1f28;
+      --muted:#5a6475; --muted-strong:#3c4452; --border:#d9dee6; --code:#2d3748;
+      --accent:#0f8a5f; --accent-border:#9fd6bd; --link:#2a5bd7; --stale:#9a6a00;
+      --footer:#8a94a6;
+      --tier-act-now:#d12b2b; --tier-watch:#9a6a00; --tier-context:#5a6475;
+    }}
   }}
   body {{ margin:0; background:var(--bg); color:var(--text);
          font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }}
@@ -829,18 +846,46 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .mut {{ font-size:1.05rem; color:var(--text); }}
   .headline {{ margin:.3rem 0 .8rem; }}
   .grid {{ display:grid; grid-template-columns:max-content 1fr; gap:.3rem .9rem;
-           font-size:.9rem; }}
-  .grid .k {{ color:var(--muted); }}
+           font-size:.9rem; margin:0; }}
+  .grid dt {{ color:var(--muted); }}
+  .grid dd {{ margin:0; }}
   .pocket {{ display:block; width:100%; max-width:520px; margin:1rem 0 0;
              border-radius:8px; border:1px solid var(--border); }}
   .note {{ color:var(--muted); font-size:.85rem; font-style:italic; }}
   footer {{ margin-top:3rem; color:var(--footer); font-size:.78rem; }}
   a {{ color:var(--link); }}
+  .lede {{ color:var(--muted-strong); font-size:.95rem; margin:0 0 1.25rem;
+           max-width:60ch; }}
+  .gloss {{ color:var(--muted); font-size:.82rem; font-style:italic;
+            margin:.15rem 0 0; }}
+  /* Print: ink-light, readable on paper. Force the light tokens regardless of the
+     reader's OS theme, drop surface fills, and open the collapsed methods details so a
+     printed surveillance report is self-contained. */
+  @media print {{
+    :root {{
+      --bg:#ffffff; --surface:#ffffff; --surface-accent:#ffffff; --text:#000000;
+      --muted:#333333; --muted-strong:#000000; --border:#999999; --code:#000000;
+      --accent:#006a44; --accent-border:#999999; --link:#000000; --stale:#664400;
+      --footer:#333333;
+      --tier-act-now:#a00000; --tier-watch:#664400; --tier-context:#333333;
+    }}
+    body {{ background:#fff; color:#000; }}
+    .card {{ background:none; }}
+    .cert a {{ background:none; }}
+    .about {{ display:block; }}
+    .about summary {{ display:none; }}
+    a {{ color:#000; text-decoration:underline; }}
+  }}
 </style>
 </head>
 <body>
-<div class="wrap">
+<main class="wrap">
   <h1>C. auris Resistance Weather Report</h1>
+  <p class="lede">A free, weekly-updated public read on emerging echinocandin
+    (first-line antifungal) resistance in <em>Candida auris</em>, a WHO critical-priority
+    hospital pathogen. It is built for genomic-surveillance and public-health teams as an
+    early-warning triage aid &mdash; a signal to look closer, not a clinical test result or a
+    treatment recommendation.</p>
   <p class="status">{html.escape(status)}</p>
   <div class="meta">
 {fresh_html}    <p class="meta-detail">Last checked <code>{last_checked}</code> &middot;
@@ -855,7 +900,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     states how current they are. Priority tiers and every number come straight from
     <code>openafr.alert</code>; this page renders that verdict, it never invents one.
 {feeds_html}  </footer>
-</div>
+</main>
 </body>
 </html>
 """
