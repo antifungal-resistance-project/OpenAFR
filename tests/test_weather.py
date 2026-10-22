@@ -522,6 +522,61 @@ def test_forecast_section_omitted_below_two_months():
     assert "Prevalence trajectory" not in page
 
 
+# ---- at-a-glance sparklines (page for readers) -------------------------------
+# Each time-series section renders a small inline-SVG trajectory above its number table so a
+# reader sees the direction at a glance. The chart is additive: the <dl> of exact values stays.
+
+def _spark_svg(page):
+    # The sparkline SVG substring, for colour-source assertions. "" when none rendered.
+    i = page.find('<svg class="spark"')
+    return page[i:page.find("</svg>", i) + 6] if i != -1 else ""
+
+
+def test_trend_section_renders_a_sparkline_with_one_marker_per_batch():
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 300, 15), ("2026-04-14", 3375, 197)))
+    assert '<svg class="spark"' in page
+    assert page.count('class="spark-dot"') == 2  # one marker per batch
+    assert 'role="img"' in page and "aria-label=" in page
+    # the number table is still there -- the chart is additive, not a replacement
+    assert "15 of 300 resolved" in page
+
+
+def test_forecast_sparkline_carries_projection_only_when_skill_certified():
+    series = _fc_series(("2026-04", 200, 4), ("2026-05", 200, 8), ("2026-06", 200, 14))
+    skilled = {"series": series, "skill": True,
+               "projection": {"next_month": "2026-07", "point": 0.09, "lo": 0.05, "hi": 0.15,
+                              "naive_pooled": 0.043}}
+    page = weather.render_page(_cov_result(200, 150), now=NOW, forecast=skilled)
+    assert '<svg class="spark"' in page
+    assert 'class="spark-proj"' in page  # the projected-point marker
+    assert 'class="spark-pi"' in page    # its 95% PI whisker
+
+    noskill = dict(skilled, skill=False)
+    page2 = weather.render_page(_cov_result(200, 150), now=NOW, forecast=noskill)
+    assert '<svg class="spark"' in page2           # trajectory still charts
+    assert 'class="spark-proj"' not in page2       # but no forecast marker
+    assert 'class="spark-pi"' not in page2
+
+
+def test_sparkline_omitted_below_two_points():
+    # One batch is a point, not a trajectory -- no chart (the section itself is also omitted).
+    page = weather.render_page(_cov_result(200, 150), now=NOW,
+                               release_trend=_trend(("2026-04-14", 3375, 197)))
+    assert '<svg class="spark"' not in page
+
+
+def test_sparkline_colour_comes_from_tokens_not_hardcoded_hex():
+    # Every colour on the chart must flow through the :root CSS tokens so light/dark/print work;
+    # a stray hex in the SVG markup would escape the theme.
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-11", 300, 15), ("2026-04-14", 3375, 197)))
+    svg = _spark_svg(page)
+    assert svg and "#" not in svg
+
+
 def test_geo_section_ranks_countries_and_labels_current_release():
     page = weather.render_page(
         _cov_result(200, 150), now=NOW,

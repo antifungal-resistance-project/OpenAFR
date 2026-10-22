@@ -330,6 +330,94 @@ def _methods_section(certification, calls_provenance, window):
 """
 
 
+def _prevalence_sparkline(points, *, projection=None, aria_label=""):
+    """A tiny, deterministic, no-JS inline-SVG sparkline of a prevalence series.
+
+    `points` -- oldest-first list of (label, value) where value is a proportion 0..1 or None
+    (a gap: NCBI deposit-month with no resolved isolate). Returns "" unless at least two points
+    carry a real value -- one point is not a trajectory, matching the sections' own guards.
+
+    `projection` -- when the forecast backtest earned it: {point, lo, hi} proportions for the
+    next step, drawn as a hollow marker past the series with a faint 95%-PI whisker. Omitted
+    entirely otherwise, so the chart never shows a forecast the backtest did not demonstrate.
+
+    All colour comes from CSS classes that read the page's :root tokens (no hex here), so the
+    chart inherits light / dark / print exactly like the rest of the page. The y-axis scales to
+    the data range (the signal lives in a ~0-7% band, not 0-100%) with honest min/max end-ticks.
+    """
+    vals = [v for _, v in points if v is not None]
+    if len(vals) < 2:
+        return ""
+
+    # Reserve a slot to the right for the projected point so it reads as "next", not in-series.
+    proj = projection if (projection and projection.get("point") is not None) else None
+    slots = len(points) + (1 if proj else 0)
+    if slots < 2:
+        return ""
+
+    # Scale to the data range, widened to include the projection point + its PI so nothing clips.
+    lo_v = min(vals)
+    hi_v = max(vals)
+    if proj:
+        for key in ("point", "lo", "hi"):
+            pv = proj.get(key)
+            if pv is not None:
+                lo_v, hi_v = min(lo_v, pv), max(hi_v, pv)
+    span = (hi_v - lo_v) or 1.0  # flat series -> avoid divide-by-zero; line sits mid-plot
+
+    # viewBox geometry: a short plot band with room for the two end-ticks on the right.
+    X0, X1, Y0, Y1 = 6.0, 286.0, 10.0, 50.0
+
+    def _x(i):
+        return X0 + (i * (X1 - X0) / (slots - 1))
+
+    def _y(v):
+        return round(Y1 - ((v - lo_v) / span) * (Y1 - Y0), 1)
+
+    # One polyline per contiguous run of real values, so a gap breaks the line (never draws to 0).
+    runs, cur = [], []
+    for i, (_, v) in enumerate(points):
+        if v is None:
+            if len(cur) > 1:
+                runs.append(cur)
+            cur = []
+        else:
+            cur.append((round(_x(i), 1), _y(v)))
+    if len(cur) > 1:
+        runs.append(cur)
+    polylines = "".join(
+        f'<polyline class="spark-line" points="{" ".join(f"{x},{y}" for x, y in run)}"/>'
+        for run in runs)
+    dots = "".join(
+        f'<circle class="spark-dot" cx="{round(_x(i), 1)}" cy="{_y(v)}" r="2"/>'
+        for i, (_, v) in enumerate(points) if v is not None)
+
+    proj_svg = ""
+    if proj:
+        px = round(_x(slots - 1), 1)
+        py = _y(proj["point"])
+        # Dashed connector from the last real point to the projection.
+        last = next(((round(_x(i), 1), _y(v)) for i in range(len(points) - 1, -1, -1)
+                     for v in (points[i][1],) if v is not None), None)
+        connector = (f'<line class="spark-proj-link" x1="{last[0]}" y1="{last[1]}" '
+                     f'x2="{px}" y2="{py}"/>' if last else "")
+        whisker = ""
+        if proj.get("lo") is not None and proj.get("hi") is not None:
+            whisker = (f'<line class="spark-pi" x1="{px}" y1="{_y(proj["lo"])}" '
+                       f'x2="{px}" y2="{_y(proj["hi"])}"/>')
+        proj_svg = (f"{connector}{whisker}"
+                    f'<circle class="spark-proj" cx="{px}" cy="{py}" r="2.6"/>')
+
+    # Honest end-ticks: the max value at the top-right, the min at the bottom-right.
+    ticks = (f'<text class="spark-tick" x="292" y="{Y0 + 3}">{hi_v * 100:.1f}%</text>'
+             f'<text class="spark-tick" x="292" y="{Y1}">{lo_v * 100:.1f}%</text>')
+    label = html.escape(str(aria_label))
+    return (f'<svg class="spark" viewBox="0 0 320 60" preserveAspectRatio="xMidYMid meet" '
+            f'role="img" aria-label="{label}"><title>{label}</title>'
+            f'<line class="spark-base" x1="{X0}" y1="{Y1}" x2="{X1}" y2="{Y1}"/>'
+            f"{polylines}{dots}{proj_svg}{ticks}</svg>")
+
+
 def _trend_section(release_trend):
     """The resistance-trend block: prevalence per committed re-call batch, with the direction
     of the latest move, or "" when there is no trajectory to show (fewer than two batches).
@@ -373,11 +461,16 @@ def _trend_section(release_trend):
                 "uncertain significance, tracked but not counted as known resistance."
                 ) if n_vus else ""
 
+    spark = _prevalence_sparkline(
+        [(e.get("as_of"), e.get("prevalence")) for e in release_trend],
+        aria_label="Known-resistance prevalence across committed re-call batches")
+    spark_html = f"    {spark}\n" if spark else ""
+
     return f"""  <section class="trend">
     <h2>Resistance trend</h2>
     <p class="gloss">&ldquo;Prevalence&rdquo; is the share of successfully called isolates
       carrying a known resistance marker &mdash; not a count of cases.</p>
-    <dl class="grid">
+{spark_html}    <dl class="grid">
 {rows}
     </dl>
 {delta_html}    <p class="note">Carriers of a <strong>known</strong> echinocandin-resistance FKS1
@@ -418,6 +511,16 @@ def _forecast_section(forecast):
         for e in series)
 
     proj = forecast.get("projection") or {}
+    # The chart only carries the projection marker when the backtest earned it -- same gate as
+    # the text line below, so the sparkline never shows a forecast the data did not demonstrate.
+    spark_proj = None
+    if forecast.get("skill") and proj.get("point") is not None:
+        spark_proj = {"point": proj.get("point"), "lo": proj.get("lo"), "hi": proj.get("hi")}
+    spark = _prevalence_sparkline(
+        [(e.get("month"), e.get("prevalence")) for e in series],
+        projection=spark_proj,
+        aria_label="Panel-gated resistance prevalence by NCBI deposit month")
+    spark_html = f"    {spark}\n" if spark else ""
     if forecast.get("skill") and proj.get("point") is not None:
         last = series[-1].get("prevalence")
         point = proj["point"]
@@ -450,7 +553,7 @@ def _forecast_section(forecast):
 
     return f"""  <section class="trend forecast">
     <h2>Prevalence trajectory &amp; forecast</h2>
-    <dl class="grid">
+{spark_html}    <dl class="grid">
 {rows}
     </dl>
 {fc_html}    <p class="note">Panel-gated known-resistance carriers as a share of resolved
@@ -833,6 +936,18 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .trend-up {{ color:var(--tier-act-now); }}
   .trend-down {{ color:var(--accent); }}
   .trend-flat {{ color:var(--muted); }}
+  /* Inline prevalence sparkline. All colour via tokens so it tracks light/dark/print with the
+     rest of the page; no JS, no external asset. */
+  .spark {{ display:block; width:100%; max-width:420px; height:auto; margin:.2rem 0 .7rem;
+            overflow:visible; }}
+  .spark-base {{ stroke:var(--border); stroke-width:1; }}
+  .spark-line {{ fill:none; stroke:var(--accent); stroke-width:1.6;
+                 stroke-linejoin:round; stroke-linecap:round; }}
+  .spark-dot {{ fill:var(--accent); }}
+  .spark-proj-link {{ stroke:var(--muted); stroke-width:1.4; stroke-dasharray:3 2; }}
+  .spark-pi {{ stroke:var(--muted); stroke-width:1.4; opacity:.5; }}
+  .spark-proj {{ fill:var(--bg); stroke:var(--muted-strong); stroke-width:1.6; }}
+  .spark-tick {{ fill:var(--muted); font-size:7px; }}
   .card {{ background:var(--surface); border:1px solid var(--border);
            border-left:4px solid var(--accent,var(--border));
            border-radius:10px; padding:1.1rem 1.25rem; margin:1rem 0; }}
