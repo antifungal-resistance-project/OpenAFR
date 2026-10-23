@@ -143,7 +143,6 @@ def test_reader_tolerates_pre_country_tables(tmp_path):
                     "B\t\tsra-fks1-recaller:called\tSRR2\t2025-02-02\n")
     table = ew.read_fks1_call_table(str(path))
     assert set(table) == {"A", "B"} and "country" not in table["A"]
-    assert ew.count_fks1_resistant(str(path)) == 1   # only A carries a call token
     live = [_rec("A", "pending:sra-fks1-recaller")]
     assert ew.overlay_fks1_calls(live, str(path)) == 1 and live[0]["fks1_call"] == "S639F"
 
@@ -164,14 +163,10 @@ def test_read_calls_index_empty_when_missing(tmp_path):
     assert ew.read_fks1_calls_index(str(tmp_path)) == []
 
 
-def test_count_resistant_missing_table_is_zero(tmp_path):
-    assert ew.count_fks1_resistant(str(tmp_path / "nope.tsv")) == 0
-
-
 def test_panel_positive_separates_known_resistance_from_uncertain_variants(tmp_path):
-    # count_fks1_resistant counts ANY call token; count_fks1_panel_positive counts only
-    # KNOWN-resistance panel substitutions, carrying non-panel hot-spot variants as VUS so
-    # the page never headlines a variant of uncertain significance as "resistant".
+    # count_fks1_panel_positive counts only KNOWN-resistance panel substitutions, carrying
+    # non-panel hot-spot variants as VUS so the page never headlines a variant of uncertain
+    # significance as "resistant".
     path = tmp_path / "PDG000000067.800.tsv"
     path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
                     "target_creation_date\n"
@@ -179,7 +174,6 @@ def test_panel_positive_separates_known_resistance_from_uncertain_variants(tmp_p
                     "B\tD642Y\tsra-fks1-recaller:called\tSRR2\t2026-02-02\n"   # known resistance
                     "C\tR1354H\tsra-fks1-recaller:called\tSRR3\t2026-02-03\n"  # non-panel (VUS)
                     "D\t\tsra-fks1-recaller:wild-type\tSRR4\t2026-02-04\n")    # wild-type
-    assert ew.count_fks1_resistant(str(path)) == 3            # A, B, C all carry a token
     assert ew.count_fks1_panel_positive(str(path)) == (2, 1)  # (S639F+D642Y known, R1354H VUS)
 
 
@@ -208,6 +202,30 @@ def test_vus_census_breaks_down_non_panel_variants_by_token(tmp_path):
 
 def test_vus_census_missing_table_is_empty(tmp_path):
     assert ew.fks1_vus_census(str(tmp_path / "nope.tsv")) == []
+
+
+def test_iter_resolved_calls_splits_panel_from_vus():
+    # The shared primitive all three FKS1 counters + the geo map consume: it splits each
+    # record's parsed call tokens into (panel-positive, VUS) on fks1_caller.is_panel_token.
+    records = [
+        {"isolate_key": "A", "fks1_call": "S639F"},          # panel only
+        {"isolate_key": "B", "fks1_call": "R1354H"},         # VUS only
+        {"isolate_key": "C", "fks1_call": "S639F,R1354H"},   # mixed row
+        {"isolate_key": "D", "fks1_call": ""},               # unresolved
+    ]
+    out = {r["isolate_key"]: (panel, vus) for r, panel, vus in ew.iter_resolved_calls(records)}
+    assert out["A"] == (["S639F"], [])
+    assert out["B"] == ([], ["R1354H"])
+    assert out["C"] == (["S639F"], ["R1354H"])
+    assert out["D"] == ([], [])          # yielded, but both lists empty -> not a carrier
+
+
+def test_release_sort_key_orders_by_release_number_not_lexically():
+    tags = ["PDG000000067.12", "PDG000000067.709", "PDG000000067.710", "snapshot-x"]
+    assert sorted(tags, key=ew._release_sort_key) == [
+        "PDG000000067.12", "PDG000000067.709", "PDG000000067.710",  # numeric, not "12">"709"
+        "snapshot-x",                                               # non-release tag sorts last
+    ]
 
 
 # --- windowed fill scope (recall_fks1.py) ------------------------------------

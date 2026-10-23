@@ -451,6 +451,26 @@ def backfill_fks1_calls_country(table_path, geo_by_key):
     return sha, n_called, n_filled, sorted(missing)
 
 
+def iter_resolved_calls(records):
+    """Yield `(record, panel_tokens, vus_tokens)` for each resolved record in `records`.
+
+    The single source of truth for what counts as a panel-positive (confirmed-resistance)
+    carrier vs. a variant-of-uncertain-significance (VUS) carrier: it parses each record's
+    `fks1_call` with `emergence.parse_call` and splits the tokens on
+    `fks1_caller.is_panel_token`. Every FKS1 counter and the geography map consume this, so
+    the page, feed, VUS census and map can never drift on the resistance definition.
+
+    `records` is any iterable of record dicts (a committed call table's `rows.values()` or a
+    live NCBI pull). A record whose call parses to no tokens still yields with two empty lists;
+    callers that want only resolved carriers test `panel_tokens or vus_tokens`."""
+    from openafr import emergence, fks1_caller
+    for r in records:
+        toks = emergence.parse_call(r.get("fks1_call"))
+        panel_tokens = [t for t in toks if fks1_caller.is_panel_token(t)]
+        vus_tokens = [t for t in toks if not fks1_caller.is_panel_token(t)]
+        yield r, panel_tokens, vus_tokens
+
+
 def fks1_calls_geo_breakdown(path, finest=False):
     """Panel-positive resistant carriers by place in a committed FKS1 call table
     -> `{place: carrier_count}`, or `{}`.
@@ -464,15 +484,13 @@ def fks1_calls_geo_breakdown(path, finest=False):
     written before its geography columns were filled (pre-backfill), or one with no located panel
     carriers, yields `{}` -- honest degradation, same as `count_fks1_panel_positive`. A missing
     table reads as `{}`."""
-    from openafr import emergence, fks1_caller
     try:
         rows = read_fks1_call_table(path)
     except FileNotFoundError:
         return {}
     counts = {}
-    for r in rows.values():
-        toks = emergence.parse_call(r.get("fks1_call"))
-        if not any(fks1_caller.is_panel_token(t) for t in toks):
+    for r, panel_tokens, _vus in iter_resolved_calls(rows.values()):
+        if not panel_tokens:
             continue
         place = display_geo(r) if finest else (r.get("country") or "").strip()
         if place:
@@ -516,6 +534,14 @@ def latest_fks1_call_table(calls_dir):
     return best
 
 
+def _release_sort_key(tag):
+    """Sort key for a PDG release tag: order by trailing release number when the tag is a
+    PDG release (the production case, highest release wins); fall back to lexical so a
+    non-release tag (e.g. a test snapshot name) cannot crash the sort."""
+    suffix = str(tag).split(".")[-1]
+    return (0, int(suffix), "") if suffix.isdigit() else (1, 0, str(tag))
+
+
 def update_fks1_calls_index(index_path, entry):
     """Upsert one fill's FKS1 call-table provenance row into the git-tracked calls INDEX.
 
@@ -530,17 +556,11 @@ def update_fks1_calls_index(index_path, entry):
         pass
     rows[entry["release_tag"]] = entry
 
-    def _order(tag):
-        # Order by trailing release number when the tag is a PDG release (the production case);
-        # fall back to lexical so a non-release tag (e.g. a test snapshot name) cannot crash.
-        suffix = tag.split(".")[-1]
-        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, tag)
-
     with open(index_path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(FKS1_CALLS_INDEX_COLUMNS), delimiter="\t",
                            lineterminator="\n", extrasaction="ignore")
         w.writeheader()
-        for tag in sorted(rows, key=_order):
+        for tag in sorted(rows, key=_release_sort_key):
             w.writerow(rows[tag])
 
 
@@ -553,11 +573,6 @@ def latest_fks1_calls_index_entry(calls_dir):
     a missing/empty INDEX yields None."""
     import os.path
     index_path = os.path.join(calls_dir, "INDEX.tsv")
-
-    def _order(tag):
-        suffix = str(tag).split(".")[-1]
-        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, str(tag))
-
     try:
         with open(index_path, newline="") as fh:
             rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("release_tag")]
@@ -565,7 +580,7 @@ def latest_fks1_calls_index_entry(calls_dir):
         return None
     if not rows:
         return None
-    return max(rows, key=lambda r: _order(r["release_tag"]))
+    return max(rows, key=lambda r: _release_sort_key(r["release_tag"]))
 
 
 def read_fks1_calls_index(calls_dir):
@@ -577,58 +592,37 @@ def read_fks1_calls_index(calls_dir):
     missing/empty INDEX yields []."""
     import os.path
     index_path = os.path.join(calls_dir, "INDEX.tsv")
-
-    def _order(tag):
-        suffix = str(tag).split(".")[-1]
-        return (0, int(suffix), "") if suffix.isdigit() else (1, 0, str(tag))
-
     try:
         with open(index_path, newline="") as fh:
             rows = [r for r in csv.DictReader(fh, delimiter="\t") if r.get("release_tag")]
     except FileNotFoundError:
         return []
-    return sorted(rows, key=lambda r: _order(r["release_tag"]))
-
-
-def count_fks1_resistant(path):
-    """Number of resistant carriers in a committed FKS1 call table -- rows whose `fks1_call`
-    holds a (non-empty) resistance token. Every row in the table is a *resolved* isolate (the
-    serializer only writes resolved calls), so this is the resistant count over a resolved
-    denominator. A missing table reads as 0 rather than raising, so a trend over a partially
-    committed history degrades honestly."""
-    try:
-        rows = read_fks1_call_table(path)
-    except FileNotFoundError:
-        return 0
-    return sum(1 for r in rows.values() if (r.get("fks1_call") or "").strip())
+    return sorted(rows, key=lambda r: _release_sort_key(r["release_tag"]))
 
 
 def count_fks1_panel_positive(path):
     """Carriers of a KNOWN echinocandin-resistance panel substitution in a committed table.
 
-    Distinct from `count_fks1_resistant`, which counts *any* non-empty FKS1 call token: a
-    hot-spot-region variant that is NOT on the caller's known-resistance panel (e.g. D642H/N/V,
-    F635I/L/S, M690V, R1354C/H) is a variant of **uncertain significance**, not confirmed
-    echinocandin resistance, so it must not be headlined as "resistant". The real-data backtest
-    (work/RESULTS_fks1_backtest.md) surfaced the page conflating the two.
+    A hot-spot-region variant that is NOT on the caller's known-resistance panel (e.g.
+    D642H/N/V, F635I/L/S, M690V, R1354C/H) is a variant of **uncertain significance**, not
+    confirmed echinocandin resistance, so it must not be headlined as "resistant": counting
+    *any* non-empty FKS1 call token would conflate the two, which the real-data backtest
+    (work/RESULTS_fks1_backtest.md) surfaced on the page.
 
     Returns `(n_panel_positive, n_vus)`: panel-positive carriers (the honest resistance
     headline), and resolved carriers whose only call is a non-panel variant of uncertain
-    significance. Panel membership is read from `fks1_caller.is_panel_token` so this can never
-    drift from the caller. A missing table reads as `(0, 0)`."""
-    from openafr import emergence, fks1_caller
+    significance. Panel membership flows through `iter_resolved_calls` (which reads
+    `fks1_caller.is_panel_token`) so this can never drift from the caller or the other FKS1
+    counters. A missing table reads as `(0, 0)`."""
     try:
         rows = read_fks1_call_table(path)
     except FileNotFoundError:
         return 0, 0
     n_panel = n_vus = 0
-    for r in rows.values():
-        toks = emergence.parse_call(r.get("fks1_call"))
-        if not toks:
-            continue
-        if any(fks1_caller.is_panel_token(t) for t in toks):
+    for _r, panel_tokens, vus_tokens in iter_resolved_calls(rows.values()):
+        if panel_tokens:
             n_panel += 1
-        else:
+        elif vus_tokens:
             n_vus += 1
     return n_panel, n_vus
 
@@ -646,18 +640,16 @@ def fks1_vus_census(path):
     hot-spot-region substitution of **uncertain significance**, the bucket the real-data
     backtest surfaced (work/RESULTS_fks1_backtest.md). Counts are per distinct token across
     resolved rows (matching the backtest's "14 variants" framing), not per isolate. The same
-    token discipline as `count_fks1_panel_positive`, so the two can never disagree. This helper
-    stays geometry-free: the view layer attaches position context (openafr/fks1_position).
-    A missing table reads as `[]`."""
-    from openafr import emergence, fks1_caller
+    token discipline as `count_fks1_panel_positive` (both flow through `iter_resolved_calls`),
+    so the two can never disagree. This helper stays geometry-free: the view layer attaches
+    position context (openafr/fks1_position). A missing table reads as `[]`."""
     try:
         rows = read_fks1_call_table(path)
     except FileNotFoundError:
         return []
     counts = {}
-    for r in rows.values():
-        for tok in emergence.parse_call(r.get("fks1_call")):
-            if not fks1_caller.is_panel_token(tok):
-                counts[tok] = counts.get(tok, 0) + 1
+    for _r, _panel, vus_tokens in iter_resolved_calls(rows.values()):
+        for tok in vus_tokens:
+            counts[tok] = counts.get(tok, 0) + 1
     return [{"token": tok, "carriers": n}
             for tok, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]

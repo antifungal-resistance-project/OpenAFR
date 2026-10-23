@@ -60,7 +60,6 @@ alone. An isolate that fails to fetch/align yields an empty call with a `failed(
 source, not a dropped or guessed one.
 """
 import argparse
-import datetime
 import os
 import pathlib
 import random
@@ -85,7 +84,7 @@ FKS1_CALLS_DIR = pathlib.Path(__file__).resolve().parent.parent / "data" / "earl
 # The recent-window default the resistance-weather page uses (.github/workflows/weather.yml
 # renders with --window 180 and an as-of 180 days back), kept in sync so a fill re-calls
 # exactly the isolates the page will display.
-DEFAULT_WINDOW_DAYS = 180
+DEFAULT_WINDOW_DAYS = emergence.DEFAULT_WINDOW_DAYS
 
 # External binaries the orchestration layer needs. Same toolchain as the ERG11 re-caller;
 # kept in one place so the gate message and the actual calls cannot drift.
@@ -337,13 +336,6 @@ def cmd_recall(args):
 FKS1_PENDING = "pending:sra-fks1-recaller"
 
 
-def _default_as_of(window_days=DEFAULT_WINDOW_DAYS):
-    """The baseline-cut date that makes `emergence.split_by_creation`'s recent window the
-    trailing `window_days` up to today -- the same convention the weather page uses (it passes
-    an as-of of today - 180). So the default fill scope IS the window the page displays."""
-    return (datetime.date.today() - datetime.timedelta(days=window_days)).isoformat()
-
-
 def _in_window(records, as_of, window_days):
     """The isolate_keys of the recent window the page scopes to: NCBI-visible after `as_of`
     and within `window_days` of it. `None` as_of means no window filter (whole snapshot)."""
@@ -386,7 +378,7 @@ def _resolve_window(args):
     window_days = getattr(args, "window_days", DEFAULT_WINDOW_DAYS)
     if getattr(args, "no_window", False):
         return None, window_days
-    return (getattr(args, "as_of", None) or _default_as_of(window_days)), window_days
+    return (getattr(args, "as_of", None) or emergence.default_as_of(window_days)), window_days
 
 
 def _release_tag_from_snapshot(path):

@@ -29,7 +29,9 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CONTACT_MAP_PATH = os.path.join(ROOT, "data", "structures", "fks1_contact_map.json")
 
-# Pinned SHA-256 of the contact map (verified at module load via PREREG_fks1_structural_proximity.sha256)
+# Pinned SHA-256 of the contact map, matching PREREG_fks1_structural_proximity.sha256. This is
+# a test-pinned integrity constant (asserted by tests/test_fks1_structural.py), not verified at
+# module load -- _load_map just reads the committed JSON.
 CONTACT_MAP_SHA256 = "6a2033ac5bd28b821e5cc3a47b759932c5b728c7f85b69958a82f1f89902acea"
 
 # Proximity tier names (weakest first, strongest last for ordering comparisons)
@@ -89,13 +91,13 @@ def structural_proximity(token):
     which occupies the same binding site as clinical echinocandins (caspofungin,
     micafungin, anidulafungin). The measurement is NOT a phenotype prediction.
     """
-    from openafr.fks1_caller import _TOKEN_RE, panel_tier
+    from openafr.fks1_caller import panel_tier, parse_token
     from openafr.fks1_position import _window_of
 
-    m = _TOKEN_RE.match((token or "").strip())
-    if not m:
+    parsed = parse_token(token)
+    if not parsed:
         return None
-    wt, pos, mut = m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+    wt, pos, mut = parsed
 
     # Skip core panel markers — they already have a resistance verdict
     if panel_tier(token) == "core":

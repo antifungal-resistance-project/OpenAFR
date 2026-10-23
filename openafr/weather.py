@@ -151,9 +151,7 @@ def _alert_card(a):
              f"{html.escape(str(a.get('position_note') or ''))}"))
     prox = ctx.get("proximity") if ctx else None
     if prox:
-        tier_label = prox["proximity_tier"].replace("_", " ")
-        dist = prox.get("min_dist_to_drug_A")
-        dist_str = f"{dist:.1f}&thinsp;Å" if dist else "N/A"
+        tier_label, dist_str = _prox_display(prox)
         rows.append(
             ("Proximity",
              f"[{html.escape(tier_label)}] "
@@ -296,9 +294,26 @@ def _is_awaiting(coverage):
         and (coverage.get("recent_called") or 0) == 0
 
 
-def _pct(x):
-    """A proportion (0..1) as a whole-percent string, or an em dash when absent."""
-    return "—" if x is None else f"{round(100 * x)}%"
+def _prox_display(prox):
+    """`(tier_label, dist_str)` for a structural-proximity dict: the tier with underscores
+    spaced out, and the min heavy-atom distance as `"12.3&thinsp;Å"` (or `"N/A"` when absent).
+    Shared by the alert card and the VUS row so the two renderers format proximity identically
+    even though their surrounding markup differs."""
+    tier_label = prox["proximity_tier"].replace("_", " ")
+    dist = prox.get("min_dist_to_drug_A")
+    dist_str = f"{dist:.1f}&thinsp;Å" if dist else "N/A"
+    return tier_label, dist_str
+
+
+def _pct(x, *, decimals=0, dash="—"):
+    """A proportion (0..1) as a percent string, or `dash` when absent. `decimals=0` gives a
+    whole percent (the certification figures); `decimals=1` the one-decimal prevalence used by
+    the trend and forecast sections. The single proportion formatter for the page."""
+    if x is None:
+        return dash
+    if decimals == 0:
+        return f"{round(100 * x)}%"
+    return f"{100 * x:.{decimals}f}%"
 
 
 def _share_description(status, coverage, calls_provenance):
@@ -484,7 +499,7 @@ def _trend_section(release_trend):
         return ""
 
     def _prev(x):
-        return "&mdash;" if x is None else f"{100 * x:.1f}%"
+        return _pct(x, decimals=1, dash="&mdash;")
 
     rows = "\n".join(
         f'      <dt><code>{html.escape(str(e.get("as_of") or "—"))}</code></dt>'
@@ -553,7 +568,7 @@ def _forecast_section(forecast):
         return ""
 
     def _prev(x):
-        return "&mdash;" if x is None else f"{100 * x:.1f}%"
+        return _pct(x, decimals=1, dash="&mdash;")
 
     rows = "\n".join(
         f'      <dt><code>{html.escape(str(e.get("month") or "—"))}</code></dt>'
@@ -710,9 +725,8 @@ def _vus_section(vus_census):
         prox = ctx.get("proximity")
         prox_html = ""
         if prox:
-            tier_label = html.escape(prox["proximity_tier"].replace("_", " "))
-            dist = prox.get("min_dist_to_drug_A")
-            dist_str = f"{dist:.1f}&thinsp;Å" if dist else "N/A"
+            tier_label, dist_str = _prox_display(prox)
+            tier_label = html.escape(tier_label)
             prox_html = (
                 f' <span class="prox-tier">[proximity: {tier_label}, '
                 f'{dist_str} from drug]</span>'
