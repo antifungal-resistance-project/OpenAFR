@@ -1,6 +1,12 @@
-"""Emergence detection for the C. auris azole early-warning track (issue #22).
+"""Emergence detection for the C. auris early-warning track (issue #22).
 
 Pipeline stage: resistance early-warning / detection method.
+
+Gene-agnostic by design. The SHIPPED product arm is echinocandin/FKS1 (OpenAFR Resistance
+Weather overlays the committed FKS1 call table and scopes to this module's recent window);
+the azole/ERG11 arm this module was first written for is now the RESEARCH arm. The ERG11
+examples and the `erg11_call` field named below are the original azole framing kept for
+context -- the same machinery runs over `fks1_call` for the product.
 
 Why this exists
 ---------------
@@ -46,7 +52,20 @@ Stdlib only, operating on snapshot records (list of dicts) as produced by
 openafr.earlywarning.read_snapshot / normalize.
 """
 import collections
+import datetime
 import re
+
+DEFAULT_WINDOW_DAYS = 180
+
+
+def default_as_of(window_days=DEFAULT_WINDOW_DAYS):
+    """The baseline-cut date (`today - window_days`) that makes `split_by_creation`'s recent
+    window the trailing `window_days` up to today. The single source of this convention,
+    shared by the recaller fill scope (scripts/recall_fks1.py), the fill-due watchdog
+    (scripts/fill_due_check.py) and weather.yml, so the fill scope IS the window the page
+    displays."""
+    return (datetime.date.today() - datetime.timedelta(days=window_days)).isoformat()
+
 
 # A canonical ERG11 point substitution looks like Y132F (wt / position / mut).
 # We normalize to upper-case and split multi-substitution calls on the usual

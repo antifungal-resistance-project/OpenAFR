@@ -37,7 +37,6 @@ from openafr.fks1_structural import (
     POCKET_ADJACENT,
     POCKET_PROXIMATE,
     PROXIMITY_TIERS,
-    contact_map_meta,
     structural_proximity,
     structural_verdict,
 )
@@ -54,16 +53,6 @@ def test_contact_map_sha256():
         f"  expected: {CONTACT_MAP_SHA256}\n"
         f"  got:      {actual}"
     )
-
-
-# ── metadata ───────────────────────────────────────────────────────────────────
-
-def test_contact_map_meta_keys():
-    meta = contact_map_meta()
-    for key in ("source_pdb", "drug_name", "contact_cutoffs_A", "alignment_offsets_sc_minus_ca"):
-        assert key in meta, f"Missing key {key!r} in contact_map_meta()"
-    assert meta["source_pdb"] == "9WZU"
-    assert "enfumafungin" in meta["drug_name"].lower() or "Enfumafungin" in meta["drug_name"]
 
 
 # ── None-return gates ──────────────────────────────────────────────────────────

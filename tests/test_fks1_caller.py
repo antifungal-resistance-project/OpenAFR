@@ -42,6 +42,20 @@ def _windows(cds):
     return F.slice_windows_from_cds(cds)
 
 
+# --- token parsing (shared primitive) --------------------------------------
+
+def test_parse_token_well_formed():
+    assert F.parse_token("S639F") == ("S", 639, "F")
+    assert F.parse_token(" s639f ") == ("S", 639, "F")   # trimmed + upper-cased
+    assert F.parse_token("R1354H") == ("R", 1354, "H")
+    assert F.parse_token("F635*") == ("F", 635, "*")      # stop codon mutant
+
+
+@pytest.mark.parametrize("bad", ["", None, "   ", "639F", "SF", "S639", "SS639F", "639"])
+def test_parse_token_malformed_is_none(bad):
+    assert F.parse_token(bad) is None
+
+
 # --- reference integrity / numbering ---------------------------------------
 
 def test_reference_loads_and_hashes(ref):

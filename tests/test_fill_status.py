@@ -112,6 +112,22 @@ def test_due_when_never_filled(tmp_path):
     assert "no committed" in status["reason"].lower()
 
 
+# --- display window: the PAGE anchors to the committed fill, not today -----------------------
+
+def test_display_window_anchors_to_committed_fill(tmp_path):
+    # With a committed fill, the page displays the fill's own (as_of, window_days), NOT the
+    # today-relative fallback -- so a frozen fill never ages its isolates off the page.
+    _write_committed(tmp_path, [_rec("A", "sra-fks1-recaller:called", call="S639F")],
+                     as_of="2026-04-14", window_days=180)
+    assert fill_status.display_window(str(tmp_path), "2099-01-01", 30) == ("2026-04-14", 180)
+
+
+def test_display_window_falls_back_when_no_committed_fill(tmp_path):
+    # No INDEX -> the page has nothing to anchor to, so it uses the caller's fallback window.
+    (tmp_path).mkdir(parents=True, exist_ok=True)
+    assert fill_status.display_window(str(tmp_path), "2026-01-01", 180) == ("2026-01-01", 180)
+
+
 # --- the CLI handshake: issue body on due, github-output flags --------------------------------
 
 def test_cli_writes_issue_and_outputs_when_due(tmp_path):

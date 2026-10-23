@@ -34,8 +34,8 @@ from openafr.fks1_caller import (
     FKS1_WINDOWS,
     LOW_PPV_PANEL,
     RESISTANCE_PANEL,
-    _TOKEN_RE,
     panel_tier,
+    parse_token,
 )
 
 # Position-context tiers, strongest signal first. Derived from the pinned panel, never
@@ -51,14 +51,6 @@ HOTSPOT_BACKGROUND = "in_hotspot_background"
 # distinguishes "right next to a known marker" from "elsewhere in the window" without
 # implying any mechanistic contact (which we explicitly do not claim).
 ADJACENT_RADIUS = 2
-
-
-def _parse(token):
-    """(wt, pos, mut) for a well-formed substitution token, else None. Uppercased."""
-    m = _TOKEN_RE.match((token or "").strip())
-    if not m:
-        return None
-    return m.group(1).upper(), int(m.group(2)), m.group(3).upper()
 
 
 def _window_of(pos):
@@ -111,7 +103,7 @@ def position_context(token):
                               pocket_adjacent) spatial contact label dict; evidence_class
                               "proximity_label" — NOT a resistance prediction
     """
-    parsed = _parse(token)
+    parsed = parse_token(token)
     if parsed is None:
         return None
     wt, pos, mut = parsed

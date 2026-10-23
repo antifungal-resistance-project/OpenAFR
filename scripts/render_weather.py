@@ -181,12 +181,12 @@ def _geo_from_records(records):
     geo_loc_name's region over the bare country); counts only carriers of a KNOWN echinocandin-
     resistance panel substitution, matching the panel-gated headline so the map never overstates
     resistance. The fallback source for `_geo_breakdown` when the committed table carries no
-    geography, and the source for a written --snapshot (which carries its own calls)."""
-    from openafr import emergence, fks1_caller
+    geography, and the source for a written --snapshot (which carries its own calls). Shares
+    `ew.iter_resolved_calls` with the committed-table counters so the live-pull map and the
+    table-based map can never disagree on what counts as a panel-positive carrier."""
     counts = {}
-    for rec in records:
-        toks = emergence.parse_call(rec.get("fks1_call"))
-        if not any(fks1_caller.is_panel_token(t) for t in toks):
+    for rec, panel_tokens, _vus in ew.iter_resolved_calls(records):
+        if not panel_tokens:
             continue
         loc = ew.display_geo(rec)
         if loc:

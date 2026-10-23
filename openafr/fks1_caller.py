@@ -79,6 +79,18 @@ _CONFIDENT = set("ACGT")
 _TOKEN_RE = re.compile(r"^([A-Za-z])(\d+)([A-Za-z*])$")
 
 
+def parse_token(token):
+    """Parse a substitution token (e.g. 'S639F') into `(wt, pos:int, mut)` with the letters
+    upper-cased, or None if it is not a well-formed token. The single source of truth for the
+    `wt/pos/mut` derivation shared across the FKS1 modules (panel membership here, position
+    context in fks1_position, structural proximity in fks1_structural), so they can never
+    drift on what counts as a parseable token."""
+    m = _TOKEN_RE.match((token or "").strip())
+    if not m:
+        return None
+    return m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+
+
 class Window:
     """A FKS1 resistance hot-spot: an inclusive 1-based residue range + an anchor residue
     whose wild-type letter the reference MUST translate to (the per-window numbering check).
@@ -180,10 +192,10 @@ def panel_tier(token):
                  low-PPV-only call as UNCHARACTERIZED_VARIANT (honest abstain), never as
                  detected resistance. See LOW_PPV_PANEL for the independent pinning.
     """
-    m = _TOKEN_RE.match((token or "").strip())
-    if not m:
+    parsed = parse_token(token)
+    if not parsed:
         return None
-    wt, pos, mut = m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+    wt, pos, mut = parsed
     entry = RESISTANCE_PANEL.get(pos)
     if not (entry and wt == entry[0] and mut in entry[1]):
         return None
@@ -278,10 +290,10 @@ def is_panel_token(token):
     """True if `token` (e.g. 'S639F') is a KNOWN echinocandin-resistance panel substitution.
     Mirrors call_windows' tagging exactly, so a prevalence count rebuilt from stored
     fks1_call strings tags precisely the tokens the caller tagged."""
-    m = _TOKEN_RE.match((token or "").strip())
-    if not m:
+    parsed = parse_token(token)
+    if not parsed:
         return False
-    wt, pos, mut = m.group(1).upper(), int(m.group(2)), m.group(3).upper()
+    wt, pos, mut = parsed
     entry = RESISTANCE_PANEL.get(pos)
     return bool(entry and wt == entry[0] and mut in entry[1])
 

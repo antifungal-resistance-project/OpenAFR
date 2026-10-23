@@ -18,7 +18,6 @@ thin shell.
 """
 import argparse
 import csv
-import datetime
 import pathlib
 import sys
 
@@ -26,6 +25,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from openafr import earlywarning as ew  # noqa: E402
+from openafr import emergence            # noqa: E402
 from openafr import fill_status          # noqa: E402
 
 FKS1_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
@@ -33,12 +33,6 @@ RUNBOOK = "work/RUNBOOK_fks1_fill.md"
 # One stable label so a still-due month updates the open issue instead of spawning duplicates
 # (the workflow keys its find-or-create on this).
 ISSUE_LABEL = "fks1-fill-due"
-
-
-def _default_as_of(window_days):
-    """today - window_days, so the recent window is the trailing `window_days` the weather page
-    displays (same convention as recall_fks1._default_as_of / weather.yml)."""
-    return (datetime.date.today() - datetime.timedelta(days=window_days)).isoformat()
 
 
 def _load_records(args):
@@ -130,7 +124,7 @@ def main():
                     help="append due/title/uncalled step-outputs here ($GITHUB_OUTPUT)")
     args = ap.parse_args()
 
-    as_of = args.as_of or _default_as_of(args.window)
+    as_of = args.as_of or emergence.default_as_of(args.window)
     records, source = _load_records(args)
     status = fill_status.fill_due(records, args.calls_dir, as_of,
                                   window_days=args.window, threshold=args.threshold)
