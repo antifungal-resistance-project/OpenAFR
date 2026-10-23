@@ -18,7 +18,7 @@ def test_data_matches_alerts_and_is_json_serialisable():
     res = _fks1_hit_result()
     data = weather_feed.build_data(res, now=NOW, geo_breakdown={"USA": 3, "Kenya": 1},
                                    page_url=URL)
-    assert data["schema_version"] == 1 and data["generated"] == "2026-09-17T08:30:00Z"
+    assert data["schema_version"] == 2 and data["generated"] == "2026-09-17T08:30:00Z"
     assert [a["mutation"] for a in data["alerts"]] == [a["mutation"] for a in res["alerts"]]
     assert list(data["geography"]) == ["Kenya", "USA"]  # sorted, stable
     json.dumps(data)  # must not raise
@@ -64,6 +64,7 @@ def test_page_links_feeds_only_when_asked():
 # A partner builds against these keys. Changing them is a schema_version bump, not a refactor.
 
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
+            "fill_age_days", "fill_stale",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
             "geography_history", "vus_census", "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
@@ -79,6 +80,19 @@ def test_data_json_schema_is_pinned():
     for a in data["alerts"]:
         assert ALERT_KEYS <= set(a)
         assert set(a["emergence"]) == EMERGENCE_KEYS
+
+
+def test_fill_age_and_staleness_reported_for_consumers():
+    # A consumer keying freshness off `generated` (bumped every weekly publish) must also see the
+    # overlaid fill's real age, and whether it has aged past its sampling window.
+    res = _fks1_hit_result()
+    res["window_days"] = 180
+    fresh = weather_feed.build_data(res, now="2026-05-01T00:00:00Z",
+                                    calls_provenance={"as_of": "2026-04-14"})
+    assert fresh["fill_age_days"] == 17 and fresh["fill_stale"] is False
+    stale = weather_feed.build_data(res, now="2026-10-22T00:00:00Z",
+                                    calls_provenance={"as_of": "2026-04-14"})
+    assert stale["fill_age_days"] == 191 and stale["fill_stale"] is True
 
 
 def test_release_trend_carries_panel_vs_vus_split_unchanged():

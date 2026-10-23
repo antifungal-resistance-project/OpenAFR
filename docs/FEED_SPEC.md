@@ -7,20 +7,27 @@ only; detection-only; not a clinical claim.
 - `data.json` — full state (this document)
 - `alerts.atom` — Atom 1.0, one entry per current alert
 
-Contract is pinned by `tests/test_weather_feed.py`. Adding a key is backward compatible.
-Renaming, removing, or changing the meaning of a key bumps `schema_version` (currently `1`).
+Contract is pinned by `tests/test_weather_feed.py` and re-checked at publish time by
+`scripts/check_published_page.py`. Adding a key is backward compatible. Renaming, removing, or
+changing the meaning of a key bumps `schema_version` (currently `2`).
+
+**Changelog.** `2` (2026-10): added `fill_age_days` + `fill_stale` so a consumer can read the
+overlaid fill's real age — `generated` advances on every weekly publish even when the underlying
+calls are frozen, so it is **not** a freshness signal on its own.
 
 ## data.json
 
 | key | type | meaning |
 |---|---|---|
-| `schema_version` | int | `1` |
-| `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time |
+| `schema_version` | int | `2` |
+| `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time — advances on every weekly publish; **not** a data-freshness signal (see `fill_age_days`) |
 | `notice` | string | research-use disclaimer |
 | `gene` | string \| null | `FKS1` for the echinocandin arm |
 | `page_url` | string \| null | canonical page URL |
 | `as_of` | string \| null | as-of date of the data behind the page |
 | `window_days` | int \| null | "recent" window used for emergence |
+| `fill_age_days` | int \| null | age of the overlaid fill at build time (`generated` − fill `as_of`); `null` when unknown |
+| `fill_stale` | bool | true once the fill is older than one `window_days` (the sampled window is behind the live feed; still older ⇒ aged fully out) |
 | `thresholds` | object | alert thresholds used |
 | `coverage` | object | genotyping coverage (resolved isolates over total) |
 | `alerts` | array | current alerts (below) |
@@ -72,9 +79,12 @@ n_resistant / n_called`, where `n_called` is resolved isolates. Do not sum `n_re
 
 `series[]` — one entry per NCBI **deposit month**, ascending: `month` (`YYYY-MM`), `n_resolved`,
 `n_resistant` (panel-gated), `prevalence`. `skill` (bool) — whether a pre-registered walk-forward
-showed the trend model beats both naive baselines (`work/RESULTS_fks1_forecast.md`). `projection`
-— the one-deposit-month-ahead `forecast_next` dict (`next_month`, `point`, `lo`/`hi` 95% PI,
-`naive_last`, `naive_pooled`, `slope_logit`, `n_months`, `has_interval`), or `null`.
+showed the trend model beats both naive baselines (`work/RESULTS_fks1_forecast.md`). `n_folds`
+(int) — walk-forward folds evaluated. `model_mae`, `naive_last_mae`, `naive_pooled_mae` (float) —
+held-out mean absolute error of the trend model and the two naive baselines the skill test
+compares against. `projection` — the one-deposit-month-ahead `forecast_next` dict (`next_month`,
+`point`, `lo`/`hi` 95% PI, `naive_last`, `naive_pooled`, `slope_logit`, `n_months`,
+`has_interval`), or `null`.
 
 **How to read it:** trust `projection.point`/`lo`/`hi` as a *forecast* **only** when `skill` is
 `true`. When `skill` is `false` the series is still a real trajectory, but no projection is

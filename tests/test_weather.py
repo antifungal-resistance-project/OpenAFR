@@ -303,6 +303,54 @@ def test_missing_coverage_and_provenance_omit_clause_without_crashing():
     assert "awaiting re-call" not in page
 
 
+# ---- fill-age honesty: the anchored page must not look fresher than its data ----------------
+# The display window is anchored to the committed fill, so coverage reads a confident 100% with a
+# static "calls current through <date>" forever. These lock the age signal that keeps the page from
+# silently overstating freshness as the fill ages out from under a weekly-refreshed "Last checked".
+
+def _aged_result(as_of, window_days):
+    r = _cov_result(200, 200)
+    r["window_days"] = window_days
+    r["as_of"] = as_of
+    return r, {"as_of": as_of, "n_called": 200}
+
+
+def test_fresh_fill_shows_no_age_warning():
+    # now within one window of the fill -> the "calls current through" date carries it; no warning.
+    res, prov = _aged_result("2026-09-01", 180)
+    page = weather.render_page(res, now="2026-10-01T00:00:00Z", calls_provenance=prov)
+    assert "fill is" not in page
+    assert 'class="stale"' not in page and 'class="dark"' not in page
+
+
+def test_stale_fill_shows_amber_age_warning():
+    # now past one window but under two -> visible amber "fill is N days old" warning.
+    res, prov = _aged_result("2026-04-14", 180)
+    page = weather.render_page(res, now="2026-10-22T00:00:00Z", calls_provenance=prov)
+    assert "window isolates re-called" in page            # still lit/confident on coverage
+    assert '<span class="stale">fill is 191 days old' in page
+    assert "older than the sampling window" in page
+    assert 'class="dark"' not in page
+
+
+def test_aged_out_fill_shows_red_dark_warning():
+    # now past two windows -> the fill's whole window has rolled off; red "refresh overdue".
+    res, prov = _aged_result("2026-04-14", 180)
+    page = weather.render_page(res, now="2027-05-01T00:00:00Z", calls_provenance=prov)
+    assert '<span class="dark">fill is' in page
+    assert "refresh overdue" in page
+
+
+def test_age_warning_omitted_when_window_unknown():
+    # fail-honest: no window_days -> cannot tier the age, so no warning rather than a guess.
+    res = _cov_result(200, 200)
+    res["as_of"] = "2026-04-14"
+    res["window_days"] = None  # unknown window -> cannot tier the age
+    page = weather.render_page(res, now="2027-05-01T00:00:00Z",
+                               calls_provenance={"as_of": "2026-04-14", "n_called": 200})
+    assert "fill is" not in page
+
+
 def test_footer_states_the_monthly_refresh_cadence():
     page = weather.render_page(_cov_result(200, 150), now=NOW,
                                calls_provenance={"as_of": "2026-04-11", "n_called": 300})
