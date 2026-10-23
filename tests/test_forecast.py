@@ -94,6 +94,66 @@ def test_forecast_reports_naive_baselines():
     assert math.isclose(fc["naive_pooled"], 8 / 200)
 
 
+# --- weighted fit (v2) ----------------------------------------------------------------
+
+def test_wls_equal_weights_matches_ols():
+    # With equal weights the weighted fit must reproduce OLS exactly (plus the mx/sxx fields).
+    xs = [0, 1, 2, 3]
+    ys = [0.1, 0.4, 0.35, 0.8]
+    o_int, o_slope, o_s2, o_n = forecast._ols(xs, ys)
+    w_int, w_slope, w_s2, w_n, mx_w, sxx_w = forecast._wls(xs, ys, [1.0] * 4)
+    assert math.isclose(w_int, o_int) and math.isclose(w_slope, o_slope)
+    assert math.isclose(w_s2, o_s2) and w_n == o_n
+    assert math.isclose(mx_w, 1.5) and math.isclose(sxx_w, 5.0)
+
+
+def test_wls_weights_pull_fit_toward_heavy_points():
+    # A high-weight point should dominate the fit. Three points collinear at slope 1 plus one
+    # off-trend point: up-weighting the off point must move the slope toward it.
+    xs = [0, 1, 2, 3]
+    ys = [0.0, 1.0, 2.0, 0.0]            # last point breaks the slope-1 line
+    _, light, *_ = forecast._wls(xs, ys, [1, 1, 1, 1])
+    _, heavy, *_ = forecast._wls(xs, ys, [1, 1, 1, 50])
+    assert heavy < light                 # the heavy off-trend point drags the slope down
+
+
+def test_binomial_weight_rewards_sample_size():
+    # Same prevalence, more isolates -> more weight (more information).
+    assert forecast._binomial_weight(10, 200) > forecast._binomial_weight(5, 100)
+    # Equal N: a near-0 month carries less weight than a mid-prevalence one.
+    assert forecast._binomial_weight(1, 400) < forecast._binomial_weight(200, 400)
+
+
+def test_forecast_weighted_default_differs_from_unweighted_on_uneven_N():
+    # Uneven monthly denominators: the weighted (default) and unweighted fits must diverge,
+    # proving the default path is actually the weighted one.
+    series = [
+        {"month": "2026-04", "n_resolved": 100, "n_resistant": 2, "prevalence": 0.02},
+        {"month": "2026-05", "n_resolved": 800, "n_resistant": 40, "prevalence": 0.05},
+        {"month": "2026-06", "n_resolved": 120, "n_resistant": 12, "prevalence": 0.10},
+    ]
+    w = forecast.forecast_next(series)                    # weighted default
+    u = forecast.forecast_next(series, weighted=False)    # v1 model
+    assert not math.isclose(w["slope_logit"], u["slope_logit"])
+    assert w["has_interval"] and u["has_interval"]
+    assert 0.0 < w["lo"] <= w["point"] <= w["hi"] < 1.0
+
+
+def test_forecast_unweighted_path_reproduces_v1_ols():
+    # v1 reproducibility guard: forecast_next(weighted=False) must match a from-scratch OLS
+    # forecast on the Anscombe-corrected logit -- the exact v1 model, untouched by the v2 code.
+    series = [
+        {"month": f"2026-0{m}", "n_resolved": 300, "n_resistant": n, "prevalence": n / 300}
+        for m, n in zip(range(4, 9), (9, 12, 18, 21, 30))
+    ]
+    u = forecast.forecast_next(series, weighted=False)
+    xs = list(range(len(series)))
+    ys = [forecast._corrected_logit(e["n_resistant"], e["n_resolved"]) for e in series]
+    a, b, _, _ = forecast._ols(xs, ys)
+    assert math.isclose(u["point"], forecast._expit(a + b * (xs[-1] + 1)))
+    assert math.isclose(u["slope_logit"], b)
+
+
 # --- backtest / has_skill -------------------------------------------------------------
 
 def _clean_rising_series():
