@@ -90,3 +90,7 @@ work/dock_batch_output.txt
 
 # pytest-cov artifact
 .coverage
+
+# Local weather-page render output (scripts/render_weather.py); the Pages workflow
+# regenerates it and commits nothing. The directory was removed in #8.
+/site/

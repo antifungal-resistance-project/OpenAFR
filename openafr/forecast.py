@@ -24,9 +24,15 @@ real-data backtest forced (work/RESULTS_fks1_backtest.md). The denominator is th
 *resolved* set (openafr.emergence.resolved), not mutation-carriers -- the coverage fix.
 
 Stdlib only; pure functions over records (list of dicts) or a prevalence series; no I/O,
-no network, no wall-clock. The model is a least-squares trend on the logit of monthly
-prevalence (with an Anscombe continuity correction so a zero-count month is finite),
-projected forward with a Student-t prediction interval -- deterministic, no RNG.
+no network, no wall-clock. The model is a *precision-weighted* least-squares trend on the
+logit of monthly prevalence (v2) -- each month weighted by its binomial information
+N*p̃*(1-p̃), with an Anscombe continuity correction so a zero-count month is finite, projected
+forward with a Student-t prediction interval -- deterministic, no RNG. Weighting the fit by
+sample size matches the N-weighting the `naive_pooled` baseline already carries, so the
+walk-forward skill comparison is apples-to-apples; it is a textbook correction for regressing
+proportions, not a tunable (work/PREREGISTRATION_fks1_forecast_v2.md). The original unweighted
+OLS fit (v1, work/PREREGISTRATION_fks1_forecast.md) stays reachable via forecast_next(...,
+weighted=False) and remains reproducible verbatim.
 """
 import math
 
@@ -130,6 +136,41 @@ def _ols(xs, ys):
     return intercept, slope, s2, n
 
 
+def _wls(xs, ys, ws):
+    """Weighted least-squares slope/intercept + weighted residual variance for y ~ a + b*x.
+
+    Returns (intercept, slope, s2, n, mx_w, sxx_w) where everything is weighted by `ws`:
+    `mx_w` is the weighted mean of x, `sxx_w = Σ w (x-mx_w)^2`, and `s2 = Σ w r^2 / (n-2)` is
+    the weighted residual variance (0.0 when n <= 2). With equal weights this reduces exactly
+    to `_ols` (plus the extra mx/sxx fields), so the unweighted path stays reproducible.
+    Pre-registered in work/PREREGISTRATION_fks1_forecast_v2.md. Pure stdlib."""
+    n = len(xs)
+    sw = sum(ws)
+    mx_w = sum(w * x for w, x in zip(ws, xs)) / sw
+    my_w = sum(w * y for w, y in zip(ws, ys)) / sw
+    sxx_w = sum(w * (x - mx_w) ** 2 for w, x in zip(ws, xs))
+    sxy_w = sum(w * (x - mx_w) * (y - my_w) for w, x, y in zip(ws, xs, ys))
+    slope = sxy_w / sxx_w if sxx_w else 0.0
+    intercept = my_w - slope * mx_w
+    if n > 2:
+        resid = [y - (intercept + slope * x) for x, y in zip(xs, ys)]
+        s2 = sum(w * r * r for w, r in zip(ws, resid)) / (n - 2)
+    else:
+        s2 = 0.0
+    return intercept, slope, s2, n, mx_w, sxx_w
+
+
+def _binomial_weight(n_resistant, n_resolved):
+    """Inverse-variance weight for a month's logit prevalence: w = N * p̃ * (1 - p̃).
+
+    This is the reciprocal of the delta-method sampling variance of the logit,
+    Var(logit p̂) ≈ 1 / (N * p̃ * (1-p̃)), using the same Anscombe-corrected p̃ = (n+0.5)/(N+1)
+    the trend already fits. A thin month (small N) or a near-0/near-1 month carries less
+    leverage -- the binomial information it actually contributes. No tunable; frozen in v2."""
+    p = (n_resistant + 0.5) / (n_resolved + 1.0)
+    return n_resolved * p * (1.0 - p)
+
+
 # Student-t 95% two-sided critical values by residual d.o.f. (n-2). A small committed table
 # keeps us honest without pulling in scipy; d.o.f. beyond the table use the normal limit 1.96.
 _T95 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365,
@@ -147,15 +188,23 @@ def _t_crit(df):
     return 1.96
 
 
-def forecast_next(series, *, horizon=1):
+def forecast_next(series, *, horizon=1, weighted=True):
     """Project prevalence `horizon` deposit-month(s) past the end of `series`.
 
-    Model: least-squares trend on the Anscombe-corrected logit of monthly prevalence vs a
-    0-based month index, inverted to a probability; a Student-t prediction interval (on the
-    logit scale, inverted) carries the regression uncertainty. Returned alongside are two
-    naive baselines the backtest must be beaten against -- `naive_last` (persistence: the
-    last observed prevalence) and `naive_pooled` (the pooled prevalence over all months) --
-    so a caller can never dress a no-skill model as a forecast.
+    Model (v2, weighted=True -- the certified default): a *precision-weighted* least-squares
+    trend on the Anscombe-corrected logit of monthly prevalence vs a 0-based month index, each
+    month weighted by its binomial information w = N*p̃*(1-p̃) (`_binomial_weight`), inverted
+    to a probability. A thin month contributes less leverage than a fat one -- matching the
+    N-weighting the `naive_pooled` baseline already has, so the skill comparison is fair.
+    Pre-registered in work/PREREGISTRATION_fks1_forecast_v2.md.
+
+    With weighted=False the fit is ordinary (unweighted) OLS -- the v1 model
+    (work/PREREGISTRATION_fks1_forecast.md), kept reproducible verbatim.
+
+    A Student-t prediction interval (on the logit scale, inverted) carries the regression
+    uncertainty. Returned alongside are two naive baselines the backtest must be beaten against
+    -- `naive_last` (persistence: the last observed prevalence) and `naive_pooled` (the pooled
+    prevalence over all months) -- so a caller can never dress a no-skill model as a forecast.
 
     Returns None when fewer than two months are available (a point is not a trajectory, the
     same <2 -> nothing degradation the page's trend section uses). Otherwise a dict:
@@ -168,18 +217,26 @@ def forecast_next(series, *, horizon=1):
         return None
     xs = list(range(len(pts)))
     ys = [_corrected_logit(e["n_resistant"], e["n_resolved"]) for e in pts]
-    intercept, slope, s2, n = _ols(xs, ys)
     x_star = xs[-1] + horizon
+
+    if weighted:
+        ws = [_binomial_weight(e["n_resistant"], e["n_resolved"]) for e in pts]
+        intercept, slope, s2, n, mx, sxx = _wls(xs, ys, ws)
+        # Future-month own scatter uses the training mean weight (N* is unknown): 1/w̄.
+        own = n / sum(ws)
+    else:
+        intercept, slope, s2, n = _ols(xs, ys)
+        mx = sum(xs) / n
+        sxx = sum((x - mx) ** 2 for x in xs)
+        own = 1.0
     mu = intercept + slope * x_star
 
-    mx = sum(xs) / n
-    sxx = sum((x - mx) ** 2 for x in xs)
     lo = hi = None
     has_interval = False
     tcrit = _t_crit(n - 2)
     if tcrit is not None and s2 > 0 and sxx > 0:
-        # Prediction (not mean) interval: adds the 1.0 for a new observation's own scatter.
-        se = math.sqrt(s2 * (1.0 + 1.0 / n + (x_star - mx) ** 2 / sxx))
+        # Prediction (not mean) interval: `own` is the new observation's own-scatter term.
+        se = math.sqrt(s2 * (own + 1.0 / n + (x_star - mx) ** 2 / sxx))
         lo = _expit(mu - tcrit * se)
         hi = _expit(mu + tcrit * se)
         has_interval = True

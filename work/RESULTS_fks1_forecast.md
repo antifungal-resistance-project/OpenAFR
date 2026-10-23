@@ -1,15 +1,11 @@
 # Results — FKS1 (echinocandin) prevalence forecast
 
-**Run 2026-10-17.** Pre-registered in [PREREGISTRATION_fks1_forecast.md](PREREGISTRATION_fks1_forecast.md)
+**Run 2026-10-23.** Pre-registered in [PREREGISTRATION_fks1_forecast_v2.md](PREREGISTRATION_fks1_forecast_v2.md)
 (hash re-checked by the grader before this file was written). Fully local — committed call
 table read offline, no GCP.
 
 - **Source table:** `data/earlywarning/fks1_calls/PDG000000067.710.tsv`
-  sha256 `14758b14d5cd274e3b32eb18d166d84ca9ddb0544b44b42d89c5447f8019a4ed` at the time of this run.
-  (Later re-pinned to `01e6e4f010e34606225ba7e2561d1f1a7c0f32841d8012ea409aae8223cdd58f` when the
-  `country` column was backfilled for the historical-geography view — a new column only; the
-  `fks1_call`/deposit-month inputs this forecast reads are unchanged, so the series above is
-  unaffected.)
+  sha256 `947ad9ab459c58be057d744be4bd54207a196762983fa96e512d3aa3c1d19ee7`
 - **Series depth:** 7 deposit-month bins (2026-04 → 2026-10).
 
 ## P1 — monthly panel-gated prevalence (deposit date)
@@ -34,20 +30,20 @@ Pre-committed bar: model MAE must be strictly below **both** naive baselines.
 | Metric | Value |
 |---|---|
 | Held-out folds | 4 (min train 3, horizon 1) |
-| Model MAE | 2.62 pp |
+| Model MAE | 2.93 pp |
 | Naive-last MAE | 3.56 pp |
 | Naive-pooled MAE | 2.01 pp |
 
 | Fold (train → target) | Actual | Model | Naive-last | Naive-pooled | In 95% PI |
 |---|---|---|---|---|---|
-| 2026-06 → 2026-07 | 5.07% | 2.10% | 2.76% | 3.73% | ✗ |
-| 2026-07 → 2026-08 | 1.40% | 3.80% | 5.07% | 4.05% | ✓ |
-| 2026-08 → 2026-09 | 6.08% | 1.72% | 1.40% | 3.40% | ✓ |
-| 2026-09 → 2026-10 | 2.49% | 3.23% | 6.08% | 3.88% | ✓ |
+| 2026-06 → 2026-07 | 5.07% | 2.10% | 2.76% | 3.73% | ✓ |
+| 2026-07 → 2026-08 | 1.40% | 4.05% | 5.07% | 4.05% | ✓ |
+| 2026-08 → 2026-09 | 6.08% | 2.33% | 1.40% | 3.40% | ✓ |
+| 2026-09 → 2026-10 | 2.49% | 4.84% | 6.08% | 3.88% | ✓ |
 
 ## P3 — interval coverage
 
-Actual-in-95%-PI over held-out months: **75.00%** (descriptive; 7 bins
+Actual-in-95%-PI over held-out months: **100.00%** (descriptive; 7 bins
 underpower a coverage *claim*).
 
 ## Verdict: NO SKILL — trajectory only

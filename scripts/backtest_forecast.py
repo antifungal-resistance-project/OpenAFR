@@ -1,7 +1,8 @@
 """Grade the FKS1 prevalence forecast against its pre-registration, and write RESULTS.
 
-Pre-registration: work/PREREGISTRATION_fks1_forecast.md, sha frozen in
-work/PREREG_fks1_forecast.sha256. This grader re-checks that hash and REFUSES to certify if
+Pre-registration: work/PREREGISTRATION_fks1_forecast_v2.md (the precision-weighted model;
+v1 was work/PREREGISTRATION_fks1_forecast.md), sha frozen in
+work/PREREG_fks1_forecast_v2.sha256. This grader re-checks that hash and REFUSES to certify if
 the prereg moved after it was frozen (the same integrity guard validate_fks1_concordance.py
 uses) -- so the bar can never be edited to fit the result.
 
@@ -27,8 +28,8 @@ sys.path.insert(0, str(ROOT))
 from openafr import earlywarning as ew   # noqa: E402
 from openafr import forecast             # noqa: E402
 
-PREREG = ROOT / "work" / "PREREGISTRATION_fks1_forecast.md"
-PINS = ROOT / "work" / "PREREG_fks1_forecast.sha256"
+PREREG = ROOT / "work" / "PREREGISTRATION_fks1_forecast_v2.md"
+PINS = ROOT / "work" / "PREREG_fks1_forecast_v2.sha256"
 DEFAULT_TABLE = ROOT / "data" / "earlywarning" / "fks1_calls" / "PDG000000067.710.tsv"
 DEFAULT_OUT = ROOT / "work" / "RESULTS_fks1_forecast.md"
 
@@ -94,7 +95,7 @@ def _render_results(table, table_sha, series, bt, fc, skill):
                    f"the monthly trajectory only. Pooled prevalence ≈ {_pct(pooled)}.")
     return f"""# Results — FKS1 (echinocandin) prevalence forecast
 
-**Run {now}.** Pre-registered in [PREREGISTRATION_fks1_forecast.md](PREREGISTRATION_fks1_forecast.md)
+**Run {now}.** Pre-registered in [PREREGISTRATION_fks1_forecast_v2.md](PREREGISTRATION_fks1_forecast_v2.md)
 (hash re-checked by the grader before this file was written). Fully local — committed call
 table read offline, no GCP.
 
@@ -172,7 +173,13 @@ def main():
     skill = forecast.has_skill(bt)
 
     out = pathlib.Path(args.out)
-    out.write_text(_render_results(table, _sha256(table), series, bt, fc, skill))
+    # Render the table path repo-relative when it lives under ROOT, so the committed
+    # artifact is identical no matter where the grader was invoked from.
+    try:
+        table_label = table.resolve().relative_to(ROOT)
+    except ValueError:
+        table_label = table
+    out.write_text(_render_results(table_label, _sha256(table), series, bt, fc, skill))
     print(f"wrote {out} — verdict: {'SKILL' if skill else 'NO SKILL (trajectory only)'} "
           f"(model MAE {_pp(bt['model_mae'])} vs last {_pp(bt['naive_last_mae'])} / "
           f"pooled {_pp(bt['naive_pooled_mae'])}).")
