@@ -201,13 +201,63 @@ def _calm_copy(gene):
             "with its emergence signal — detection only, no structural verdict.")
 
 
-def _coverage_clause(coverage, provenance):
+def _fill_age_tier(provenance, window_days, now_date):
+    """Classify the overlaid fill's age at render time -> (tier, age_days).
+
+    The page's display window is ANCHORED to the committed fill (fill_status.display_window),
+    so coverage reads a confident "100%" with a static "calls current through <fill date>"
+    forever, no matter how old the fill is. That is honest about coverage but silent about age:
+    a reader (or a consumer keying off the weekly-refreshed "Last checked") sees no signal that
+    the underlying calls are months old. This supplies that signal.
+
+    tier is 'fresh' while the fill is younger than one window, 'stale' once it is older than one
+    window (its calls still show, but the sampled window is behind the live feed), and 'dark'
+    once the fill's entire window has rolled past a trailing-today window -- i.e. age >= 2 *
+    window_days, which is exactly fill_status._window_aged_out(as_of, window_days, today - window)
+    (kept as local date math so this render layer stays I/O-free). Returns (None, None) when the
+    fill date or window is unknown -- omit rather than guess, matching the clause's discipline.
+    """
+    as_of = (provenance or {}).get("as_of")
+    age_days = _fmt_days_since(as_of, now_date) if as_of else None
+    try:
+        window = int(window_days)
+    except (TypeError, ValueError):
+        window = None
+    if age_days is None or window is None or window <= 0:
+        return None, None
+    if age_days >= 2 * window:
+        return "dark", age_days
+    if age_days > window:
+        return "stale", age_days
+    return "fresh", age_days
+
+
+def _age_clause(provenance, window_days, now_date):
+    """The data-age half of the freshness line, or "" when age can't be stated honestly.
+
+    Fresh fills say nothing (the "calls current through" date already carries it); a fill past
+    one window gets a visible, coloured "fill is N days old" warning that strengthens once the
+    window has fully aged out -- the page's own confidence degrading with its data."""
+    tier, age_days = _fill_age_tier(provenance, window_days, now_date)
+    if tier is None or tier == "fresh":
+        return ""
+    cls = "dark" if tier == "dark" else "stale"
+    aged = (" &mdash; past its sampling window, refresh overdue" if tier == "dark"
+            else " &mdash; older than the sampling window")
+    return (f' &middot; <span class="{cls}">fill is {age_days} day'
+            f'{"" if age_days == 1 else "s"} old{aged}</span>')
+
+
+def _coverage_clause(coverage, provenance, now_date=None, window_days=None):
     """A freshness/coverage clause for the .meta line, or "" when there is nothing honest
     to say. For a public-health page, how much of the shown window is actually re-called —
     and how current those calls are — matters as much as the verdict itself.
 
     `coverage` -- the composer's coverage dict (recent_total / recent_called), or None.
     `provenance` -- {as_of, n_called} of the overlaid call table (the fill date), or None.
+    `now_date`/`window_days` -- render date + displayed window, used only to append an honest
+    age warning once the anchored fill is older than its window (see `_age_clause`); omitted
+    when either is unknown.
     Degrades honestly: zero re-called isolates in the window reads as "awaiting re-call",
     never as a confident current picture; missing data omits the clause rather than guessing.
     """
@@ -234,8 +284,9 @@ def _coverage_clause(coverage, provenance):
         return (f'<span class="stale">echinocandin calls: awaiting re-call'
                 f'{fill_size}{through_html}</span>')
     pct = round(100 * called / total)
+    age_html = _age_clause(provenance, window_days, now_date)
     return (f"echinocandin calls: {called} of {total} window isolates re-called "
-            f"({pct}%){through_html}")
+            f"({pct}%){through_html}{age_html}")
 
 
 def _is_awaiting(coverage):
@@ -834,7 +885,8 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
 
     as_of = html.escape(str(r.get("as_of", "—")))
     window = html.escape(str(r.get("window_days", "—")))
-    coverage_clause = _coverage_clause(coverage, calls_provenance)
+    coverage_clause = _coverage_clause(coverage, calls_provenance,
+                                       now_date=now_date, window_days=r.get("window_days"))
     # The freshness/coverage clause is the single most important fact on the meta line, so
     # it leads on its own readable line; the provenance detail (checked/as-of/window/source)
     # follows, muted. Same facts and the same honest degradation as before, better hierarchy.
@@ -914,6 +966,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .meta-detail {{ color:var(--muted); font-size:.82rem; margin:0; }}
   .meta code {{ color:var(--code); }}
   .meta .stale {{ color:var(--stale); }}
+  .meta .dark {{ color:var(--tier-act-now); font-weight:600; }}
   .cert {{ margin:-.5rem 0 2rem; font-size:.85rem; }}
   .cert a {{ display:inline-block; color:var(--accent); text-decoration:none;
              border:1px solid var(--accent-border); background:var(--surface-accent);

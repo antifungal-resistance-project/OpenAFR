@@ -96,6 +96,8 @@ def _write_site(tmp_path, data):
     site.mkdir()
     (site / "index.html").write_text("<html></html>")
     (site / "data.json").write_text(json.dumps(data))
+    (site / "alerts.atom").write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom"/>\n')
     return site
 
 
@@ -106,7 +108,10 @@ def _valid_data():
         "generated": "2026-01-01T00:00:00Z",
         "notice": "Research use only.",
         "gene": "FKS1", "page_url": None, "as_of": AS_OF, "window_days": WINDOW,
-        "thresholds": {}, "coverage": {"recent_called": 10, "baseline_called": 20},
+        "fill_age_days": 20, "fill_stale": False,
+        "thresholds": {},
+        "coverage": {"recent_total": 10, "recent_called": 10,
+                     "baseline_total": 20, "baseline_called": 20},
         "alerts": [{
             "mutation": "S639F", "priority": "watch", "headline": "", "first_seen": None,
             "regions": [], "n_carriers_total": 3,
@@ -156,6 +161,83 @@ def test_alert_missing_emergence_field_fails(tmp_path):
     data = _valid_data()
     data["alerts"][0]["emergence"].pop("delta")
     site = _write_site(tmp_path, data)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+# ---- content sanity beyond key-shape (strengthened gate) ---------------------------------
+
+def _lit_site_with_table(tmp_path, data):
+    """A site/ carrying arbitrary data.json PLUS a committed table, so the lit/coverage/geography
+    content checks (which only run when a fill is committed) are exercised."""
+    calls_dir = tmp_path / "fks1_calls"
+    _commit_table(calls_dir)
+    return _write_site(tmp_path, data), calls_dir
+
+
+def test_partial_overlay_collapse_fails_even_though_coverage_is_nonzero(tmp_path):
+    # 10 of 3375 overlaid: recent_called > 0 (old check passed) but ratio far below the floor.
+    data = _valid_data()
+    data["coverage"] = {"recent_total": 3375, "recent_called": 10,
+                        "baseline_total": 0, "baseline_called": 0}
+    data["geography"] = {"USA": 5}
+    site, calls_dir = _lit_site_with_table(tmp_path, data)
+    assert gate.run(str(site), str(calls_dir)) == 1
+
+
+def test_lit_page_with_empty_geography_fails(tmp_path):
+    data = _valid_data()  # coverage is 100% -> lit, but geography is {}
+    site, calls_dir = _lit_site_with_table(tmp_path, data)
+    assert gate.run(str(site), str(calls_dir)) == 1
+
+
+def test_release_trend_missing_panel_vs_vus_key_fails(tmp_path):
+    # #192 split must not silently revert: an entry without n_vus is a regression.
+    data = _valid_data()
+    data["release_trend"] = [{"release_tag": "PDG000000067.710", "as_of": "2026-04-14",
+                              "n_called": 3375, "n_resistant": 128, "prevalence": 0.038}]
+    site = _write_site(tmp_path, data)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+def test_implausible_prevalence_swing_fails(tmp_path):
+    data = _valid_data()
+    data["release_trend"] = [
+        {"release_tag": "A", "as_of": "2026-01-01", "n_called": 100, "n_resistant": 4,
+         "n_vus": 2, "prevalence": 0.04},
+        {"release_tag": "B", "as_of": "2026-04-14", "n_called": 100, "n_resistant": 60,
+         "n_vus": 2, "prevalence": 0.60},  # +0.56 jump: a bad fill, not epidemiology
+    ]
+    site = _write_site(tmp_path, data)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+def test_out_of_range_prevalence_fails(tmp_path):
+    data = _valid_data()
+    data["release_trend"] = [{"release_tag": "A", "as_of": "2026-01-01", "n_called": 100,
+                              "n_resistant": 4, "n_vus": 2, "prevalence": 1.5}]
+    site = _write_site(tmp_path, data)
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+def test_malformed_atom_fails(tmp_path):
+    site = _write_site(tmp_path, _valid_data())
+    (site / "alerts.atom").write_text("<feed><unclosed>")
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert gate.run(str(site), str(empty)) == 1
+
+
+def test_missing_atom_fails(tmp_path):
+    site = _write_site(tmp_path, _valid_data())
+    (site / "alerts.atom").unlink()
     empty = tmp_path / "empty"
     empty.mkdir()
     assert gate.run(str(site), str(empty)) == 1

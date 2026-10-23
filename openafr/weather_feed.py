@@ -12,7 +12,11 @@ import datetime
 import hashlib
 from xml.sax.saxutils import escape
 
-SCHEMA_VERSION = 1
+from openafr.weather import _fill_age_tier
+
+# v2 (2026-10): added `fill_age_days` + `fill_stale` so a consumer keying freshness off
+# `generated` (refreshed on every weekly publish) is not misled by an anchored, frozen fill.
+SCHEMA_VERSION = 2
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 
@@ -52,6 +56,10 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
     provenance. `forecast` is the openafr.forecast bundle (monthly series + walk-forward skill
     + one-step projection); a consumer reads `forecast.skill` before trusting `projection`."""
     r = alert_result or {}
+    now_date = datetime.datetime.fromisoformat(
+        _now_iso(now).replace("Z", "+00:00")).date()
+    fill_tier, fill_age_days = _fill_age_tier(
+        calls_provenance, r.get("window_days"), now_date)
     return {
         "schema_version": SCHEMA_VERSION,
         "generated": _now_iso(now),
@@ -60,6 +68,10 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
         "page_url": page_url,
         "as_of": r.get("as_of"),
         "window_days": r.get("window_days"),
+        # Age of the overlaid fill at build time, and whether it has aged past its sampling
+        # window -- the freshness signal `generated` alone cannot carry (see weather._age_clause).
+        "fill_age_days": fill_age_days,
+        "fill_stale": fill_tier in ("stale", "dark"),
         "thresholds": r.get("thresholds") or {},
         "coverage": r.get("coverage") or {},
         "alerts": [_alert_record(a) for a in (r.get("alerts") or [])],
