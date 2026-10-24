@@ -16,7 +16,9 @@ from openafr.weather import _fill_age_tier
 
 # v2 (2026-10): added `fill_age_days` + `fill_stale` so a consumer keying freshness off
 # `generated` (refreshed on every weekly publish) is not misled by an anchored, frozen fill.
-SCHEMA_VERSION = 2
+# v3 (2026-10): added `panel_census` -- the per-marker breakdown of the known-resistance panel
+# (which substitution each resistant carrier has), whose carrier counts sum to the headline.
+SCHEMA_VERSION = 3
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 
@@ -50,11 +52,13 @@ def _alert_record(a):
 
 
 def build_data(alert_result, *, now=None, calls_provenance=None, certification=None,
-               release_trend=None, geo_breakdown=None, geo_history=None, vus_census=None,
-               forecast=None, page_url=None):
-    """The `data.json` document: status, alerts, coverage, trend, forecast, geography, VUS,
-    provenance. `forecast` is the openafr.forecast bundle (monthly series + walk-forward skill
-    + one-step projection); a consumer reads `forecast.skill` before trusting `projection`."""
+               release_trend=None, geo_breakdown=None, geo_history=None, panel_census=None,
+               vus_census=None, forecast=None, page_url=None):
+    """The `data.json` document: status, alerts, coverage, trend, forecast, geography,
+    panel breakdown, VUS, provenance. `forecast` is the openafr.forecast bundle (monthly series
+    + walk-forward skill + one-step projection); a consumer reads `forecast.skill` before
+    trusting `projection`. `panel_census` is the per-marker breakdown of the known-resistance
+    panel, each `{token, carriers, low_ppv}`, whose carrier counts sum to the headline."""
     r = alert_result or {}
     now_date = datetime.datetime.fromisoformat(
         _now_iso(now).replace("Z", "+00:00")).date()
@@ -82,6 +86,7 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
             {"release_tag": e.get("release_tag"), "as_of": e.get("as_of"),
              "geography": dict(sorted((e.get("geography") or {}).items()))}
             for e in (geo_history or [])],
+        "panel_census": list(panel_census or []),
         "vus_census": list(vus_census or []),
         "calls_provenance": dict(calls_provenance or {}),
         "certification": dict(certification) if certification else None,

@@ -702,6 +702,54 @@ def _geo_history_section(geo_history):
 """
 
 
+def _panel_breakdown_section(panel_census):
+    """The 'which known-resistance variant is circulating' section: the per-marker breakdown
+    behind the single headline prevalence number -- each known-resistance panel substitution
+    the current table carries, with how many isolates carry it -- or "" when there are none
+    (honest degradation, same as trend/geo/VUS).
+
+    `panel_census` -- the per-variant list from render_weather: each entry carries `token`,
+    `carriers`, and `low_ppv` (True for the known-but-low-PPV positions D642Y/M690I, which are
+    counted in the headline but split R/S rather than tracking resistance). Passed in, never
+    recomputed here. Carrier counts sum to the headline `n_resistant`; this is detection detail,
+    strictly the marker and its count, never a per-isolate phenotype claim.
+    """
+    if not panel_census:
+        return ""
+    def _panel_row(v):
+        token = html.escape(str(v["token"]))
+        carriers = v.get("carriers", 0)
+        low_ppv = v.get("low_ppv")
+        tag = (' <span class="low-ppv">low PPV</span>' if low_ppv else "")
+        return (
+            f"      <dt><code>{token}</code>{tag}</dt>"
+            f"<dd>{carriers} carrier(s)</dd>"
+        )
+
+    rows = "\n".join(_panel_row(v) for v in panel_census)
+    has_low_ppv = any(v.get("low_ppv") for v in panel_census)
+    low_ppv_note = (
+        " Markers tagged <strong>low PPV</strong> (D642Y, M690I) are on the panel and so are "
+        "counted in the headline, but their carriers split resistant/susceptible rather than "
+        "tracking resistance &mdash; read them with more caution than the core markers."
+        if has_low_ppv else "")
+    return f"""  <section class="panel-breakdown">
+    <h2>Which resistance variant is circulating</h2>
+    <p class="gloss">The known echinocandin-resistance FKS1 markers behind the headline
+      prevalence &mdash; which specific substitution each resistant isolate carries, and how
+      many carry it.</p>
+    <dl class="grid">
+{rows}
+    </dl>
+    <p class="note">Per-marker carrier counts for the known-resistance panel, from the same
+      resolved calls as the headline prevalence
+      (<code>openafr.earlywarning.iter_resolved_calls</code>, the single source of truth). An
+      isolate carrying more than one panel marker is counted under each.{low_ppv_note}
+      Detection only.</p>
+  </section>
+"""
+
+
 def _vus_section(vus_census):
     """The 'variants of uncertain significance' section: the non-panel hot-spot FKS1 variants
     the current table carries, each with how many isolates carry it and WHERE it sits relative
@@ -813,7 +861,7 @@ def _structured_data(description, certification, provenance, page_url):
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
                 certification=None, release_trend=None, geo_breakdown=None, geo_history=None,
-                vus_census=None, forecast=None, page_url=None, feeds=False):
+                panel_census=None, vus_census=None, forecast=None, page_url=None, feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -836,6 +884,10 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     `geo_history` -- [{release_tag, as_of, geography: {country: carrier_count}}], oldest first,
                         from the committed call series; renders the per-release historical
                         geography section. None/empty omits it.
+    `panel_census` -- the per-variant breakdown of KNOWN-resistance panel markers, each with
+                        `token`, `carriers`, `low_ppv`; renders the "which resistance variant
+                        is circulating" section. Carrier counts sum to the headline
+                        `n_resistant`. None/empty omits it.
     `vus_census` -- the per-variant list of non-panel hot-spot variants (uncertain
                         significance), each with `token`, `carriers`, `position_context`,
                         `position_note`; renders the VUS section. None/empty omits it.
@@ -910,6 +962,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     cert_badge = _cert_badge(certification)
     trend_html = _trend_section(release_trend)
     forecast_html = _forecast_section(forecast)
+    panel_html = _panel_breakdown_section(panel_census)
     geo_html = _geo_section(geo_breakdown)
     geo_history_html = _geo_history_section(geo_history)
     vus_html = _vus_section(vus_census)
@@ -999,6 +1052,9 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
                         margin:.6rem 0 .3rem; }}
   .vus-tier {{ color:var(--muted); font-size:.78rem; }}
   .struct-label {{ color:var(--accent); font-size:.78rem; }}
+  .low-ppv {{ color:var(--muted); font-size:.72rem; font-weight:600; text-transform:uppercase;
+              letter-spacing:.04em; border:1px solid var(--muted); border-radius:3px;
+              padding:0 .3em; margin-left:.35em; vertical-align:middle; }}
   .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
   .trend-up {{ color:var(--tier-act-now); }}
   .trend-down {{ color:var(--accent); }}
@@ -1075,7 +1131,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{forecast_html}{geo_html}{geo_history_html}{vus_html}{methods_html}  <footer>
+{trend_html}{forecast_html}{panel_html}{geo_html}{geo_history_html}{vus_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above

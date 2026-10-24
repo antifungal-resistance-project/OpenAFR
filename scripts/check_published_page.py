@@ -55,7 +55,8 @@ DEFAULT_CALLS_DIR = ROOT / "data" / "earlywarning" / "fks1_calls"
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
             "fill_age_days", "fill_stale",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
-            "geography_history", "vus_census", "calls_provenance", "certification"}
+            "geography_history", "panel_census", "vus_census", "calls_provenance",
+            "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -158,6 +159,7 @@ def _validate_schema(data, failures):
     if _check(isinstance(gh, list), "geography_history is a list", failures):
         _check(all(isinstance(e, dict) and isinstance(e.get("geography"), dict) for e in gh),
                "geography_history entries carry a geography object", failures)
+    _check(isinstance(data.get("panel_census"), list), "panel_census is a list", failures)
     _check(isinstance(data.get("vus_census"), list), "vus_census is a list", failures)
     for i, a in enumerate(data.get("alerts") or []):
         if not _check(ALERT_KEYS <= set(a), f"alert[{i}] has all required keys", failures):

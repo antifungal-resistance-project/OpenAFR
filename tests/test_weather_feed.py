@@ -18,7 +18,7 @@ def test_data_matches_alerts_and_is_json_serialisable():
     res = _fks1_hit_result()
     data = weather_feed.build_data(res, now=NOW, geo_breakdown={"USA": 3, "Kenya": 1},
                                    page_url=URL)
-    assert data["schema_version"] == 2 and data["generated"] == "2026-09-17T08:30:00Z"
+    assert data["schema_version"] == 3 and data["generated"] == "2026-09-17T08:30:00Z"
     assert [a["mutation"] for a in data["alerts"]] == [a["mutation"] for a in res["alerts"]]
     assert list(data["geography"]) == ["Kenya", "USA"]  # sorted, stable
     json.dumps(data)  # must not raise
@@ -66,7 +66,8 @@ def test_page_links_feeds_only_when_asked():
 TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of", "window_days",
             "fill_age_days", "fill_stale",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
-            "geography_history", "vus_census", "calls_provenance", "certification"}
+            "geography_history", "panel_census", "vus_census", "calls_provenance",
+            "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -137,6 +138,17 @@ def test_vus_census_passes_through_with_position_context():
                "position_note": "It sits in hot-spot HS1, at the F635 anchor — ..."}]
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, vus_census=census)
     assert data["vus_census"] == census
+    json.dumps(data)
+
+
+def test_panel_census_passes_through():
+    # The per-marker breakdown behind n_resistant: token + carriers + low_ppv flag, passed
+    # through untouched so page and feed can't disagree. Absent -> empty list, not null.
+    assert weather_feed.build_data(_fks1_hit_result(), now=NOW)["panel_census"] == []
+    census = [{"token": "S639F", "carriers": 20, "low_ppv": False},
+              {"token": "D642Y", "carriers": 50, "low_ppv": True}]
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW, panel_census=census)
+    assert data["panel_census"] == census
     json.dumps(data)
 
 

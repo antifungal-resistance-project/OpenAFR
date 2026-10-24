@@ -174,6 +174,23 @@ def _vus_census(args):
     return out or None
 
 
+def _panel_census(args):
+    """The per-variant breakdown of KNOWN-resistance (panel) FKS1 markers the page/feed surface,
+    each with its carrier count and PPV tier, or None.
+
+    Reads the SAME latest committed table the page overlays (`fks1_panel_census`), so the census
+    is reproducible from committed data alone and its carrier counts sum to the panel-gated
+    headline. Unlike the VUS census this needs no geometry -- panel tokens are known resistance,
+    not variants to situate -- so it is a thin pass-through. None for the erg11 arm or a written
+    --snapshot (which carries its own calls, not the committed series)."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
+    if not table or not pathlib.Path(table).exists():
+        return None
+    return ew.fks1_panel_census(str(table)) or None
+
+
 def _geo_from_records(records):
     """Panel-positive carriers by finest location from live-pull records: {location: count}.
 
@@ -403,6 +420,7 @@ def main():
                   release_trend=_release_trend(args),
                   geo_breakdown=_geo_breakdown(records, args),
                   geo_history=_geo_history(args),
+                  panel_census=_panel_census(args),
                   vus_census=_vus_census(args),
                   forecast=_forecast(args),
                   page_url=PAGE_URL)
