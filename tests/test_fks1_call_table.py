@@ -204,6 +204,45 @@ def test_vus_census_missing_table_is_empty(tmp_path):
     assert ew.fks1_vus_census(str(tmp_path / "nope.tsv")) == []
 
 
+def test_panel_census_breaks_down_known_resistance_markers_by_token(tmp_path):
+    # The per-marker detail behind count_fks1_panel_positive's n_resistant: distinct PANEL
+    # tokens with carrier counts, descending by count then token, each tagged with its PPV
+    # tier. Non-panel (VUS) tokens are excluded. The low-PPV D642Y/M690I letters stay on the
+    # panel (counted in the headline) but carry low_ppv=True.
+    path = tmp_path / "PDG000000067.800.tsv"
+    path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+                    "target_creation_date\n"
+                    "A\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-02-01\n"   # core panel
+                    "B\tS639F\tsra-fks1-recaller:called\tSRR2\t2026-02-02\n"   # core panel (same)
+                    "C\tD642Y\tsra-fks1-recaller:called\tSRR3\t2026-02-03\n"   # low-PPV panel
+                    "D\tR1354H\tsra-fks1-recaller:called\tSRR4\t2026-02-04\n"  # VUS (excluded)
+                    "E\t\tsra-fks1-recaller:wild-type\tSRR5\t2026-02-05\n")    # wild-type
+    assert ew.fks1_panel_census(str(path)) == [
+        {"token": "S639F", "carriers": 2, "low_ppv": False},  # highest count first, core tier
+        {"token": "D642Y", "carriers": 1, "low_ppv": True},   # low-PPV panel member tagged
+    ]
+
+
+def test_panel_census_missing_table_is_empty(tmp_path):
+    assert ew.fks1_panel_census(str(tmp_path / "nope.tsv")) == []
+
+
+def test_panel_census_carriers_reconcile_with_headline(tmp_path):
+    # Invariant: when no isolate carries more than one panel marker, the per-token carrier
+    # counts sum to the headline n_resistant (count_fks1_panel_positive[0]). Same source of
+    # truth (iter_resolved_calls), so page and headline can never drift.
+    path = tmp_path / "PDG000000067.800.tsv"
+    path.write_text("isolate_key\tfks1_call\tfks1_resistance_source\trun_acc\t"
+                    "target_creation_date\n"
+                    "A\tS639F\tsra-fks1-recaller:called\tSRR1\t2026-02-01\n"
+                    "B\tD642Y\tsra-fks1-recaller:called\tSRR2\t2026-02-02\n"
+                    "C\tW691L\tsra-fks1-recaller:called\tSRR3\t2026-02-03\n"
+                    "D\tR1354H\tsra-fks1-recaller:called\tSRR4\t2026-02-04\n")  # VUS, not counted
+    n_resistant, _n_vus = ew.count_fks1_panel_positive(str(path))
+    census = ew.fks1_panel_census(str(path))
+    assert sum(e["carriers"] for e in census) == n_resistant == 3
+
+
 def test_iter_resolved_calls_splits_panel_from_vus():
     # The shared primitive all three FKS1 counters + the geo map consume: it splits each
     # record's parsed call tokens into (panel-positive, VUS) on fks1_caller.is_panel_token.

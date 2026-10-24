@@ -653,3 +653,36 @@ def fks1_vus_census(path):
             counts[tok] = counts.get(tok, 0) + 1
     return [{"token": tok, "carriers": n}
             for tok, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+
+
+def fks1_panel_census(path):
+    """Per-variant census of KNOWN-resistance (panel) FKS1 tokens in a committed call table.
+
+    The headline reports only the aggregate `n_resistant` from `count_fks1_panel_positive`;
+    this breaks that single number down by the actual marker so the page can say WHICH
+    resistance variant is circulating. Returns a list of distinct panel tokens with how many
+    isolates carry each, descending by count then token, each tagged with its PPV tier:
+      [{"token": "S639F", "carriers": 20, "low_ppv": False},
+       {"token": "D642Y", "carriers": 50, "low_ppv": True}, ...]
+
+    A token is counted when it IS on the caller's known-resistance panel
+    (`fks1_caller.is_panel_token`); `low_ppv` is True for the low-PPV tier positions
+    (D642Y, M690I via `fks1_caller.panel_tier`), which are panel-tagged -- and so counted in
+    the headline -- but split R/S rather than tracking resistance. Counts are per distinct token
+    and flow through the same `iter_resolved_calls` split as `count_fks1_panel_positive`, so the
+    two can never disagree on what is panel-positive. The per-token carrier counts sum to the
+    headline `n_resistant` except where a single isolate carries more than one panel marker
+    (then it is counted under each, so the sum can exceed the distinct-carrier headline). A
+    missing table reads as `[]` (honest degradation, same as `fks1_vus_census`)."""
+    from openafr import fks1_caller
+    try:
+        rows = read_fks1_call_table(path)
+    except FileNotFoundError:
+        return []
+    counts = {}
+    for _r, panel_tokens, _vus in iter_resolved_calls(rows.values()):
+        for tok in panel_tokens:
+            counts[tok] = counts.get(tok, 0) + 1
+    return [{"token": tok, "carriers": n,
+             "low_ppv": fks1_caller.panel_tier(tok) == "low_ppv"}
+            for tok, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]

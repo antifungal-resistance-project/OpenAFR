@@ -704,6 +704,36 @@ def test_vus_section_absent_without_census():
     assert 'class="vus"' not in page_empty
 
 
+def test_panel_breakdown_lists_each_marker_with_carriers():
+    census = [{"token": "S639F", "carriers": 20, "low_ppv": False},
+              {"token": "D642Y", "carriers": 50, "low_ppv": True}]
+    page = weather.render_page(_cov_result(200, 150), now=NOW, panel_census=census)
+    assert 'class="panel-breakdown"' in page
+    assert "Which resistance variant is circulating" in page
+    assert "S639F" in page and "D642Y" in page
+    assert "20 carrier(s)" in page and "50 carrier(s)" in page
+    # the low-PPV marker is tagged; the high-PPV one is not
+    assert '<code>D642Y</code> <span class="low-ppv">low PPV</span>' in page
+    assert '<code>S639F</code></dt>' in page
+    # the low-PPV caveat only appears because a low-PPV marker is present
+    assert "split resistant/susceptible" in page
+
+
+def test_panel_breakdown_omits_low_ppv_note_when_all_core():
+    census = [{"token": "S639F", "carriers": 20, "low_ppv": False}]
+    page = weather.render_page(_cov_result(200, 150), now=NOW, panel_census=census)
+    assert 'class="panel-breakdown"' in page
+    assert "low PPV" not in page
+    assert "split resistant/susceptible" not in page
+
+
+def test_panel_breakdown_absent_without_census():
+    page = weather.render_page(_cov_result(200, 150), now=NOW)
+    assert 'class="panel-breakdown"' not in page
+    page_empty = weather.render_page(_cov_result(200, 150), now=NOW, panel_census=[])
+    assert 'class="panel-breakdown"' not in page_empty
+
+
 def test_trend_section_surfaces_vus_separately_from_resistant():
     # #192: non-panel variants of uncertain significance are tracked, never headlined as resistant.
     trend = _trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128))

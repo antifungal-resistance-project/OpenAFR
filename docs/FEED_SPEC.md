@@ -9,17 +9,19 @@ only; detection-only; not a clinical claim.
 
 Contract is pinned by `tests/test_weather_feed.py` and re-checked at publish time by
 `scripts/check_published_page.py`. Adding a key is backward compatible. Renaming, removing, or
-changing the meaning of a key bumps `schema_version` (currently `2`).
+changing the meaning of a key bumps `schema_version` (currently `3`).
 
-**Changelog.** `2` (2026-10): added `fill_age_days` + `fill_stale` so a consumer can read the
-overlaid fill's real age — `generated` advances on every weekly publish even when the underlying
-calls are frozen, so it is **not** a freshness signal on its own.
+**Changelog.** `3` (2026-10): added `panel_census` — the per-marker breakdown of the
+known-resistance panel (which substitution each resistant carrier has) behind the single
+headline prevalence number. `2` (2026-10): added `fill_age_days` + `fill_stale` so a consumer
+can read the overlaid fill's real age — `generated` advances on every weekly publish even when
+the underlying calls are frozen, so it is **not** a freshness signal on its own.
 
 ## data.json
 
 | key | type | meaning |
 |---|---|---|
-| `schema_version` | int | `2` |
+| `schema_version` | int | `3` |
 | `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time — advances on every weekly publish; **not** a data-freshness signal (see `fill_age_days`) |
 | `notice` | string | research-use disclaimer |
 | `gene` | string \| null | `FKS1` for the echinocandin arm |
@@ -35,6 +37,7 @@ calls are frozen, so it is **not** a freshness signal on its own.
 | `forecast` | object \| null | prevalence trajectory + near-term forecast (below) |
 | `geography` | object | `{country: panel-carrier count}`, current release only, sorted by country |
 | `geography_history` | array | per-release `{country: panel-carrier count}` over the committed series (below) |
+| `panel_census` | array | per-marker breakdown of the known-resistance panel (below) |
 | `vus_census` | array | per-variant census of non-panel hot-spot variants of uncertain significance (below) |
 | `calls_provenance` | object | which committed call table(s) the page is built on |
 | `certification` | object \| null | caller certification (benchmark, concordance) |
@@ -100,6 +103,16 @@ same panel gate as the top-level `geography`). `geography` is **country-level** 
 it — no finer region), isolates with no recorded country are omitted, and a release whose call
 table predates the geography column is absent entirely (not a zero). Use this to read the
 geographic picture over time; the top-level `geography` is the current live pull only.
+
+### panel_census[]
+
+The per-marker breakdown behind `release_trend[].n_resistant` — the single headline prevalence
+number split by which known-resistance substitution each carrier has. One entry per distinct
+panel token in the latest committed call table, descending by `carriers`: `token`, `carriers`
+(isolates carrying it), and `low_ppv` (true for the known-but-low-PPV positions D642Y / M690I,
+which are counted in the headline but split R/S rather than tracking resistance). Per-token
+counts sum to `n_resistant` except where one isolate carries more than one panel marker (then it
+is counted under each). Detection only — the marker and its count, never a per-isolate phenotype.
 
 ### vus_census[]
 
