@@ -14,9 +14,12 @@ No network: synthetic snapshot records only.
 from openafr import backtest as bt
 
 
-def _rec(key, fks1_call, source, run="SRR9"):
-    return {"isolate_key": key, "target_acc": key + ".1", "run_acc": run,
-            "fks1_call": fks1_call, "fks1_resistance_source": source}
+def _rec(key, fks1_call, source, run="SRR9", geo=None):
+    rec = {"isolate_key": key, "target_acc": key + ".1", "run_acc": run,
+           "fks1_call": fks1_call, "fks1_resistance_source": source}
+    if geo is not None:
+        rec["geo_loc_name"] = geo
+    return rec
 
 
 def test_resolution_buckets_over_panel_window():
@@ -67,3 +70,51 @@ def test_prevalence_is_not_measured_until_filled():
     assert p["n_resolved"] == 0
     assert p["event_frequency"] is None and p["ci95"] is None
     assert p["excluded"]["pending"] == 50
+
+
+_RES = "sra-fks1-recaller:HS1=called,HS2=wild-type,HS3=wild-type"
+_WT = "sra-fks1-recaller:HS1=wild-type,HS2=wild-type,HS3=wild-type"
+
+
+def test_prevalence_by_place_uses_resolved_denominator_not_carrier_count():
+    # USA: 2 resolved, 1 panel-positive (50%). UK: 5 resolved, 1 positive (20%). A region's
+    # denominator is its RESOLVED isolates, never its carrier count: the partial/pending USA
+    # rows below are excluded from USA's denominator, so volume can't inflate the rate.
+    records = [
+        _rec("a", "S639F", _RES, geo="USA: California"),
+        _rec("b", "", _WT, geo="USA: California"),
+        _rec("c", "", "sra-fks1-recaller:HS1=partial(uncalled:639),HS2=wild-type,HS3=wild-type",
+             geo="USA: California"),                       # excluded, not a negative
+    ] + [_rec(f"u{i}", "S639P" if i == 0 else "", _RES, geo="United Kingdom")
+         for i in range(5)]
+    out = bt.fks1_panel_prevalence_by_place(records, finest=True, min_resolved=2)
+    places = {p["place"]: p for p in out["places"]}
+    assert places["USA: California"]["n_resolved"] == 2
+    assert places["USA: California"]["n_panel_positive"] == 1
+    assert places["USA: California"]["event_frequency"] == 0.5
+    assert places["United Kingdom"]["n_resolved"] == 5
+    assert places["United Kingdom"]["event_frequency"] == 0.2
+    # Ranked by prevalence descending: the higher-rate place leads despite its smaller N.
+    assert out["places"][0]["place"] == "USA: California"
+    assert all(p["ci95"] is not None for p in out["places"])
+
+
+def test_prevalence_by_place_pools_small_places_and_drops_unplaced():
+    records = [
+        _rec("a", "S639F", _RES, geo="USA"),
+        _rec("b", "", _WT, geo="USA"),
+        _rec("small", "S639F", _RES, geo="Tinyland"),      # 1 resolved < min -> pooled
+        _rec("nowhere", "S639F", _RES),                    # no geo -> unplaced, dropped
+    ]
+    out = bt.fks1_panel_prevalence_by_place(records, finest=True, min_resolved=2)
+    assert [p["place"] for p in out["places"]] == ["USA"]
+    assert out["pooled_small"] == {"n_places": 1, "n_resolved": 1, "n_panel_positive": 1}
+    assert out["n_unplaced"] == 1
+    # SSoT invariant: per-place + pooled positives == the national headline positives.
+    headline = bt.fks1_panel_prevalence(records)
+    summed = (sum(p["n_panel_positive"] for p in out["places"])
+              + out["pooled_small"]["n_panel_positive"]
+              + sum(1 for r in records                       # unplaced positives
+                    if r.get("geo_loc_name") is None
+                    and "S639" in (r.get("fks1_call") or "")))
+    assert summed == headline["n_panel_positive"]

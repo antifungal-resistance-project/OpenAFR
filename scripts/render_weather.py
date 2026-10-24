@@ -260,6 +260,34 @@ def _geo_history(args):
     return out or None
 
 
+def _geo_prevalence(args):
+    """Panel-gated echinocandin PREVALENCE by place for the current release, or None.
+
+    The proportional counterpart to `_geo_breakdown` (raw carrier counts): reads the SAME latest
+    committed call table the page overlays and runs `backtest.fks1_panel_prevalence_by_place` over
+    ALL its rows, so each place's denominator is its genuinely resolved isolates (not its carrier
+    count) and a region is 'elevated' only when its resistance RATE -- not its sequencing volume --
+    stands out. The national `headline_prevalence` is computed from the same rows via
+    `backtest.fks1_panel_prevalence`, the headline's single source of truth, so the section's
+    'above the national rate' flag and the summed-positives invariant can never drift from the
+    headline. None for the erg11 arm, a written --snapshot (its own calls, not the committed
+    series), a missing table, or no placeable resolved isolates -- honest degradation, same as the
+    other sections."""
+    if args.gene != "fks1" or args.snapshot:
+        return None
+    from openafr import backtest
+    table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
+    if not table or not pathlib.Path(table).exists():
+        return None
+    records = list(ew.read_fks1_call_table(str(table)).values())
+    by_place = backtest.fks1_panel_prevalence_by_place(records, finest=True)
+    if not by_place["places"]:
+        return None
+    headline = backtest.fks1_panel_prevalence(records)
+    by_place["headline_prevalence"] = headline["event_frequency"]
+    return by_place
+
+
 def _certification(runlog_path=CONCORDANCE_RUNLOG):
     """Certification verdict for the FKS1 caller, scored live from the committed concordance
     runlog through the SAME scorer (`openafr.concordance.evaluate` + `apply_bar`) the CI
@@ -420,6 +448,7 @@ def main():
                   release_trend=_release_trend(args),
                   geo_breakdown=_geo_breakdown(records, args),
                   geo_history=_geo_history(args),
+                  geo_prevalence=_geo_prevalence(args),
                   panel_census=_panel_census(args),
                   vus_census=_vus_census(args),
                   forecast=_forecast(args),

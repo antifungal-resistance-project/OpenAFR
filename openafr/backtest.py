@@ -445,6 +445,72 @@ def fks1_panel_prevalence(records):
     }
 
 
+def fks1_panel_prevalence_by_place(records, *, finest=True, min_resolved=5):
+    """Panel-gated echinocandin prevalence broken down by geography -- the per-place view behind
+    the single national headline from `fks1_panel_prevalence`.
+
+    Buckets resolved isolates by place and, within each place, runs the SAME resolved-denominator
+    and panel-positive logic as `fks1_panel_prevalence`: a place's denominator is its genuinely
+    RESOLVED isolates (`_fks1_resolution_bucket(...) == 'resolved'`, every panel window called or
+    wild-type), never its raw carrier count, so a heavily-sequenced region can't look 'hot' from
+    sampling volume alone and a small region with a high resistance RATE becomes visible. Place is
+    `earlywarning.display_geo` (finest geography -- region after a colon, else country) when
+    `finest=True`, else the bare `country`. Unlocated isolates (blank place) are dropped from the
+    denominator entirely, the same honest omission the geography maps make.
+
+    `min_resolved` keeps a place off the ranked list until it has enough resolved isolates for the
+    proportion to mean anything (so a 1/1 = 100% place can't masquerade as a hotspot); such places
+    are pooled into `pooled_small` (place count + their summed resolved/positive) so the footnote
+    can name how much is held back WITHOUT inventing a rate for any one of them.
+
+    Returns `{places: [...], pooled_small: {...}, n_unplaced: int}` where each `places` entry has
+    the same event_frequency/ci95 shape as `fks1_panel_prevalence`, sorted by prevalence (then CI
+    lower bound) descending. The summed `n_panel_positive` across `places` + `pooled_small`
+    equals the national `n_panel_positive`, so this can never drift from the headline."""
+    by_place = {}          # place -> [n_resolved, n_positive]
+    n_unplaced = 0
+    for r in records:
+        if _fks1_resolution_bucket(r.get("fks1_resistance_source")) != "resolved":
+            continue
+        place = _ew.display_geo(r) if finest else (r.get("country") or "").strip()
+        positive = any(fks1_caller.is_panel_token(t)
+                       for t in emergence.parse_call(r.get("fks1_call")))
+        if not place:
+            n_unplaced += 1
+            continue
+        cell = by_place.setdefault(place, [0, 0])
+        cell[0] += 1
+        if positive:
+            cell[1] += 1
+
+    places = []
+    pooled_n = pooled_pos = pooled_count = 0
+    for place, (n_res, n_pos) in by_place.items():
+        if n_res < min_resolved:
+            pooled_count += 1
+            pooled_n += n_res
+            pooled_pos += n_pos
+            continue
+        places.append({
+            "place": place,
+            "n_resolved": n_res,
+            "n_panel_positive": n_pos,
+            "event_frequency": n_pos / n_res,
+            "ci95": wilson_interval(n_pos, n_res),
+        })
+    places.sort(key=lambda p: (p["event_frequency"], p["ci95"][0] if p["ci95"] else 0.0),
+                reverse=True)
+    return {
+        "places": places,
+        "pooled_small": {
+            "n_places": pooled_count,
+            "n_resolved": pooled_n,
+            "n_panel_positive": pooled_pos,
+        },
+        "n_unplaced": n_unplaced,
+    }
+
+
 # --------------------- committed FKS1 call table -> records ---------------------
 # The real-data FKS1 backtest reads the DURABLE committed call table directly
 # (data/earlywarning/fks1_calls/PDG...<N>.tsv), not a live NCBI pull or a gitignored

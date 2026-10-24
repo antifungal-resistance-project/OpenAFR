@@ -118,6 +118,7 @@ def _valid_data():
             "emergence": {k: None for k in gate.EMERGENCE_KEYS},
         }],
         "release_trend": [], "forecast": None, "geography": {}, "geography_history": [],
+        "panel_census": [], "geography_prevalence": None,
         "vus_census": [], "calls_provenance": {}, "certification": None,
     }.items()}
 

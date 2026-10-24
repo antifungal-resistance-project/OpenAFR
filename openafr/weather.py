@@ -702,6 +702,70 @@ def _geo_history_section(geo_history):
 """
 
 
+def _geo_prevalence_section(geo_prevalence):
+    """The 'where resistance is proportionally elevated' section: panel-gated echinocandin
+    PREVALENCE (resistant / resolved, with a 95% Wilson CI) per place -- the proportional
+    counterpart to `_geo_section`, which shows only raw carrier counts. Raw counts conflate
+    sequencing volume with resistance; this section answers the actual surveillance question
+    (is resistance proportionally high anywhere?), flagging a place as 'elevated' only when its
+    CI lower bound clears the national headline rate. "" when there is nothing to show (honest
+    degradation, same as every other section).
+
+    `geo_prevalence` -- the dict from render_weather's `_geo_prevalence`: `places` (each with
+    `place`, `n_resolved`, `n_panel_positive`, `event_frequency`, `ci95`), already ranked by
+    prevalence; `pooled_small` (count + summed resolved/positive of places held below the
+    minimum resolved-isolate threshold, named in the footnote so nothing is hidden); and
+    `headline_prevalence` (the national rate from the same resolved rows, the single source of
+    truth the 'elevated' flag compares against). Passed in, never recomputed.
+    """
+    if not geo_prevalence or not geo_prevalence.get("places"):
+        return ""
+    headline = geo_prevalence.get("headline_prevalence")
+
+    def _row(p):
+        place = html.escape(str(p["place"]))
+        pct = f"{p['event_frequency'] * 100:.1f}%"
+        ci = p.get("ci95")
+        ci_part = (f" (95% CI {ci[0] * 100:.1f}&ndash;{ci[1] * 100:.1f}%)"
+                   if ci else "")
+        n = f"{p['n_panel_positive']}/{p['n_resolved']} resolved"
+        # 'Elevated' is the strong claim -- the CI lower bound must clear the national rate, so
+        # a place is only flagged when its resistance is statistically above the headline, not
+        # merely numerically higher on a small sample.
+        elevated = (ci and headline is not None and ci[0] > headline)
+        tag = ' <span class="elevated">above national</span>' if elevated else ""
+        return (f"      <dt>{place}{tag}</dt>"
+                f"<dd>{pct}{ci_part} &middot; {n}</dd>")
+
+    rows = "\n".join(_row(p) for p in geo_prevalence["places"])
+    pooled = geo_prevalence.get("pooled_small") or {}
+    n_small = pooled.get("n_places", 0)
+    pooled_note = (
+        f" {n_small} smaller place(s) with too few resolved isolates to rate are pooled out "
+        f"({pooled.get('n_panel_positive', 0)} carrier(s) over "
+        f"{pooled.get('n_resolved', 0)} resolved) rather than shown as unstable rates."
+        if n_small else "")
+    headline_note = (
+        f" The national rate is {headline * 100:.1f}%; a place is flagged "
+        f"<strong>above national</strong> only when its 95% CI lower bound clears it."
+        if headline is not None else "")
+    return f"""  <section class="geo-prevalence">
+    <h2>Where resistance is proportionally elevated</h2>
+    <p class="gloss">Echinocandin-resistance prevalence by place &mdash; resistant isolates as a
+      share of those the caller could resolve, not raw carrier counts, so a heavily-sequenced
+      region doesn't look hot from volume alone.</p>
+    <dl class="grid">
+{rows}
+    </dl>
+    <p class="note">Panel-gated prevalence (resistant / resolved) per finest reported place, from
+      the same resolved calls and resolution denominator as the headline
+      (<code>openafr.backtest.fks1_panel_prevalence_by_place</code>).{headline_note}{pooled_note}
+      A proportion with a confidence interval, detection only &mdash; never a per-isolate
+      phenotype claim.</p>
+  </section>
+"""
+
+
 def _panel_breakdown_section(panel_census):
     """The 'which known-resistance variant is circulating' section: the per-marker breakdown
     behind the single headline prevalence number -- each known-resistance panel substitution
@@ -861,7 +925,8 @@ def _structured_data(description, certification, provenance, page_url):
 
 def render_page(alert_result, *, now=None, watching_since=None, calls_provenance=None,
                 certification=None, release_trend=None, geo_breakdown=None, geo_history=None,
-                panel_census=None, vus_census=None, forecast=None, page_url=None, feeds=False):
+                geo_prevalence=None, panel_census=None, vus_census=None, forecast=None,
+                page_url=None, feeds=False):
     """Render the whole page as a self-contained HTML string (inline CSS, no framework).
 
     `alert_result` -- the dict from alert.compose_alerts (or compose_fks1_alerts).
@@ -884,6 +949,10 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     `geo_history` -- [{release_tag, as_of, geography: {country: carrier_count}}], oldest first,
                         from the committed call series; renders the per-release historical
                         geography section. None/empty omits it.
+    `geo_prevalence` -- {places, pooled_small, headline_prevalence} from the committed table:
+                        panel-gated prevalence (resistant / resolved, with a Wilson CI) per
+                        place; renders the "where resistance is proportionally elevated" section.
+                        None/empty omits it.
     `panel_census` -- the per-variant breakdown of KNOWN-resistance panel markers, each with
                         `token`, `carriers`, `low_ppv`; renders the "which resistance variant
                         is circulating" section. Carrier counts sum to the headline
@@ -964,6 +1033,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     forecast_html = _forecast_section(forecast)
     panel_html = _panel_breakdown_section(panel_census)
     geo_html = _geo_section(geo_breakdown)
+    geo_prevalence_html = _geo_prevalence_section(geo_prevalence)
     geo_history_html = _geo_history_section(geo_history)
     vus_html = _vus_section(vus_census)
     methods_html = _methods_section(certification, calls_provenance, window)
@@ -1055,6 +1125,10 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .low-ppv {{ color:var(--muted); font-size:.72rem; font-weight:600; text-transform:uppercase;
               letter-spacing:.04em; border:1px solid var(--muted); border-radius:3px;
               padding:0 .3em; margin-left:.35em; vertical-align:middle; }}
+  .elevated {{ color:var(--tier-watch); font-size:.72rem; font-weight:600;
+               text-transform:uppercase; letter-spacing:.04em;
+               border:1px solid var(--tier-watch); border-radius:3px;
+               padding:0 .3em; margin-left:.35em; vertical-align:middle; }}
   .trend-delta {{ font-size:.9rem; margin:.5rem 0 0; }}
   .trend-up {{ color:var(--tier-act-now); }}
   .trend-down {{ color:var(--accent); }}
@@ -1131,7 +1205,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{forecast_html}{panel_html}{geo_html}{geo_history_html}{vus_html}{methods_html}  <footer>
+{trend_html}{forecast_html}{panel_html}{geo_html}{geo_prevalence_html}{geo_history_html}{vus_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
