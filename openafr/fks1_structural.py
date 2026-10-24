@@ -118,7 +118,7 @@ def structural_proximity(token):
     tier = entry["tier"]
     sc_pos = entry["sc_pos"]
     sc_aa = entry.get("sc_aa", "?")
-    source = f"PDB {contact_map['source_pdb']} ({contact_map['drug_name']})"
+    source = f"PDB {contact_map['source_pdb']}"
 
     note = _describe_proximity(tier, d, token, window.name, source)
 

@@ -95,11 +95,11 @@ def _status_line(alerts, watching_since, now_date):
     if alerts:
         counts = {t: sum(1 for a in alerts if a["priority"] == t) for t in _TIER}
         parts = [f"{counts[t]} {_TIER[t].lower()}" for t in _TIER if counts[t]]
-        return "RESISTANCE SEEN — " + ", ".join(parts)
+        return "Resistance detected — " + ", ".join(parts)
     days = _fmt_days_since(watching_since, now_date)
     if days is None:
-        return "WATCHING — no resistance variant over threshold yet"
-    return f"QUIET — {days} day(s) with nothing new over threshold"
+        return "Watching — no echinocandin-resistant variant has crossed the alert threshold yet"
+    return f"Quiet — {_plural(days, 'day')} with nothing new above the alert threshold"
 
 
 def _alert_card(a):
@@ -123,47 +123,50 @@ def _alert_card(a):
         s = None
     mut = html.escape(str(a["mutation"]))
     regions = ", ".join(a.get("regions") or []) or "undisclosed"
+    delta = e["delta"]
+    delta_txt = f"{'up' if delta >= 0 else 'down'} {abs(delta):.1%}"
     rows = [
         ("Emergence",
-         f"recent {e['recent_count']}/{e['recent_called']} "
-         f"(&Delta; {e['delta']:+.1%})"),
+         f"{e['recent_count']} of {_plural(e['recent_called'], 'recent isolate')} "
+         f"({delta_txt})"),
         ("Backlog",
          "&#9888; possible archival" if e.get("possible_backlog") else "genuine spread"),
         ("Geography",
-         f"{a.get('n_regions', 0)} region(s): {html.escape(regions)} "
-         f"({a.get('n_carriers_total', 0)} carrier(s))"),
+         f"{_plural(a.get('n_regions', 0), 'region')}: {html.escape(regions)} "
+         f"({_plural(a.get('n_carriers_total', 0), 'carrier')})"),
         ("First seen", html.escape(_fmt_first_seen(a.get("first_seen")))),
     ]
     if s:
         rows.append(
             ("Structural fit",
-             f"[{html.escape(str(s['evidence_class']))}, conf={html.escape(str(s['confidence']))}] "
-             f"{html.escape(str(s['fluconazole_fit_verdict']))}"))
+             f"{html.escape(str(s['fluconazole_fit_verdict']))} "
+             f"({html.escape(str(s['evidence_class']))}, "
+             f"confidence {html.escape(str(s['confidence']))})"))
     # FKS1 novel-variant position context (geometry-free; never a fit verdict). Present only
     # when the detection-only composer attached one for an uncharacterised hot-spot variant.
     # The composer pre-renders the sentence into `position_note`, so the page stays decoupled
     # from fks1_position (same discipline as it reading `headline`, not recomputing it).
     ctx = a.get("position_context")
     if ctx:
+        note = html.escape(str(a.get("position_note") or ""))
+        tier = html.escape(str(ctx["tier"]))
         rows.append(
-            ("Position",
-             f"[{html.escape(str(ctx['tier']))}] "
-             f"{html.escape(str(a.get('position_note') or ''))}"))
+            ("Position", f"{note} ({tier})" if note else tier))
     prox = ctx.get("proximity") if ctx else None
     if prox:
-        tier_label, dist_str = _prox_display(prox)
-        rows.append(
-            ("Proximity",
-             f"[{html.escape(tier_label)}] "
-             f"{dist_str} from enfumafungin in {html.escape(prox.get('reference_structure',''))}"
-             f" — {html.escape(prox.get('note','')[:120])}"))
+        # The proximity note is already a complete, plain sentence (residue, hot-spot,
+        # distance, structure); show it as-is rather than re-prefixing the distance.
+        note = html.escape(str(prox.get("note") or ""))
+        if note:
+            note = note[0].upper() + note[1:]
+        tier_label, _ = _prox_display(prox)
+        rows.append(("Proximity", note or html.escape(tier_label)))
     sv = ctx.get("structural_verdict") if ctx else None
     if sv:
         label = html.escape(sv.get("label", ""))
         rows.append(
             ("Structural label",
-             f"[proximity_label] {label} "
-             f"&#x2014; spatial co-location only, not a resistance prediction"))
+             f"{label} &#x2014; spatial co-location only, not a resistance prediction"))
     rows_html = "\n".join(
         f"      <dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
     headline = html.escape(str(a.get("headline") or ""))
@@ -196,7 +199,7 @@ def _calm_copy(gene):
                 "here with its structural fit verdict.")
     return ("No echinocandin-resistance variant is over threshold right now.",
             "When an echinocandin-resistance FKS1 substitution emerges, it appears here "
-            "with its emergence signal — detection only, no structural verdict.")
+            "with its emergence signal — we flag the marker, not a structural verdict.")
 
 
 def _fill_age_tier(provenance, window_days, now_date):
@@ -277,7 +280,7 @@ def _coverage_clause(coverage, provenance, now_date=None, window_days=None):
                     if through else "")
     if called == 0:
         n_fill = (provenance or {}).get("n_called")
-        fill_size = (f" &middot; last fill: {int(n_fill):,} isolate(s) called"
+        fill_size = (f" &middot; last batch: {int(n_fill):,} isolates called"
                      if n_fill else "")
         return (f'<span class="stale">echinocandin calls: awaiting re-call'
                 f'{fill_size}{through_html}</span>')
@@ -314,6 +317,14 @@ def _pct(x, *, decimals=0, dash="—"):
     if decimals == 0:
         return f"{round(100 * x)}%"
     return f"{100 * x:.{decimals}f}%"
+
+
+def _plural(n, singular, plural=None):
+    """`"1 carrier"` / `"3 carriers"` -- a count with its noun, correctly pluralised, so the
+    page never falls back to the machine-looking `"carrier(s)"`. `plural` defaults to
+    `singular + "s"`."""
+    word = singular if n == 1 else (plural or f"{singular}s")
+    return f"{n} {word}"
 
 
 def _share_description(status, coverage, calls_provenance):
@@ -374,6 +385,18 @@ def _methods_section(certification, calls_provenance, window):
                          _pct(certification.get("identity")))
     return f"""  <details class="about" id="methods">
     <summary>How this works &middot; methods &amp; provenance</summary>
+    <p><b>How to read this page.</b> It reports whether a <em>known</em>
+      echinocandin-resistance FKS1 marker is present in public <em>C. auris</em> genomes.
+      That is detection, not a lab susceptibility test and not a treatment recommendation
+      &mdash; it is an early-warning triage aid for research use, a signal to look closer.
+      Every number comes straight from the certified caller and is reproducible from the
+      committed call tables (<code>openafr.alert</code> renders the verdict, it never
+      invents one). Two terms recur: an isolate is <b>resolved</b> when the caller could
+      read its FKS1 sequence cleanly (prevalence is always a share of resolved isolates,
+      never of raw deposits), and a <b>95% CI</b> is the range the true rate most likely
+      sits in given the sample size. The echinocandin arm makes no structural fit verdict
+      because echinocandins do not coordinate a metal, so the CYP51/heme-iron geometry
+      behind the azole-arm verdict does not transfer to FKS1.</p>
     <p><b>Source.</b> {html.escape(_TAXON)} whole-genome deposits from NCBI Pathogen
       Detection, over a trailing <code>{html.escape(str(window))}</code>-day window.{fill_line}
       Public assemblies carry no echinocandin call (NCBI runs no AMR pipeline), so an
@@ -388,10 +411,9 @@ def _methods_section(certification, calls_provenance, window):
       <dt>Specificity</dt><dd>{spec}</dd>
       <dt>Exact-token identity</dt><dd>{ident}</dd>
     </dl>
-    <p class="note">Detection only &mdash; the echinocandin arm reports whether a known
-      resistance variant is present, not a structural fit verdict. Research use only: a
-      triage aid, not a clinical claim. Priority tiers and every number come straight from
-      <code>openafr.alert</code>; this page renders that verdict, it never invents one.</p>
+    <p class="note">The echinocandin arm reports presence of a known resistance variant,
+      not a structural fit verdict; the priority tiers come from the same
+      <code>openafr.alert</code> verdict.</p>
   </details>
 """
 
@@ -503,8 +525,8 @@ def _trend_section(release_trend):
 
     rows = "\n".join(
         f'      <dt><code>{html.escape(str(e.get("as_of") or "—"))}</code></dt>'
-        f'<dd>{e.get("n_resistant", 0)} of {e.get("n_called", 0)} resolved '
-        f'&middot; {_prev(e.get("prevalence"))}</dd>'
+        f'<dd>{_prev(e.get("prevalence"))} &mdash; '
+        f'{e.get("n_resistant", 0)} of {_plural(e.get("n_called", 0), "isolate")}</dd>'
         for e in release_trend)
 
     pts = [e["prevalence"] for e in release_trend if e.get("prevalence") is not None]
@@ -523,8 +545,8 @@ def _trend_section(release_trend):
     # Non-panel hot-spot variants (uncertain significance) in the latest batch -- surfaced so
     # the reader sees they are tracked but deliberately NOT counted as known resistance.
     n_vus = release_trend[-1].get("n_vus", 0)
-    vus_html = (f" A further {n_vus} resolved isolate(s) carry a non-panel FKS1 variant of "
-                "uncertain significance, tracked but not counted as known resistance."
+    vus_html = (f" A further {_plural(n_vus, 'resolved isolate')} carry a non-panel FKS1 "
+                "variant of uncertain significance &mdash; watched, not counted as resistant."
                 ) if n_vus else ""
 
     spark = _prevalence_sparkline(
@@ -540,8 +562,7 @@ def _trend_section(release_trend):
 {rows}
     </dl>
 {delta_html}    <p class="note">Carriers of a <strong>known</strong> echinocandin-resistance FKS1
-      substitution as a share of resolved isolates, per committed re-call batch &mdash;
-      reproducible from the committed call tables.{vus_html}</p>
+      marker as a share of resolved isolates, one point per re-call batch.{vus_html}</p>
   </section>
 """
 
@@ -572,8 +593,8 @@ def _forecast_section(forecast):
 
     rows = "\n".join(
         f'      <dt><code>{html.escape(str(e.get("month") or "—"))}</code></dt>'
-        f'<dd>{e.get("n_resistant", 0)} of {e.get("n_resolved", 0)} resolved '
-        f'&middot; {_prev(e.get("prevalence"))}</dd>'
+        f'<dd>{_prev(e.get("prevalence"))} &mdash; '
+        f'{e.get("n_resistant", 0)} of {_plural(e.get("n_resolved", 0), "isolate")}</dd>'
         for e in series)
 
     proj = forecast.get("projection") or {}
@@ -602,10 +623,8 @@ def _forecast_section(forecast):
         fc_html = (f'    <p class="trend-delta {cls}">{arrow} Projected '
                    f'<code>{html.escape(str(proj.get("next_month") or "next month"))}</code>: '
                    f"{_prev(point)}{pi}.</p>\n")
-        note = ("One-deposit-month-ahead projection, surfaced because a pre-registered "
-                "walk-forward showed the trend model out-predicts naive persistence "
-                "(work/RESULTS_fks1_forecast.md). Deposit-month axis, not epidemiological "
-                "incidence.")
+        note = ("The projection (one month ahead) is shown only because a pre-registered "
+                "walk-forward test showed the trend model out-predicts naive persistence.")
     else:
         pooled = proj.get("naive_pooled")
         pooled_str = _prev(pooled) if pooled is not None else "the series mean"
@@ -613,18 +632,16 @@ def _forecast_section(forecast):
                    f"demonstrated over a flat baseline at this series depth; showing the "
                    f"trajectory only (prevalence is roughly stationary near "
                    f"{pooled_str}).</p>\n")
-        note = ("A pre-registered walk-forward did not show the trend model beating a flat "
-                "baseline on held-out months (work/RESULTS_fks1_forecast.md), so no projection "
-                "is claimed. Deposit-month axis, not epidemiological incidence.")
+        note = ("A pre-registered walk-forward test did not show the trend model beating a "
+                "flat baseline on held-out months, so no projection is claimed.")
 
     return f"""  <section class="trend forecast">
-    <h2>Prevalence trajectory &amp; forecast</h2>
+    <h2>How prevalence is trending</h2>
 {spark_html}    <dl class="grid">
 {rows}
     </dl>
-{fc_html}    <p class="note">Panel-gated known-resistance carriers as a share of resolved
-      isolates, per NCBI deposit month &mdash; reproducible from the committed call table.
-      {html.escape(note)}</p>
+{fc_html}    <p class="note">Known-resistance carriers as a share of resolved isolates, by the
+      month each genome was deposited to NCBI. {html.escape(note)}</p>
   </section>
 """
 
@@ -645,13 +662,13 @@ def _geo_section(geo_breakdown):
         f"      <dt>{html.escape(str(location))}</dt><dd>{n}</dd>"
         for location, n in items)
     return f"""  <section class="geo">
-    <h2>Where carriers are &middot; current release</h2>
+    <h2>Where carriers are &middot; latest batch</h2>
     <dl class="grid">
 {rows}
     </dl>
-    <p class="note">Resistant FKS1 carriers by location in the current release (finest geography
-      reported -- region where available, else country; read from the committed call table).
-      Isolates with no location are omitted.</p>
+    <p class="note">Resistant FKS1 carriers by location in the latest batch, at the finest
+      geography reported (region where available, else country). Isolates with no recorded
+      location are omitted.</p>
   </section>
 """
 
@@ -692,12 +709,11 @@ def _geo_history_section(geo_history):
     if not blocks:
         return ""
     return f"""  <section class="geo geo-history">
-    <h2>Where carriers are &middot; by release</h2>
+    <h2>Where carriers are &middot; over time</h2>
 {chr(10).join(blocks)}
-    <p class="note">Known-resistance panel carriers by country for each committed re-call
-      release, reproducible from the committed call tables (country-level, as NCBI reported it;
-      isolates with no recorded country are omitted). Shown per release so the geographic
-      picture can be read over time, not just for the latest pull above.</p>
+    <p class="note">Known-resistance carriers by country for each re-call batch, so the
+      geographic picture can be read over time, not just for the latest batch above
+      (country-level, as NCBI reported it; isolates with no recorded country are omitted).</p>
   </section>
 """
 
@@ -728,40 +744,39 @@ def _geo_prevalence_section(geo_prevalence):
         ci = p.get("ci95")
         ci_part = (f" (95% CI {ci[0] * 100:.1f}&ndash;{ci[1] * 100:.1f}%)"
                    if ci else "")
-        n = f"{p['n_panel_positive']}/{p['n_resolved']} resolved"
+        n = f"{p['n_panel_positive']} of {_plural(p['n_resolved'], 'isolate')}"
         # 'Elevated' is the strong claim -- the CI lower bound must clear the national rate, so
         # a place is only flagged when its resistance is statistically above the headline, not
         # merely numerically higher on a small sample.
         elevated = (ci and headline is not None and ci[0] > headline)
         tag = ' <span class="elevated">above national</span>' if elevated else ""
         return (f"      <dt>{place}{tag}</dt>"
-                f"<dd>{pct}{ci_part} &middot; {n}</dd>")
+                f"<dd>{pct}{ci_part} &mdash; {n}</dd>")
 
     rows = "\n".join(_row(p) for p in geo_prevalence["places"])
     pooled = geo_prevalence.get("pooled_small") or {}
     n_small = pooled.get("n_places", 0)
     pooled_note = (
-        f" {n_small} smaller place(s) with too few resolved isolates to rate are pooled out "
-        f"({pooled.get('n_panel_positive', 0)} carrier(s) over "
-        f"{pooled.get('n_resolved', 0)} resolved) rather than shown as unstable rates."
+        f" {_plural(n_small, 'smaller place')} with too few resolved isolates to rate "
+        f"{'is' if n_small == 1 else 'are'} pooled out "
+        f"({_plural(pooled.get('n_panel_positive', 0), 'carrier')} over "
+        f"{_plural(pooled.get('n_resolved', 0), 'resolved isolate')}) rather than shown as "
+        f"unstable rates."
         if n_small else "")
     headline_note = (
         f" The national rate is {headline * 100:.1f}%; a place is flagged "
         f"<strong>above national</strong> only when its 95% CI lower bound clears it."
         if headline is not None else "")
     return f"""  <section class="geo-prevalence">
-    <h2>Where resistance is proportionally elevated</h2>
+    <h2>Where resistance is highest (by share, not just counts)</h2>
     <p class="gloss">Echinocandin-resistance prevalence by place &mdash; resistant isolates as a
       share of those the caller could resolve, not raw carrier counts, so a heavily-sequenced
       region doesn't look hot from volume alone.</p>
     <dl class="grid">
 {rows}
     </dl>
-    <p class="note">Panel-gated prevalence (resistant / resolved) per finest reported place, from
-      the same resolved calls and resolution denominator as the headline
-      (<code>openafr.backtest.fks1_panel_prevalence_by_place</code>).{headline_note}{pooled_note}
-      A proportion with a confidence interval, detection only &mdash; never a per-isolate
-      phenotype claim.</p>
+    <p class="note">Resistant isolates as a share of resolved isolates for each place, with a
+      95% confidence interval.{headline_note}{pooled_note}</p>
   </section>
 """
 
@@ -784,18 +799,18 @@ def _panel_breakdown_section(panel_census):
         token = html.escape(str(v["token"]))
         carriers = v.get("carriers", 0)
         low_ppv = v.get("low_ppv")
-        tag = (' <span class="low-ppv">low PPV</span>' if low_ppv else "")
+        tag = (' <span class="low-ppv">weaker marker (low PPV)</span>' if low_ppv else "")
         return (
             f"      <dt><code>{token}</code>{tag}</dt>"
-            f"<dd>{carriers} carrier(s)</dd>"
+            f"<dd>{_plural(carriers, 'carrier')}</dd>"
         )
 
     rows = "\n".join(_panel_row(v) for v in panel_census)
     has_low_ppv = any(v.get("low_ppv") for v in panel_census)
     low_ppv_note = (
-        " Markers tagged <strong>low PPV</strong> (D642Y, M690I) are on the panel and so are "
-        "counted in the headline, but their carriers split resistant/susceptible rather than "
-        "tracking resistance &mdash; read them with more caution than the core markers."
+        " Markers tagged a <strong>weaker marker</strong> (D642Y, M690I) still count toward the "
+        "headline, but their carriers split resistant/susceptible rather than reliably tracking "
+        "resistance &mdash; read them with more caution than the core markers."
         if has_low_ppv else "")
     return f"""  <section class="panel-breakdown">
     <h2>Which resistance variant is circulating</h2>
@@ -805,11 +820,8 @@ def _panel_breakdown_section(panel_census):
     <dl class="grid">
 {rows}
     </dl>
-    <p class="note">Per-marker carrier counts for the known-resistance panel, from the same
-      resolved calls as the headline prevalence
-      (<code>openafr.earlywarning.iter_resolved_calls</code>, the single source of truth). An
-      isolate carrying more than one panel marker is counted under each.{low_ppv_note}
-      Detection only.</p>
+    <p class="note">How many isolates carry each known-resistance marker. An isolate carrying
+      more than one marker is counted under each.{low_ppv_note}</p>
   </section>
 """
 
@@ -840,36 +852,33 @@ def _vus_section(vus_census):
             tier_label, dist_str = _prox_display(prox)
             tier_label = html.escape(tier_label)
             prox_html = (
-                f' <span class="prox-tier">[proximity: {tier_label}, '
-                f'{dist_str} from drug]</span>'
+                f' <span class="prox-tier">{dist_str} from the drug ({tier_label})</span>'
             )
         sv = ctx.get("structural_verdict")
         sv_html = ""
         if sv:
             label = html.escape(sv.get("label", ""))
-            sv_html = f' <span class="struct-label">[structural: {label}]</span>'
+            sv_html = f' <span class="struct-label">structural: {label}</span>'
         return (
             f'      <dt><code>{token}</code> '
             f'<span class="vus-tier">{tier_str}</span>{prox_html}{sv_html}</dt>'
-            f"<dd>{carriers} carrier(s) &mdash; {note}</dd>"
+            f"<dd>{_plural(carriers, 'carrier')} &mdash; {note}</dd>"
         )
 
     rows = "\n".join(_vus_row(v) for v in vus_census)
     return f"""  <section class="vus">
-    <h2>Variants of uncertain significance</h2>
+    <h2>Variants we're watching but not yet counting (uncertain significance)</h2>
     <p class="gloss">Hot-spot DNA changes we have detected but that are <em>not yet</em> known
       to cause resistance &mdash; flagged and watched, deliberately not counted as resistant.</p>
     <dl class="grid">
 {rows}
     </dl>
-    <p class="note">Non-panel FKS1 hot-spot substitutions seen in the committed calls:
-      <strong>tracked but NOT counted as known resistance</strong>. The position line states
-      only where each residue sits relative to the known resistance geography (which hot-spot,
-      how far from the anchor); the proximity line shows the minimum heavy-atom distance to
-      enfumafungin (same FKS1 binding site as echinocandins) in the 9WZU cryo-EM structure;
-      the structural line, when present, is a spatial co-location label for drug-contact or
-      adjacent positions (S. cerevisiae proxy, ±1&#8211;2&thinsp;Å; not a drug-fit or
-      phenotype claim). Detection only.</p>
+    <p class="note">Non-panel FKS1 hot-spot substitutions seen in the calls:
+      <strong>watched, not counted as resistant</strong>. The position shows where the residue
+      sits relative to the known-resistance hot spots; where available, the distance to the
+      bound drug (enfumafungin &mdash; the same FKS1 site echinocandins act on, in the 9WZU
+      structure) and a spatial co-location label are shown. These locate a variant; they are
+      not a drug-fit or resistance prediction.</p>
   </section>
 """
 
@@ -992,10 +1001,10 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
         prev = latest_fill.get("prevalence")
         if n_fill is not None and prev is not None:
             prev_pct = f"{prev * 100:.1f}%"
-            n_res_part = (f" ({n_res} panel-positive carrier(s))"
+            n_res_part = (f" ({_plural(n_res, 'carrier')} of a known marker)"
                           if n_res is not None else "")
             fill_note = (
-                f'<p class="meta-detail">Most recent fill: {int(n_fill):,} isolates called'
+                f'<p class="meta-detail">Most recent batch: {int(n_fill):,} isolates called'
                 f' &middot; {prev_pct} resistance prevalence{n_res_part}.</p>'
             )
         else:
@@ -1209,8 +1218,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
-    states how current they are. Priority tiers and every number come straight from
-    <code>openafr.alert</code>; this page renders that verdict, it never invents one.
+    states how current they are. See the methods section for how the numbers are produced.
 {feeds_html}  </footer>
 </main>
 </body>
