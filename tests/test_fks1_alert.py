@@ -80,7 +80,7 @@ def test_alerts_ranked_watch_before_context():
 def test_every_headline_states_the_detection_only_caveat():
     for a in _compose()["alerts"]:
         assert "detection only" in a["headline"]
-        assert "no structural verdict" in a["headline"]
+        assert "no structural fit verdict" in a["headline"]
 
 
 def test_epidemiology_is_carried_like_the_erg11_path():

@@ -139,8 +139,8 @@ def _headline(signal, verdict, regions, first_seen):
     mut = signal["mutation"]
     n = signal["recent_count"]
     isolate = "isolate" if n == 1 else "isolates"
-    geo = (f"across {len(regions)} region(s) ({', '.join(regions)})" if regions
-           else "of undisclosed geography")
+    geo = (f"across {len(regions)} {'region' if len(regions) == 1 else 'regions'} "
+           f"({', '.join(regions)})" if regions else "of undisclosed geography")
     seen = first_seen["collected"] or first_seen["visible"] or "an unknown date"
     fit = {
         "weaker-fit": "predicts WEAKER azole fit",
@@ -268,9 +268,7 @@ def _rank(alerts):
 
 # Stated on every FKS1 alert so a reader never mistakes the absence of a fit call for
 # an all-clear.
-FKS1_DETECTION_ONLY_CAVEAT = (
-    "detection only -- no structural verdict; echinocandins do not coordinate a "
-    "metal, so the CYP51/heme-iron geometry does not transfer to FKS1.")
+FKS1_DETECTION_ONLY_CAVEAT = "detection only — no structural fit verdict is made"
 
 
 def _fks1_priority(signal):
@@ -292,11 +290,11 @@ def _fks1_headline(signal, regions, first_seen, position_context=None):
     mut = signal["mutation"]
     n = signal["recent_count"]
     isolate = "isolate" if n == 1 else "isolates"
-    geo = (f"across {len(regions)} region(s) ({', '.join(regions)})" if regions
-           else "of undisclosed geography")
+    geo = (f"across {len(regions)} {'region' if len(regions) == 1 else 'regions'} "
+           f"({', '.join(regions)})" if regions else "of undisclosed geography")
     seen = first_seen["collected"] or first_seen["visible"] or "an unknown date"
     tag = " (possible archival backlog)" if signal["possible_backlog"] else ""
-    where = f" It {fks1_position.describe(position_context)}" if position_context else ""
+    where = f". It {fks1_position.describe(position_context)}" if position_context else ""
     return (f"{mut} is {_emergence_kind(signal)} on {n} {isolate} {geo}, first seen "
             f"{seen}{tag}; {FKS1_DETECTION_ONLY_CAVEAT}{where}")
 

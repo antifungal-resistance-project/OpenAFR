@@ -43,7 +43,7 @@ def _render_all(result, *, now=NOW, **kw):
 def test_day0_all_three_are_calm_and_empty():
     page, data, root = _render_all(None)
     # page: watching copy, no tier badge
-    assert "WATCHING" in page
+    assert "Watching" in page
     assert "No echinocandin-resistance variant is over threshold" in page
     assert 'class="badge"' not in page
     # json + atom: no alerts, no false all-clear artefact (certification stays null)

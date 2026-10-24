@@ -174,8 +174,8 @@ def describe(ctx):
     where = f"hot-spot {ctx['window']}"
     off = ctx["anchor_distance"]
     rel = (f"at the {ctx['anchor']} anchor" if off == 0
-           else f"{abs(off)} residue(s) {'after' if off > 0 else 'before'} the "
-                f"{ctx['anchor']} anchor")
+           else f"{abs(off)} residue{'' if abs(off) == 1 else 's'} "
+                f"{'after' if off > 0 else 'before'} the {ctx['anchor']} anchor")
     if ctx["tier"] == KNOWN_LOW_PPV_MARKER:
         so = ("a known-but-low-PPV FKS1 change (carriers split resistant/susceptible), "
               "abstained on rather than called")

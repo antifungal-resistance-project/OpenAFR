@@ -49,7 +49,7 @@ def _empty_result(note=None):
 def test_none_result_renders_watching_page():
     # Default arm is the echinocandin (FKS1) product; a bare None result shows its copy.
     page = weather.render_page(None, now=NOW)
-    assert "WATCHING" in page
+    assert "Watching" in page
     assert "No echinocandin-resistance variant is over threshold" in page
     assert 'class="badge"' not in page  # no tier badge element when there are no alerts
 
@@ -86,7 +86,7 @@ def test_hit_page_renders_one_card_per_alert_with_verdict():
 
 def test_hit_status_line_leads_with_resistance():
     page = weather.render_page(_hit_result(), now=NOW)
-    assert "RESISTANCE SEEN" in page
+    assert "Resistance detected" in page
 
 
 def test_first_seen_renders_collected_with_visible_not_a_raw_dict():
@@ -111,7 +111,7 @@ def test_fks1_hit_page_renders_detection_only_cards():
     result = _fks1_hit_result()
     assert result["alerts"], "FKS1 fixture must produce alerts"
     page = weather.render_page(result, now=NOW)
-    assert "RESISTANCE SEEN" in page
+    assert "Resistance detected" in page
     for a in result["alerts"]:
         assert a["mutation"] in page
     # detection-only: no structural fit row, and the caveat rides in on the headline
@@ -213,14 +213,14 @@ def test_alert_card_shows_rung3_structural_verdict_when_present():
 
 def test_quiet_framing_counts_days_since_watch_start():
     page = weather.render_page(_empty_result(), now=NOW, watching_since="2026-09-01")
-    assert "QUIET" in page
-    assert "16 day(s)" in page  # 2026-09-01 -> 2026-09-17
+    assert "Quiet" in page
+    assert "16 days" in page  # 2026-09-01 -> 2026-09-17
 
 
 def test_day0_line_when_no_watch_start():
     page = weather.render_page(_empty_result(), now=NOW)
-    assert "WATCHING" in page
-    assert "QUIET" not in page
+    assert "Watching" in page
+    assert "Quiet" not in page
 
 
 # ---- determinism + safety ----------------------------------------------------
@@ -240,8 +240,8 @@ def test_now_defaults_to_wall_clock_when_omitted():
 def test_unparseable_watch_start_falls_back_to_watching_line():
     # A malformed watching_since must not raise; it degrades to the day-0 line.
     page = weather.render_page(_empty_result(), now=NOW, watching_since="not-a-date")
-    assert "WATCHING" in page
-    assert "day(s)" not in page
+    assert "Watching" in page
+    assert "with nothing new" not in page
 
 
 def test_result_text_is_html_escaped():
@@ -402,7 +402,7 @@ def test_head_carries_shareable_meta():
         assert tag in page
     assert 'property="og:url" content="https://example.org/weather/"' in page
     # the description reflects the real status, not boilerplate
-    assert "RESISTANCE SEEN" in page.split("<body>")[0]
+    assert "Resistance detected" in page.split("<body>")[0]
 
 
 # ---- render-layer polish: design tokens, head completeness, meta hierarchy --------
@@ -509,8 +509,8 @@ def test_trend_section_shows_per_batch_prevalence_and_rising_delta():
     assert 'class="trend"' in page
     assert "Resistance trend" in page
     # both batches render with resolved counts and a one-decimal prevalence
-    assert "15 of 300 resolved" in page and "5.0%" in page
-    assert "197 of 3375 resolved" in page and "5.8%" in page
+    assert "15 of 300 isolates" in page and "5.0%" in page
+    assert "197 of 3375 isolates" in page and "5.8%" in page
     # 5.0% -> 5.8% is a rise; the delta names the direction and magnitude
     assert "trend-up" in page and "prevalence up 0.8 pts" in page
 
@@ -543,8 +543,8 @@ def test_forecast_section_shows_projection_only_when_skill_certified():
                          "naive_pooled": 0.043}}
     page = weather.render_page(_cov_result(200, 150), now=NOW, forecast=fc)
     assert 'class="trend forecast"' in page
-    assert "Prevalence trajectory &amp; forecast" in page
-    assert "4 of 200 resolved" in page and "14 of 200 resolved" in page
+    assert "How prevalence is trending" in page
+    assert "4 of 200 isolates" in page and "14 of 200 isolates" in page
     assert "Projected" in page and "<code>2026-07</code>" in page and "9.0%" in page
     assert "95% PI 5.0%&ndash;15.0%" in page
     assert "trend-up" in page
@@ -588,7 +588,7 @@ def test_trend_section_renders_a_sparkline_with_one_marker_per_batch():
     assert page.count('class="spark-dot"') == 2  # one marker per batch
     assert 'role="img"' in page and "aria-label=" in page
     # the number table is still there -- the chart is additive, not a replacement
-    assert "15 of 300 resolved" in page
+    assert "15 of 300 isolates" in page
 
 
 def test_forecast_sparkline_carries_projection_only_when_skill_certified():
@@ -630,7 +630,7 @@ def test_geo_section_ranks_countries_and_labels_current_release():
         _cov_result(200, 150), now=NOW,
         geo_breakdown={"India": 12, "USA": 5, "South Africa": 12})
     assert 'class="geo"' in page
-    assert "current release" in page
+    assert "latest batch" in page
     # ranked by count desc, ties broken by name -> India, South Africa (both 12), then USA (5)
     order = [page.index("India"), page.index("South Africa"), page.index("USA")]
     assert order == sorted(order)
@@ -653,7 +653,7 @@ def test_geo_history_renders_one_ranked_block_per_release():
              "geography": {"USA": 111, "China": 14, "Colombia": 1}},
         ])
     assert 'class="geo geo-history"' in page
-    assert "by release" in page
+    assert "over time" in page
     # both releases appear, each labelled with its as-of date
     assert "PDG000000067.709 &middot; as of 2026-04-11" in page
     assert "PDG000000067.710 &middot; as of 2026-04-14" in page
@@ -688,13 +688,13 @@ def test_vus_section_lists_each_variant_with_carriers_and_geography():
     page = weather.render_page(
         _cov_result(200, 150), now=NOW, vus_census=_vus(("F635I", 6), ("R1354H", 4)))
     assert 'class="vus"' in page
-    assert "Variants of uncertain significance" in page
+    assert "uncertain significance" in page
     assert "F635I" in page and "R1354H" in page
-    assert "6 carrier(s)" in page and "4 carrier(s)" in page
+    assert "6 carriers" in page and "4 carriers" in page
     # the geography sentence rides in, and the tier label is shown
     assert "hot-spot" in page
     # detection-only boundary is restated: tracked, not counted as resistance
-    assert "NOT counted as known resistance" in page
+    assert "not counted as resistant" in page
 
 
 def test_vus_section_absent_without_census():
@@ -711,9 +711,9 @@ def test_panel_breakdown_lists_each_marker_with_carriers():
     assert 'class="panel-breakdown"' in page
     assert "Which resistance variant is circulating" in page
     assert "S639F" in page and "D642Y" in page
-    assert "20 carrier(s)" in page and "50 carrier(s)" in page
+    assert "20 carriers" in page and "50 carriers" in page
     # the low-PPV marker is tagged; the high-PPV one is not
-    assert '<code>D642Y</code> <span class="low-ppv">low PPV</span>' in page
+    assert '<code>D642Y</code> <span class="low-ppv">weaker marker (low PPV)</span>' in page
     assert '<code>S639F</code></dt>' in page
     # the low-PPV caveat only appears because a low-PPV marker is present
     assert "split resistant/susceptible" in page
@@ -748,15 +748,15 @@ def test_geo_prevalence_ranks_places_and_flags_above_national():
     }
     page = weather.render_page(_cov_result(200, 150), now=NOW, geo_prevalence=geo_prev)
     assert 'class="geo-prevalence"' in page
-    assert "Where resistance is proportionally elevated" in page
+    assert "Where resistance is highest (by share, not just counts)" in page
     assert "USA: California" in page and "30.0%" in page
-    assert "95% CI 18.0&ndash;45.0%" in page and "12/40 resolved" in page
+    assert "95% CI 18.0&ndash;45.0%" in page and "12 of 40 isolates" in page
     # The high-rate place whose CI lower bound clears the national rate is flagged; the other isn't.
     assert 'USA: California <span class="elevated">above national</span>' in page
     assert 'United Kingdom <span class="elevated">' not in page
     # The footnote names the national rate and the pooled-out small places (nothing hidden).
     assert "national rate is 10.0%" in page
-    assert "2 smaller place(s)" in page
+    assert "2 smaller places" in page
     # Ranked: the higher-prevalence place comes first.
     assert page.index("USA: California") < page.index("United Kingdom")
 
@@ -773,8 +773,8 @@ def test_trend_section_surfaces_vus_separately_from_resistant():
     trend = _trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128))
     trend[-1]["n_vus"] = 69
     page = weather.render_page(_cov_result(200, 150), now=NOW, release_trend=trend)
-    assert "128 of 3375 resolved" in page and "3.8%" in page
-    assert "69 resolved isolate(s) carry a non-panel FKS1 variant of uncertain significance" in page
+    assert "128 of 3375 isolates" in page and "3.8%" in page
+    assert "69 resolved isolates carry a non-panel FKS1 variant of uncertain significance" in page
     assert "5.8%" not in page
 
 
