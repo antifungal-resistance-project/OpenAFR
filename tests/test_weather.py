@@ -734,6 +734,40 @@ def test_panel_breakdown_absent_without_census():
     assert 'class="panel-breakdown"' not in page_empty
 
 
+def test_geo_prevalence_ranks_places_and_flags_above_national():
+    geo_prev = {
+        "headline_prevalence": 0.10,
+        "places": [
+            {"place": "USA: California", "n_resolved": 40, "n_panel_positive": 12,
+             "event_frequency": 0.30, "ci95": (0.18, 0.45)},   # CI low 18% > 10% -> flagged
+            {"place": "United Kingdom", "n_resolved": 60, "n_panel_positive": 6,
+             "event_frequency": 0.10, "ci95": (0.05, 0.20)},   # CI low 5% < 10% -> not flagged
+        ],
+        "pooled_small": {"n_places": 2, "n_resolved": 3, "n_panel_positive": 1},
+        "n_unplaced": 4,
+    }
+    page = weather.render_page(_cov_result(200, 150), now=NOW, geo_prevalence=geo_prev)
+    assert 'class="geo-prevalence"' in page
+    assert "Where resistance is proportionally elevated" in page
+    assert "USA: California" in page and "30.0%" in page
+    assert "95% CI 18.0&ndash;45.0%" in page and "12/40 resolved" in page
+    # The high-rate place whose CI lower bound clears the national rate is flagged; the other isn't.
+    assert 'USA: California <span class="elevated">above national</span>' in page
+    assert 'United Kingdom <span class="elevated">' not in page
+    # The footnote names the national rate and the pooled-out small places (nothing hidden).
+    assert "national rate is 10.0%" in page
+    assert "2 smaller place(s)" in page
+    # Ranked: the higher-prevalence place comes first.
+    assert page.index("USA: California") < page.index("United Kingdom")
+
+
+def test_geo_prevalence_absent_without_data():
+    assert 'class="geo-prevalence"' not in weather.render_page(_cov_result(200, 150), now=NOW)
+    empty = {"places": [], "pooled_small": {}, "headline_prevalence": None}
+    assert 'class="geo-prevalence"' not in weather.render_page(
+        _cov_result(200, 150), now=NOW, geo_prevalence=empty)
+
+
 def test_trend_section_surfaces_vus_separately_from_resistant():
     # #192: non-panel variants of uncertain significance are tracked, never headlined as resistant.
     trend = _trend(("2026-04-11", 300, 8), ("2026-04-14", 3375, 128))

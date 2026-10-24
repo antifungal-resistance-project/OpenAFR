@@ -18,7 +18,10 @@ from openafr.weather import _fill_age_tier
 # `generated` (refreshed on every weekly publish) is not misled by an anchored, frozen fill.
 # v3 (2026-10): added `panel_census` -- the per-marker breakdown of the known-resistance panel
 # (which substitution each resistant carrier has), whose carrier counts sum to the headline.
-SCHEMA_VERSION = 3
+# v4 (2026-10): added `geography_prevalence` -- panel-gated prevalence (resistant / resolved,
+# with a Wilson CI) per place plus the national headline rate, so a consumer can see WHERE
+# resistance is proportionally elevated, not just where raw carriers are.
+SCHEMA_VERSION = 4
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 
@@ -52,10 +55,12 @@ def _alert_record(a):
 
 
 def build_data(alert_result, *, now=None, calls_provenance=None, certification=None,
-               release_trend=None, geo_breakdown=None, geo_history=None, panel_census=None,
-               vus_census=None, forecast=None, page_url=None):
+               release_trend=None, geo_breakdown=None, geo_history=None, geo_prevalence=None,
+               panel_census=None, vus_census=None, forecast=None, page_url=None):
     """The `data.json` document: status, alerts, coverage, trend, forecast, geography,
-    panel breakdown, VUS, provenance. `forecast` is the openafr.forecast bundle (monthly series
+    panel breakdown, geography_prevalence, VUS, provenance. `geography_prevalence` is the
+    per-place panel-gated prevalence bundle (places with Wilson CIs + the national headline
+    rate), or None. `forecast` is the openafr.forecast bundle (monthly series
     + walk-forward skill + one-step projection); a consumer reads `forecast.skill` before
     trusting `projection`. `panel_census` is the per-marker breakdown of the known-resistance
     panel, each `{token, carriers, low_ppv}`, whose carrier counts sum to the headline."""
@@ -87,6 +92,7 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
              "geography": dict(sorted((e.get("geography") or {}).items()))}
             for e in (geo_history or [])],
         "panel_census": list(panel_census or []),
+        "geography_prevalence": dict(geo_prevalence) if geo_prevalence else None,
         "vus_census": list(vus_census or []),
         "calls_provenance": dict(calls_provenance or {}),
         "certification": dict(certification) if certification else None,
