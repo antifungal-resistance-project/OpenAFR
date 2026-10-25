@@ -9,19 +9,24 @@ only; detection-only; not a clinical claim.
 
 Contract is pinned by `tests/test_weather_feed.py` and re-checked at publish time by
 `scripts/check_published_page.py`. Adding a key is backward compatible. Renaming, removing, or
-changing the meaning of a key bumps `schema_version` (currently `3`).
+changing the meaning of a key bumps `schema_version` (currently `5`).
 
-**Changelog.** `3` (2026-10): added `panel_census` — the per-marker breakdown of the
-known-resistance panel (which substitution each resistant carrier has) behind the single
-headline prevalence number. `2` (2026-10): added `fill_age_days` + `fill_stale` so a consumer
-can read the overlaid fill's real age — `generated` advances on every weekly publish even when
-the underlying calls are frozen, so it is **not** a freshness signal on its own.
+**Changelog.** `5` (2026-10): added `scope_limits` — the claims this service deliberately does
+**not** make yet (chiefly a per-isolate calibrated probability), each with its reason and the
+condition that would unlock it. `4` (2026-10): added `geography_prevalence` — panel-gated
+prevalence (resistant / resolved, with a Wilson CI) per place plus the national headline rate,
+so a consumer can see *where* resistance is proportionally elevated, not just where raw carriers
+are. `3` (2026-10): added `panel_census` — the per-marker breakdown of the known-resistance
+panel (which substitution each resistant carrier has) behind the single headline prevalence
+number. `2` (2026-10): added `fill_age_days` + `fill_stale` so a consumer can read the overlaid
+fill's real age — `generated` advances on every weekly publish even when the underlying calls
+are frozen, so it is **not** a freshness signal on its own.
 
 ## data.json
 
 | key | type | meaning |
 |---|---|---|
-| `schema_version` | int | `3` |
+| `schema_version` | int | `5` |
 | `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time — advances on every weekly publish; **not** a data-freshness signal (see `fill_age_days`) |
 | `notice` | string | research-use disclaimer |
 | `gene` | string \| null | `FKS1` for the echinocandin arm |
@@ -38,7 +43,9 @@ the underlying calls are frozen, so it is **not** a freshness signal on its own.
 | `geography` | object | `{country: panel-carrier count}`, current release only, sorted by country |
 | `geography_history` | array | per-release `{country: panel-carrier count}` over the committed series (below) |
 | `panel_census` | array | per-marker breakdown of the known-resistance panel (below) |
+| `geography_prevalence` | object \| null | panel-gated prevalence per place + the national headline rate (below) |
 | `vus_census` | array | per-variant census of non-panel hot-spot variants of uncertain significance (below) |
+| `scope_limits` | array | claims the service deliberately does **not** make yet, with reasons (below) |
 | `calls_provenance` | object | which committed call table(s) the page is built on |
 | `certification` | object \| null | caller certification (benchmark, concordance) |
 
@@ -113,6 +120,46 @@ panel token in the latest committed call table, descending by `carriers`: `token
 which are counted in the headline but split R/S rather than tracking resistance). Per-token
 counts sum to `n_resistant` except where one isolate carries more than one panel marker (then it
 is counted under each). Detection only — the marker and its count, never a per-isolate phenotype.
+
+### geography_prevalence
+
+Panel-gated echinocandin **prevalence** by place for the current release (the proportional
+counterpart to the raw-count `geography`), or `null` (azole arm, a snapshot render, a missing
+table, or no placeable resolved isolates). Keys:
+
+- `places[]` — one entry per place with at least `min_resolved` (5) resolved isolates, sorted by
+  prevalence (then CI lower bound) descending: `place`, `n_resolved` (the denominator),
+  `n_panel_positive` (the numerator), `event_frequency` (= positive / resolved, 0..1), `ci95`
+  (Wilson 95% CI `[lo, hi]`).
+- `pooled_small` — places below the `min_resolved` floor, pooled so the footnote math holds:
+  place count + their summed `n_resolved` / `n_panel_positive`.
+- `headline_prevalence` — the national panel-gated rate (`backtest.fks1_panel_prevalence`), the
+  same single source of truth as the headline, so "above the national rate" never drifts.
+
+The summed `n_panel_positive` across `places` + `pooled_small` equals the national count. Read a
+place as *proportionally elevated* only when its `event_frequency` stands out, not its raw volume.
+Detection only, research use.
+
+### scope_limits[]
+
+The claims this service deliberately does **not** make yet — surfaced so a consumer sees a
+considered boundary, not a silent gap. Fixed product policy (`openafr.weather.SCOPE_LIMITS`),
+shared with the HTML page so the two cannot disagree; the reasons are the honest ceilings fixed
+in advance by this project's frozen pre-registrations / contract, not claims. One entry per
+deferral, with keys:
+
+| key | type | meaning |
+|---|---|---|
+| `claim` | string | the claim being withheld (e.g. "a per-isolate calibrated resistance probability") |
+| `status` | string | `deferred` (earnable later) or `out of scope` (not this service's job) |
+| `reason` | string | plain-language why it is withheld today |
+| `unlock` | string \| null | the condition that would earn it, or `null` when out of scope |
+| `source` | string | the frozen doc fixing the reason (e.g. `work/PREREGISTRATION_calibration.md`) |
+
+The lead entry is the **calibrated-probability** deferral: the feed reports presence of a known
+resistance marker (categorical), never a probability, because no public panel pairs genomes with
+lab susceptibility at the size needed to *measure* that a stamped probability is reliable
+(`work/PREREGISTRATION_calibration.md`, `docs/DIAGNOSTIC_VERDICT_CONTRACT.md`).
 
 ### vus_census[]
 

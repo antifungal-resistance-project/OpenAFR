@@ -394,6 +394,15 @@ def test_non_pass_verdict_makes_no_certification_claim():
     assert 'class="cert"' not in page
 
 
+def test_scope_limits_section_names_the_deferred_probability():
+    # The "what we don't claim yet" block renders on every page (it is static product policy,
+    # not gated on a fill or certification) and leads with the calibrated-probability deferral.
+    page = weather.render_page(_fks1_hit_result(), now=NOW)
+    assert 'id="scope-limits"' in page
+    assert "does not claim yet" in page
+    assert "calibrated resistance probability" in page
+
+
 def test_head_carries_shareable_meta():
     page = weather.render_page(_fks1_hit_result(), now=NOW,
                                page_url="https://example.org/weather/")

@@ -56,7 +56,9 @@ TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of"
             "fill_age_days", "fill_stale",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
             "geography_history", "panel_census", "geography_prevalence", "vus_census",
-            "calls_provenance", "certification"}
+            "scope_limits", "calls_provenance", "certification"}
+# A partner reads scope_limits to see what the service withholds; pin the keys they index into.
+SCOPE_LIMIT_KEYS = {"claim", "status", "reason"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -167,6 +169,11 @@ def _validate_schema(data, failures):
                    and 0.0 <= p["event_frequency"] <= 1.0 for p in gp["places"]),
                "geography_prevalence rates are sane fractions", failures)
     _check(isinstance(data.get("vus_census"), list), "vus_census is a list", failures)
+    sl = data.get("scope_limits")
+    if _check(isinstance(sl, list) and len(sl) > 0,
+              "scope_limits is a non-empty list", failures):
+        _check(all(isinstance(e, dict) and SCOPE_LIMIT_KEYS <= set(e) for e in sl),
+               "scope_limits entries carry claim/status/reason", failures)
     for i, a in enumerate(data.get("alerts") or []):
         if not _check(ALERT_KEYS <= set(a), f"alert[{i}] has all required keys", failures):
             print(f"        missing: {sorted(ALERT_KEYS - set(a))}")
