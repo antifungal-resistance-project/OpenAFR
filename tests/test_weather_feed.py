@@ -4,6 +4,7 @@ Same inputs as the page, so these lock that the feeds carry the page's facts, st
 deterministic, are valid XML/JSON, and escape page-controlled text.
 """
 import json
+import pathlib
 import xml.etree.ElementTree as ET
 
 from openafr import weather, weather_feed
@@ -94,6 +95,19 @@ def test_scope_limits_are_published_and_name_the_deferred_probability():
     assert {"claim", "status", "reason"} <= set(first)
     assert "probabilit" in first["claim"].lower()      # calibrated-probability deferral leads
     assert sl == [dict(lim) for lim in weather.SCOPE_LIMITS]  # feed == shared policy
+
+
+def test_feed_spec_doc_tracks_the_emitted_schema():
+    # docs/FEED_SPEC.md is the partner-facing contract, but nothing asserted it tracks the code,
+    # so it silently drifted to schema 3 while the feed emitted 4 and geography_prevalence went
+    # undocumented. A partner building against the spec would never learn the key exists.
+    # Regression: FEED_SPEC-drift — found by /qa on 2026-10-25.
+    # Report: .gstack/qa-reports/qa-report-weather-2026-10-25.md
+    spec = (pathlib.Path(__file__).resolve().parents[1] / "docs" / "FEED_SPEC.md").read_text()
+    assert f"currently `{weather_feed.SCHEMA_VERSION}`" in spec, \
+        "FEED_SPEC schema_version is stale vs weather_feed.SCHEMA_VERSION"
+    for key in TOP_KEYS:
+        assert f"`{key}`" in spec, f"FEED_SPEC does not document top-level key {key!r}"
 
 
 def test_fill_age_and_staleness_reported_for_consumers():
