@@ -12,7 +12,7 @@ import datetime
 import hashlib
 from xml.sax.saxutils import escape
 
-from openafr.weather import _fill_age_tier
+from openafr.weather import SCOPE_LIMITS, _fill_age_tier
 
 # v2 (2026-10): added `fill_age_days` + `fill_stale` so a consumer keying freshness off
 # `generated` (refreshed on every weekly publish) is not misled by an anchored, frozen fill.
@@ -21,7 +21,10 @@ from openafr.weather import _fill_age_tier
 # v4 (2026-10): added `geography_prevalence` -- panel-gated prevalence (resistant / resolved,
 # with a Wilson CI) per place plus the national headline rate, so a consumer can see WHERE
 # resistance is proportionally elevated, not just where raw carriers are.
-SCHEMA_VERSION = 4
+# v5 (2026-10): added `scope_limits` -- the claims this service deliberately does NOT make yet
+# (chiefly a per-isolate calibrated probability) with the reason + the unlock condition, from the
+# shared openafr.weather.SCOPE_LIMITS policy, so a partner sees what is withheld, not a silent gap.
+SCHEMA_VERSION = 5
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 
@@ -63,7 +66,10 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
     rate), or None. `forecast` is the openafr.forecast bundle (monthly series
     + walk-forward skill + one-step projection); a consumer reads `forecast.skill` before
     trusting `projection`. `panel_census` is the per-marker breakdown of the known-resistance
-    panel, each `{token, carriers, low_ppv}`, whose carrier counts sum to the headline."""
+    panel, each `{token, carriers, low_ppv}`, whose carrier counts sum to the headline.
+    `scope_limits` is the fixed policy list of claims the service deliberately does NOT make yet
+    (each `{claim, status, reason, unlock, source}`), from openafr.weather.SCOPE_LIMITS so the
+    feed and the page state the same deferrals."""
     r = alert_result or {}
     now_date = datetime.datetime.fromisoformat(
         _now_iso(now).replace("Z", "+00:00")).date()
@@ -94,6 +100,7 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
         "panel_census": list(panel_census or []),
         "geography_prevalence": dict(geo_prevalence) if geo_prevalence else None,
         "vus_census": list(vus_census or []),
+        "scope_limits": [dict(lim) for lim in SCOPE_LIMITS],
         "calls_provenance": dict(calls_provenance or {}),
         "certification": dict(certification) if certification else None,
     }

@@ -119,7 +119,11 @@ def _valid_data():
         }],
         "release_trend": [], "forecast": None, "geography": {}, "geography_history": [],
         "panel_census": [], "geography_prevalence": None,
-        "vus_census": [], "calls_provenance": {}, "certification": None,
+        "vus_census": [],
+        "scope_limits": [{"claim": "a per-isolate calibrated resistance probability",
+                          "status": "deferred", "reason": "no held-out phenotype panel",
+                          "unlock": "option-C panel", "source": "prereg"}],
+        "calls_provenance": {}, "certification": None,
     }.items()}
 
 

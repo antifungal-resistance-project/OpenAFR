@@ -18,7 +18,7 @@ def test_data_matches_alerts_and_is_json_serialisable():
     res = _fks1_hit_result()
     data = weather_feed.build_data(res, now=NOW, geo_breakdown={"USA": 3, "Kenya": 1},
                                    page_url=URL)
-    assert data["schema_version"] == 4 and data["generated"] == "2026-09-17T08:30:00Z"
+    assert data["schema_version"] == 5 and data["generated"] == "2026-09-17T08:30:00Z"
     assert [a["mutation"] for a in data["alerts"]] == [a["mutation"] for a in res["alerts"]]
     assert list(data["geography"]) == ["Kenya", "USA"]  # sorted, stable
     json.dumps(data)  # must not raise
@@ -67,7 +67,7 @@ TOP_KEYS = {"schema_version", "generated", "notice", "gene", "page_url", "as_of"
             "fill_age_days", "fill_stale",
             "thresholds", "coverage", "alerts", "release_trend", "forecast", "geography",
             "geography_history", "panel_census", "geography_prevalence", "vus_census",
-            "calls_provenance", "certification"}
+            "scope_limits", "calls_provenance", "certification"}
 ALERT_KEYS = {"mutation", "priority", "headline", "first_seen", "regions", "n_carriers_total",
               "emergence"}
 EMERGENCE_KEYS = {"first_appearance", "rising", "possible_backlog", "recent_count",
@@ -81,6 +81,19 @@ def test_data_json_schema_is_pinned():
     for a in data["alerts"]:
         assert ALERT_KEYS <= set(a)
         assert set(a["emergence"]) == EMERGENCE_KEYS
+
+
+def test_scope_limits_are_published_and_name_the_deferred_probability():
+    # The feed states what the service deliberately does NOT claim yet (chiefly a calibrated
+    # per-isolate probability), from the same policy the page renders, so a partner sees the
+    # deferral, not a silent gap.
+    data = weather_feed.build_data(_fks1_hit_result(), now=NOW)
+    sl = data["scope_limits"]
+    assert isinstance(sl, list) and len(sl) > 0
+    first = sl[0]
+    assert {"claim", "status", "reason"} <= set(first)
+    assert "probabilit" in first["claim"].lower()      # calibrated-probability deferral leads
+    assert sl == [dict(lim) for lim in weather.SCOPE_LIMITS]  # feed == shared policy
 
 
 def test_fill_age_and_staleness_reported_for_consumers():

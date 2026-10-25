@@ -360,6 +360,75 @@ def _cert_badge(certification):
             f"{html.escape(str(n))}-isolate benchmark</a></p>\n")
 
 
+# What this service deliberately does NOT claim yet, and why -- the single source of truth for
+# both the page section (_scope_limits_section) and the data.json `scope_limits` key
+# (weather_feed.build_data), so the two can never disagree. These are product-level policy, not
+# data-derived: each `reason` is the honest ceiling named by a frozen pre-registration / contract
+# (cited in `source`), NOT a new claim. Surfacing the deferrals turns a built-but-dark capability
+# into an honesty signal rather than a silent gap.
+SCOPE_LIMITS = [
+    {
+        "claim": "a per-isolate calibrated resistance probability",
+        "status": "deferred",
+        "reason": "This report tells you whether a known echinocandin-resistance FKS1 marker is "
+                  "present -- a yes/no detection, not a probability. We do not attach a number "
+                  "like \"80% likely resistant\", because saying so honestly means first "
+                  "measuring that such a number holds up: across isolates we would stamp 80%, "
+                  "about 80% must actually be resistant by a lab test. No public collection "
+                  "pairs the genomes with lab susceptibility results at the size needed to "
+                  "measure that, so the probability stays off the report until it can be earned.",
+        "unlock": "a paired genotype + lab-susceptibility panel that clears the pre-registered "
+                  "reliability bar (work/PREREGISTRATION_calibration.md, "
+                  "docs/DIAGNOSTIC_VERDICT_CONTRACT.md)",
+        "source": "work/PREREGISTRATION_calibration.md",
+    },
+    {
+        "claim": "an azole (fluconazole) resistance read-out",
+        "status": "out of scope",
+        "reason": "This is the echinocandin (FKS1) service. We do not report fluconazole "
+                  "resistance here: azole resistance is already near-ubiquitous in C. auris, so "
+                  "a presence/absence signal would carry little early-warning value.",
+        "unlock": None,
+        "source": "TODOS.md (FKS1 surveillance redirection)",
+    },
+]
+
+
+def _scope_limits_section(scope_limits=SCOPE_LIMITS):
+    """The collapsible 'what this service does not claim yet' block, or "" when the list is empty.
+
+    Renders the SCOPE_LIMITS policy (shared with weather_feed so page and feed agree). Static --
+    it introduces no number or probability; it states what is deliberately withheld and why,
+    which is the honesty signal the certified-caller / Wilson-CI / forecast-skill discipline
+    already sets elsewhere on the page.
+    """
+    if not scope_limits:
+        return ""
+    items = []
+    for lim in scope_limits:
+        claim = html.escape(str(lim.get("claim") or ""))
+        status = html.escape(str(lim.get("status") or "deferred"))
+        reason = html.escape(str(lim.get("reason") or ""))
+        unlock = lim.get("unlock")
+        unlock_html = (f' <span class="note">Earned by: {html.escape(str(unlock))}.</span>'
+                       if unlock else "")
+        items.append(
+            f"      <dt>{claim} &mdash; <em>{status}</em></dt>\n"
+            f"      <dd>{reason}{unlock_html}</dd>")
+    rows = "\n".join(items)
+    return f"""  <details class="about" id="scope-limits">
+    <summary>What this report does not claim yet &middot; and why</summary>
+    <p>Credibility rests as much on what we withhold as on what we show. These are claims this
+      service could make look plausible but has deliberately held back until each is earned; the
+      reasons are fixed in advance in the pre-registrations and contract this project freezes,
+      not decided after the fact.</p>
+    <dl class="grid scope-grid">
+{rows}
+    </dl>
+  </details>
+"""
+
+
 def _methods_section(certification, calls_provenance, window):
     """The collapsible 'how this works / methods' block, or "" when uncertified.
 
@@ -1045,6 +1114,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
     geo_prevalence_html = _geo_prevalence_section(geo_prevalence)
     geo_history_html = _geo_history_section(geo_history)
     vus_html = _vus_section(vus_census)
+    scope_limits_html = _scope_limits_section()
     methods_html = _methods_section(certification, calls_provenance, window)
     share_desc_plain = _share_description(status, coverage, calls_provenance)
     share_desc = html.escape(share_desc_plain)
@@ -1123,6 +1193,12 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
   .about summary {{ cursor:pointer; color:var(--muted-strong); font-weight:600; }}
   .about code {{ color:var(--code); }}
   .about .cert-grid {{ max-width:420px; margin:.6rem 0; }}
+  /* Scope-limits read as stacked heading + paragraph, not a two-column key:value grid. */
+  .about .scope-grid {{ display:block; max-width:640px; margin:.6rem 0; }}
+  .about .scope-grid dt {{ color:var(--muted-strong); font-weight:600; margin:.9rem 0 .2rem; }}
+  .about .scope-grid dt em {{ color:var(--stale); font-style:normal; font-weight:600; }}
+  .about .scope-grid dd {{ margin:0 0 .3rem; }}
+  .about .scope-grid dd .note {{ display:block; margin-top:.15rem; }}
   h2 {{ font-size:.95rem; letter-spacing:.02em; text-transform:uppercase;
         color:var(--muted-strong); font-weight:600; margin:2.5rem 0 .6rem; }}
   .trend, .geo, .vus {{ margin:0 0 1rem; }}
@@ -1214,7 +1290,7 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
        source: NCBI Pathogen Detection via OpenAFR early-warning.</p>
   </div>
 {cert_badge}{body}
-{trend_html}{forecast_html}{panel_html}{geo_html}{geo_prevalence_html}{geo_history_html}{vus_html}{methods_html}  <footer>
+{trend_html}{forecast_html}{panel_html}{geo_html}{geo_prevalence_html}{geo_history_html}{vus_html}{scope_limits_html}{methods_html}  <footer>
     OpenAFR early-warning. Research use only — a triage aid, not a clinical claim.
     Echinocandin calls come from a monthly FKS1 re-call batch over the live NCBI feed
     (cadence set by the ~97-day median deposit lag); between batches the coverage line above
