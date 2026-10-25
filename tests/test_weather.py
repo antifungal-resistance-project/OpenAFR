@@ -700,6 +700,12 @@ def test_vus_section_lists_each_variant_with_carriers_and_geography():
     assert "uncertain significance" in page
     assert "F635I" in page and "R1354H" in page
     assert "6 carriers" in page and "4 carriers" in page
+    # the variant list stacks (header line + full-width note) via .vus-list, never the
+    # two-column .grid: its long token+tags dt makes the max-content grid squeeze the note
+    # into a cramped far-right column. Regression guard for that layout bug (/qa 2026-10-25).
+    assert 'class="vus-list"' in page
+    vus_block = page[page.index('class="vus"'):]
+    assert 'class="grid"' not in vus_block[:vus_block.index("</section>")]
     # the geography sentence rides in, and the tier label is shown
     assert "hot-spot" in page
     # detection-only boundary is restated: tracked, not counted as resistance

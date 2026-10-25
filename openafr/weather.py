@@ -939,7 +939,7 @@ def _vus_section(vus_census):
     <h2>Variants we're watching but not yet counting (uncertain significance)</h2>
     <p class="gloss">Hot-spot DNA changes we have detected but that are <em>not yet</em> known
       to cause resistance &mdash; flagged and watched, deliberately not counted as resistant.</p>
-    <dl class="grid">
+    <dl class="vus-list">
 {rows}
     </dl>
     <p class="note">Non-panel FKS1 hot-spot substitutions seen in the calls:
@@ -1246,6 +1246,13 @@ def render_page(alert_result, *, now=None, watching_since=None, calls_provenance
            font-size:.9rem; margin:0; }}
   .grid dt {{ color:var(--muted); }}
   .grid dd {{ margin:0; }}
+  /* VUS rows carry a long token+tags header and a full-sentence note, so they stack
+     (header line, note beneath) instead of the two-column label/value grid, which would
+     squeeze the note into a cramped far-right column. */
+  .vus-list {{ font-size:.9rem; margin:0; }}
+  .vus-list dt {{ margin-top:.7rem; }}
+  .vus-list dt:first-of-type {{ margin-top:0; }}
+  .vus-list dd {{ margin:.1rem 0 0; }}
   .pocket {{ display:block; width:100%; max-width:520px; margin:1rem 0 0;
              border-radius:8px; border:1px solid var(--border); }}
   .note {{ color:var(--muted); font-size:.85rem; font-style:italic; }}
