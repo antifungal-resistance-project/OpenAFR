@@ -275,7 +275,7 @@ def _geo_prevalence(args):
     other sections."""
     if args.gene != "fks1" or args.snapshot:
         return None
-    from openafr import backtest
+    from openafr import backtest, fks1_caller
     table = args.fks1_calls or ew.latest_fks1_call_table(_calls_dir(args))
     if not table or not pathlib.Path(table).exists():
         return None
@@ -283,6 +283,16 @@ def _geo_prevalence(args):
     by_place = backtest.fks1_panel_prevalence_by_place(records, finest=True)
     if not by_place["places"]:
         return None
+    # Enrich each place's raw per_mutation counts into the same marker shape the national
+    # panel census uses ({token, carriers, low_ppv}), descending by carriers, so the page can
+    # name WHICH marker drives a hotspot and carry the low-PPV caution for D642Y/M690I -- the
+    # same upstream-enrichment split as _panel_census (the view stays pure).
+    for place in by_place["places"]:
+        per_mut = place.pop("per_mutation", {})
+        place["markers"] = [
+            {"token": tok, "carriers": n,
+             "low_ppv": fks1_caller.panel_tier(tok) == "low_ppv"}
+            for tok, n in sorted(per_mut.items(), key=lambda kv: (-kv[1], kv[0]))]
     headline = backtest.fks1_panel_prevalence(records)
     by_place["headline_prevalence"] = headline["event_frequency"]
     return by_place

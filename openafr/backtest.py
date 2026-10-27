@@ -464,28 +464,32 @@ def fks1_panel_prevalence_by_place(records, *, finest=True, min_resolved=5):
     can name how much is held back WITHOUT inventing a rate for any one of them.
 
     Returns `{places: [...], pooled_small: {...}, n_unplaced: int}` where each `places` entry has
-    the same event_frequency/ci95 shape as `fks1_panel_prevalence`, sorted by prevalence (then CI
-    lower bound) descending. The summed `n_panel_positive` across `places` + `pooled_small`
-    equals the national `n_panel_positive`, so this can never drift from the headline."""
-    by_place = {}          # place -> [n_resolved, n_positive]
+    the same event_frequency/ci95 shape as `fks1_panel_prevalence` plus a `per_mutation` tally
+    (panel token -> carrier count within the place) so a reader sees WHICH marker drives each
+    hotspot, sorted by prevalence (then CI lower bound) descending. The summed `n_panel_positive`
+    across `places` + `pooled_small` equals the national `n_panel_positive`, so this can never
+    drift from the headline."""
+    by_place = {}          # place -> [n_resolved, n_positive, {token: carriers}]
     n_unplaced = 0
     for r in records:
         if _fks1_resolution_bucket(r.get("fks1_resistance_source")) != "resolved":
             continue
         place = _ew.display_geo(r) if finest else (r.get("country") or "").strip()
-        positive = any(fks1_caller.is_panel_token(t)
-                       for t in emergence.parse_call(r.get("fks1_call")))
+        panel_toks = [t for t in emergence.parse_call(r.get("fks1_call"))
+                      if fks1_caller.is_panel_token(t)]
         if not place:
             n_unplaced += 1
             continue
-        cell = by_place.setdefault(place, [0, 0])
+        cell = by_place.setdefault(place, [0, 0, {}])
         cell[0] += 1
-        if positive:
+        if panel_toks:
             cell[1] += 1
+            for t in panel_toks:
+                cell[2][t] = cell[2].get(t, 0) + 1
 
     places = []
     pooled_n = pooled_pos = pooled_count = 0
-    for place, (n_res, n_pos) in by_place.items():
+    for place, (n_res, n_pos, per_mut) in by_place.items():
         if n_res < min_resolved:
             pooled_count += 1
             pooled_n += n_res
@@ -497,6 +501,11 @@ def fks1_panel_prevalence_by_place(records, *, finest=True, min_resolved=5):
             "n_panel_positive": n_pos,
             "event_frequency": n_pos / n_res,
             "ci95": wilson_interval(n_pos, n_res),
+            # Which marker drives this place -- a token-carrier tally (an isolate with
+            # multiple panel tokens is counted under each, as in the national per_mutation),
+            # NOT a partition of n_panel_positive. Sorted by position so the view is stable.
+            "per_mutation": dict(sorted(
+                per_mut.items(), key=lambda kv: int(re.search(r"\d+", kv[0]).group()))),
         })
     places.sort(key=lambda p: (p["event_frequency"], p["ci95"][0] if p["ci95"] else 0.0),
                 reverse=True)

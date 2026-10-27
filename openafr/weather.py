@@ -797,15 +797,31 @@ def _geo_prevalence_section(geo_prevalence):
     degradation, same as every other section).
 
     `geo_prevalence` -- the dict from render_weather's `_geo_prevalence`: `places` (each with
-    `place`, `n_resolved`, `n_panel_positive`, `event_frequency`, `ci95`), already ranked by
-    prevalence; `pooled_small` (count + summed resolved/positive of places held below the
-    minimum resolved-isolate threshold, named in the footnote so nothing is hidden); and
+    `place`, `n_resolved`, `n_panel_positive`, `event_frequency`, `ci95`, and `markers` -- the
+    per-place marker tally, each `{token, carriers, low_ppv}`, descending by carriers), already
+    ranked by prevalence; `pooled_small` (count + summed resolved/positive of places held below
+    the minimum resolved-isolate threshold, named in the footnote so nothing is hidden); and
     `headline_prevalence` (the national rate from the same resolved rows, the single source of
     truth the 'elevated' flag compares against). Passed in, never recomputed.
     """
     if not geo_prevalence or not geo_prevalence.get("places"):
         return ""
     headline = geo_prevalence.get("headline_prevalence")
+
+    def _markers_clause(markers):
+        # Name which marker(s) drive the place: the top one by carriers, plus a second only
+        # when it is within half the top's count (a genuinely mixed place). A token-carrier
+        # tally, never a fraction of the place's positives, so it can't read as >100%.
+        if not markers:
+            return ""
+        top = markers[0]["carriers"]
+        shown = [m for m in markers if m["carriers"] * 2 >= top][:2]
+        parts = []
+        for m in shown:
+            tok = html.escape(str(m["token"]))
+            low = ' <span class="low-ppv">weaker marker</span>' if m.get("low_ppv") else ""
+            parts.append(f"<code>{tok}</code>&times;{m['carriers']}{low}")
+        return f' &middot; driven by {", ".join(parts)}'
 
     def _row(p):
         place = html.escape(str(p["place"]))
@@ -819,10 +835,13 @@ def _geo_prevalence_section(geo_prevalence):
         # merely numerically higher on a small sample.
         elevated = (ci and headline is not None and ci[0] > headline)
         tag = ' <span class="elevated">above national</span>' if elevated else ""
+        markers = _markers_clause(p.get("markers") or [])
         return (f"      <dt>{place}{tag}</dt>"
-                f"<dd>{pct}{ci_part} &mdash; {n}</dd>")
+                f"<dd>{pct}{ci_part} &mdash; {n}{markers}</dd>")
 
     rows = "\n".join(_row(p) for p in geo_prevalence["places"])
+    has_low_ppv = any(m.get("low_ppv") for p in geo_prevalence["places"]
+                      for m in (p.get("markers") or []))
     pooled = geo_prevalence.get("pooled_small") or {}
     n_small = pooled.get("n_places", 0)
     pooled_note = (
@@ -836,6 +855,13 @@ def _geo_prevalence_section(geo_prevalence):
         f" The national rate is {headline * 100:.1f}%; a place is flagged "
         f"<strong>above national</strong> only when its 95% CI lower bound clears it."
         if headline is not None else "")
+    markers_note = (
+        " &ldquo;Driven by&rdquo; names which known-resistance marker(s) the place's carriers "
+        "hold &mdash; distinct dominant markers in two places point to independent emergence, "
+        "not one spreading lineage."
+        + (" A marker tagged a <strong>weaker marker</strong> (D642Y, M690I) still counts, but "
+           "its carriers split resistant/susceptible rather than reliably tracking resistance."
+           if has_low_ppv else ""))
     return f"""  <section class="geo-prevalence">
     <h2>Where resistance is highest (by share, not just counts)</h2>
     <p class="gloss">Echinocandin-resistance prevalence by place &mdash; resistant isolates as a
@@ -845,7 +871,7 @@ def _geo_prevalence_section(geo_prevalence):
 {rows}
     </dl>
     <p class="note">Resistant isolates as a share of resolved isolates for each place, with a
-      95% confidence interval.{headline_note}{pooled_note}</p>
+      95% confidence interval.{headline_note}{markers_note}{pooled_note}</p>
   </section>
 """
 

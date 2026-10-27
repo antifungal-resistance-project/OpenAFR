@@ -19,7 +19,7 @@ def test_data_matches_alerts_and_is_json_serialisable():
     res = _fks1_hit_result()
     data = weather_feed.build_data(res, now=NOW, geo_breakdown={"USA": 3, "Kenya": 1},
                                    page_url=URL)
-    assert data["schema_version"] == 5 and data["generated"] == "2026-09-17T08:30:00Z"
+    assert data["schema_version"] == 6 and data["generated"] == "2026-09-17T08:30:00Z"
     assert [a["mutation"] for a in data["alerts"]] == [a["mutation"] for a in res["alerts"]]
     assert list(data["geography"]) == ["Kenya", "USA"]  # sorted, stable
     json.dumps(data)  # must not raise
@@ -186,12 +186,18 @@ def test_geography_prevalence_passes_through():
     geo_prev = {
         "headline_prevalence": 0.1,
         "places": [{"place": "USA", "n_resolved": 40, "n_panel_positive": 12,
-                    "event_frequency": 0.3, "ci95": (0.18, 0.45)}],
+                    "event_frequency": 0.3, "ci95": (0.18, 0.45),
+                    "markers": [{"token": "D642Y", "carriers": 11, "low_ppv": True},
+                                {"token": "S639F", "carriers": 1, "low_ppv": False}]}],
         "pooled_small": {"n_places": 1, "n_resolved": 1, "n_panel_positive": 0},
         "n_unplaced": 2,
     }
     data = weather_feed.build_data(_fks1_hit_result(), now=NOW, geo_prevalence=geo_prev)
-    assert data["geography_prevalence"]["places"][0]["place"] == "USA"
+    place = data["geography_prevalence"]["places"][0]
+    assert place["place"] == "USA"
+    # Per-place marker tally rides through untouched (v6), so page and feed agree on WHICH
+    # marker drives a place.
+    assert place["markers"][0] == {"token": "D642Y", "carriers": 11, "low_ppv": True}
     assert data["geography_prevalence"]["headline_prevalence"] == 0.1
     json.dumps(data)
 

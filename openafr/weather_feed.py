@@ -24,7 +24,11 @@ from openafr.weather import SCOPE_LIMITS, _fill_age_tier
 # v5 (2026-10): added `scope_limits` -- the claims this service deliberately does NOT make yet
 # (chiefly a per-isolate calibrated probability) with the reason + the unlock condition, from the
 # shared openafr.weather.SCOPE_LIMITS policy, so a partner sees what is withheld, not a silent gap.
-SCHEMA_VERSION = 5
+# v6 (2026-10): added per-place `markers` inside `geography_prevalence.places` -- which known-
+# resistance marker(s) drive each place (each `{token, carriers, low_ppv}`), so a consumer sees
+# that distinct hotspots carry distinct markers (independent emergence), not just where the rate
+# is high. A token-carrier tally, not a partition of the place's positives.
+SCHEMA_VERSION = 6
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 
@@ -62,8 +66,8 @@ def build_data(alert_result, *, now=None, calls_provenance=None, certification=N
                panel_census=None, vus_census=None, forecast=None, page_url=None):
     """The `data.json` document: status, alerts, coverage, trend, forecast, geography,
     panel breakdown, geography_prevalence, VUS, provenance. `geography_prevalence` is the
-    per-place panel-gated prevalence bundle (places with Wilson CIs + the national headline
-    rate), or None. `forecast` is the openafr.forecast bundle (monthly series
+    per-place panel-gated prevalence bundle (places with Wilson CIs + a `markers` tally of which
+    known-resistance marker(s) drive each place + the national headline rate), or None. `forecast` is the openafr.forecast bundle (monthly series
     + walk-forward skill + one-step projection); a consumer reads `forecast.skill` before
     trusting `projection`. `panel_census` is the per-marker breakdown of the known-resistance
     panel, each `{token, carriers, low_ppv}`, whose carrier counts sum to the headline.

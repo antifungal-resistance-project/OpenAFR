@@ -13,11 +13,18 @@ _Last re-ranked: 2026-10-26._
 
 ## Active bets (ranked)
 
-1. **Weather depth — keep extending what the page tells you.** The current winning thread:
-   the last five PRs (#215 panel breakdown, #216 geo prevalence, #217 plain language,
-   #218 claims-not-made, #219 QA/schema v4) each added a layer. Next increments are judgment
-   calls — e.g. trend/time-series over releases, finer geo resolution, clearer forecast
-   surfacing. Pick the increment that most changes what a surveillance reader learns.
+1. **Weather depth — keep extending what the page tells you.** The winning thread: each
+   recent PR adds a layer (#215 panel breakdown, #216 geo prevalence, #217 plain language,
+   #218 claims-not-made, #219 QA, then **marker × region** — each geo-prevalence hotspot now
+   names which FKS1 marker drives it; the data shows Mid-Atlantic is clonal D642Y and
+   Guangdong is M690I, i.e. independent emergence; schema v5→**v6**). Next increments are
+   judgment calls — pick the one that most changes what a surveillance reader learns:
+   - **Fix the per-release trend honesty.** The "Resistance trend" section plots 709
+     (300-isolate pilot) vs 710 (3375 full) as "prevalence up 0.8 pts since the previous
+     batch" — but both cover the ~same April window, so that delta is a sampling-depth
+     artifact, not emergence. Either suppress the delta when two fills share a window, or
+     label batches by sampling depth rather than time. (Good next pick: a real honesty fix.)
+   - Finer geo resolution; clearer forecast surfacing.
 
 2. **Live-loop durability — don't let the page go dark.** The display window anchors to the
    committed fill; on the current fill it goes dark ~2027-04-10. The non-billable monthly

@@ -9,9 +9,12 @@ only; detection-only; not a clinical claim.
 
 Contract is pinned by `tests/test_weather_feed.py` and re-checked at publish time by
 `scripts/check_published_page.py`. Adding a key is backward compatible. Renaming, removing, or
-changing the meaning of a key bumps `schema_version` (currently `5`).
+changing the meaning of a key bumps `schema_version` (currently `6`).
 
-**Changelog.** `5` (2026-10): added `scope_limits` — the claims this service deliberately does
+**Changelog.** `6` (2026-10): added per-place `markers` inside `geography_prevalence.places` —
+which known-resistance marker(s) drive each place (each `{token, carriers, low_ppv}`), so a
+consumer sees that distinct hotspots carry *distinct* markers (independent emergence), not just
+where the rate is high. `5` (2026-10): added `scope_limits` — the claims this service deliberately does
 **not** make yet (chiefly a per-isolate calibrated probability), each with its reason and the
 condition that would unlock it. `4` (2026-10): added `geography_prevalence` — panel-gated
 prevalence (resistant / resolved, with a Wilson CI) per place plus the national headline rate,
@@ -26,7 +29,7 @@ are frozen, so it is **not** a freshness signal on its own.
 
 | key | type | meaning |
 |---|---|---|
-| `schema_version` | int | `5` |
+| `schema_version` | int | `6` |
 | `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time — advances on every weekly publish; **not** a data-freshness signal (see `fill_age_days`) |
 | `notice` | string | research-use disclaimer |
 | `gene` | string \| null | `FKS1` for the echinocandin arm |
@@ -130,7 +133,10 @@ table, or no placeable resolved isolates). Keys:
 - `places[]` — one entry per place with at least `min_resolved` (5) resolved isolates, sorted by
   prevalence (then CI lower bound) descending: `place`, `n_resolved` (the denominator),
   `n_panel_positive` (the numerator), `event_frequency` (= positive / resolved, 0..1), `ci95`
-  (Wilson 95% CI `[lo, hi]`).
+  (Wilson 95% CI `[lo, hi]`), and `markers[]` — which known-resistance marker(s) drive the place,
+  each `{token, carriers, low_ppv}`, descending by carriers. `markers` is a token-carrier tally
+  (an isolate with two panel markers is counted under each), **not** a partition of
+  `n_panel_positive`; distinct dominant markers in two places point to independent emergence.
 - `pooled_small` — places below the `min_resolved` floor, pooled so the footnote math holds:
   place count + their summed `n_resolved` / `n_panel_positive`.
 - `headline_prevalence` — the national panel-gated rate (`backtest.fks1_panel_prevalence`), the
