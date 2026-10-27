@@ -94,9 +94,27 @@ def test_prevalence_by_place_uses_resolved_denominator_not_carrier_count():
     assert places["USA: California"]["event_frequency"] == 0.5
     assert places["United Kingdom"]["n_resolved"] == 5
     assert places["United Kingdom"]["event_frequency"] == 0.2
+    # Each place carries a per_mutation tally of which marker its carriers hold.
+    assert places["USA: California"]["per_mutation"] == {"S639F": 1}
+    assert places["United Kingdom"]["per_mutation"] == {"S639P": 1}
     # Ranked by prevalence descending: the higher-rate place leads despite its smaller N.
     assert out["places"][0]["place"] == "USA: California"
     assert all(p["ci95"] is not None for p in out["places"])
+
+
+def test_prevalence_by_place_per_mutation_counts_each_marker_and_sorts_by_position():
+    # A multi-marker isolate is counted under EACH token (so per_mutation is a token-carrier
+    # tally, not a partition of n_panel_positive), and tokens sort by position number.
+    records = [
+        _rec("a", "M690I/S639F", _RES, geo="USA: Mountain"),   # two panel markers, one isolate
+        _rec("b", "S639F", _RES, geo="USA: Mountain"),
+        _rec("c", "", _WT, geo="USA: Mountain"),
+    ]
+    out = bt.fks1_panel_prevalence_by_place(records, finest=True, min_resolved=2)
+    place = out["places"][0]
+    assert place["n_panel_positive"] == 2                       # two isolates, not three tokens
+    assert place["per_mutation"] == {"S639F": 2, "M690I": 1}
+    assert list(place["per_mutation"]) == ["S639F", "M690I"]    # sorted by position (639 < 690)
 
 
 def test_prevalence_by_place_pools_small_places_and_drops_unplaced():

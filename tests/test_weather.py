@@ -754,9 +754,12 @@ def test_geo_prevalence_ranks_places_and_flags_above_national():
         "headline_prevalence": 0.10,
         "places": [
             {"place": "USA: California", "n_resolved": 40, "n_panel_positive": 12,
-             "event_frequency": 0.30, "ci95": (0.18, 0.45)},   # CI low 18% > 10% -> flagged
+             "event_frequency": 0.30, "ci95": (0.18, 0.45),   # CI low 18% > 10% -> flagged
+             "markers": [{"token": "D642Y", "carriers": 11, "low_ppv": True},
+                         {"token": "S639F", "carriers": 1, "low_ppv": False}]},
             {"place": "United Kingdom", "n_resolved": 60, "n_panel_positive": 6,
-             "event_frequency": 0.10, "ci95": (0.05, 0.20)},   # CI low 5% < 10% -> not flagged
+             "event_frequency": 0.10, "ci95": (0.05, 0.20),   # CI low 5% < 10% -> not flagged
+             "markers": [{"token": "M690I", "carriers": 6, "low_ppv": True}]},
         ],
         "pooled_small": {"n_places": 2, "n_resolved": 3, "n_panel_positive": 1},
         "n_unplaced": 4,
@@ -769,6 +772,15 @@ def test_geo_prevalence_ranks_places_and_flags_above_national():
     # The high-rate place whose CI lower bound clears the national rate is flagged; the other isn't.
     assert 'USA: California <span class="elevated">above national</span>' in page
     assert 'United Kingdom <span class="elevated">' not in page
+    # v6: each place names its dominant marker; the sole marker's dominance over one place vs
+    # another's distinct marker is the independent-emergence signal.
+    assert "driven by <code>D642Y</code>&times;11" in page
+    assert "driven by <code>M690I</code>&times;6" in page
+    # A near-dominant second marker (>= half the top) is shown; a trailing one is not.
+    assert "<code>S639F</code>" not in page  # 1 carrier < half of 11 -> dropped
+    # The dominant markers here are low-PPV, so the caution and tag render.
+    assert '<span class="low-ppv">weaker marker</span>' in page
+    assert "weaker marker" in page and "split resistant/susceptible" in page
     # The footnote names the national rate and the pooled-out small places (nothing hidden).
     assert "national rate is 10.0%" in page
     assert "2 smaller places" in page
