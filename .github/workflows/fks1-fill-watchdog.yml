@@ -25,6 +25,9 @@ on:
       threshold:
         description: "New in-window isolates that make a refill due"
         default: "25"
+      dark_lead_days:
+        description: "Ring this many days before the page would go dark"
+        default: "90"
 
 permissions:
   contents: read    # commits nothing -- it only reads the committed call table + files an issue
@@ -61,6 +64,7 @@ jobs:
             --as-of "${{ steps.dates.outputs.as_of }}" \
             --window "${{ steps.dates.outputs.window }}" \
             --threshold "${{ github.event.inputs.threshold || '25' }}" \
+            --dark-lead-days "${{ github.event.inputs.dark_lead_days || '90' }}" \
             --issue-out "$RUNNER_TEMP/issue.md" \
             --github-output "$GITHUB_OUTPUT"
 

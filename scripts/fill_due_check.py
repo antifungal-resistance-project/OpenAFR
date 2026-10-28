@@ -58,11 +58,20 @@ def _issue_body(status, source, as_of, window_days):
     rel = status["newest_release"] or "(none yet)"
     through = status["committed_as_of"] or "—"
     cov = status["coverage_pct"]
+    dark = status.get("dark_date")
+    days = status.get("days_until_dark")
+    if dark is None:
+        dark_line = "- Projected dark date: unknown (fill has no committed window)"
+    elif days is not None and days <= 0:
+        dark_line = f"- **Page is already dark** (window rolled off {dark})"
+    else:
+        dark_line = f"- **Page goes dark {dark}** — {days} day(s) of runway left"
     lines = [
         "## FKS1 fill is due — the resistance-weather page is drifting stale",
         "",
         f"**{status['reason']}**",
         "",
+        dark_line,
         f"- New in-window isolates uncalled (refill workload): **{status['uncalled_new']}**",
         f"- Window now: {status['resolved_in_window']}/{status['total_in_window']} isolates "
         f"re-called (**{cov:.0f}%** coverage) over a trailing {window_days}-day window "
@@ -97,6 +106,8 @@ def _write_github_output(path, status):
         fh.write(f"due={'true' if status['due'] else 'false'}\n")
         fh.write(f"uncalled={status['uncalled_new']}\n")
         fh.write(f"label={ISSUE_LABEL}\n")
+        fh.write(f"dark_date={status.get('dark_date') or ''}\n")
+        fh.write(f"days_until_dark={status.get('days_until_dark') if status.get('days_until_dark') is not None else ''}\n")
         if status["due"]:
             fh.write(f"title={title}\n")
 
@@ -118,6 +129,9 @@ def main():
     ap.add_argument("--threshold", type=int, default=fill_status.DEFAULT_THRESHOLD,
                     help=f"new in-window isolates that make a refill due "
                          f"(default {fill_status.DEFAULT_THRESHOLD})")
+    ap.add_argument("--dark-lead-days", type=int, default=fill_status.DEFAULT_DARK_LEAD_DAYS,
+                    help=f"ring the bell this many days before the page would go dark "
+                         f"(default {fill_status.DEFAULT_DARK_LEAD_DAYS})")
     ap.add_argument("--issue-out", default=None,
                     help="write the GitHub-issue body here when due (workflow files it)")
     ap.add_argument("--github-output", default=None,
@@ -127,13 +141,17 @@ def main():
     as_of = args.as_of or emergence.default_as_of(args.window)
     records, source = _load_records(args)
     status = fill_status.fill_due(records, args.calls_dir, as_of,
-                                  window_days=args.window, threshold=args.threshold)
+                                  window_days=args.window, threshold=args.threshold,
+                                  dark_lead_days=args.dark_lead_days)
 
     verdict = "DUE" if status["due"] else "quiet"
+    dark = status.get("dark_date") or "?"
+    days = status.get("days_until_dark")
+    dark_note = f"dark {dark} ({days}d)" if days is not None else f"dark {dark}"
     print(f"{verdict}: {status['reason']} (checked {source})")
     print(f"  in-window {status['resolved_in_window']}/{status['total_in_window']} re-called "
           f"({status['coverage_pct']:.0f}%); {status['uncalled_new']} new uncalled; "
-          f"last fill {status['newest_release']} through {status['committed_as_of']}")
+          f"last fill {status['newest_release']} through {status['committed_as_of']}; {dark_note}")
 
     if status["due"] and args.issue_out:
         pathlib.Path(args.issue_out).parent.mkdir(parents=True, exist_ok=True)
