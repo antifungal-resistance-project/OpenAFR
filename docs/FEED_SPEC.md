@@ -9,7 +9,7 @@ only; detection-only; not a clinical claim.
 
 Contract is pinned by `tests/test_weather_feed.py` and re-checked at publish time by
 `scripts/check_published_page.py`. Adding a key is backward compatible. Renaming, removing, or
-changing the meaning of a key bumps `schema_version` (currently `6`).
+changing the meaning of a key bumps `schema_version` (currently `7`).
 
 **Changelog.** `6` (2026-10): added per-place `markers` inside `geography_prevalence.places` —
 which known-resistance marker(s) drive each place (each `{token, carriers, low_ppv}`), so a
@@ -29,7 +29,7 @@ are frozen, so it is **not** a freshness signal on its own.
 
 | key | type | meaning |
 |---|---|---|
-| `schema_version` | int | `6` |
+| `schema_version` | int | `7` |
 | `generated` | string | UTC `YYYY-MM-DDTHH:MM:SSZ` build time — advances on every weekly publish; **not** a data-freshness signal (see `fill_age_days`) |
 | `notice` | string | research-use disclaimer |
 | `gene` | string \| null | `FKS1` for the echinocandin arm |
@@ -80,7 +80,12 @@ The `evidence_class: "proximity_label"` constraint is enforced: `structural_verd
 
 ### release_trend[]
 
-`release_tag`, `as_of`, `n_called`, `n_resistant`, `n_vus`, `prevalence`.
+`release_tag`, `as_of`, `window_days`, `n_called`, `n_resistant`, `n_vus`, `prevalence`.
+
+`window_days` (int | null) is the sampling window that batch covers (`[as_of, as_of+window_days)`).
+Use it to tell a real time-trend from a deeper re-sampling: a prevalence difference between two
+batches whose windows **overlap** is a **sampling-depth artifact, not emergence** — the page frames
+such a move that way rather than as a rise/fall "since the previous batch".
 
 **How to read "resistant":** `n_resistant` counts isolates carrying a *known-resistance panel*
 FKS1 substitution. `n_vus` counts resolved isolates with a hot-spot variant *not* on the panel

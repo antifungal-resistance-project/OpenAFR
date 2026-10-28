@@ -506,28 +506,51 @@ def test_meta_shows_fill_provenance_when_window_is_quiet():
 # (current-release only, honestly labelled). Both degrade to nothing when their data is absent.
 
 def _trend(*points):
-    # points: (as_of, n_called, n_resistant) oldest-first; prevalence derived.
-    return [{"as_of": a, "n_called": c, "n_resistant": r,
-             "prevalence": (r / c) if c else None} for (a, c, r) in points]
+    # points: (as_of, n_called, n_resistant) or (as_of, n_called, n_resistant, window_days)
+    # oldest-first; prevalence derived.
+    out = []
+    for p in points:
+        a, c, r = p[0], p[1], p[2]
+        window = p[3] if len(p) > 3 else None
+        out.append({"as_of": a, "window_days": window, "n_called": c, "n_resistant": r,
+                    "prevalence": (r / c) if c else None})
+    return out
 
 
-def test_trend_section_shows_per_batch_prevalence_and_rising_delta():
+def test_trend_section_reframes_a_shared_window_as_sampling_depth():
+    # Live 709/710: a 300-isolate pilot and a 3375-isolate full fill of the ~same April window.
+    # The 5.0% -> 5.8% move is a sampling-depth artifact, NOT emergence, so it must not be framed
+    # as "prevalence up ... since the previous batch" (the dishonest reading issue #222 fixed).
     page = weather.render_page(
         _cov_result(200, 150), now=NOW,
-        release_trend=_trend(("2026-04-11", 300, 15), ("2026-04-14", 3375, 197)))
+        release_trend=_trend(("2026-04-11", 300, 15, 180), ("2026-04-14", 3375, 197, 180)))
     assert 'class="trend"' in page
     assert "Resistance trend" in page
     # both batches render with resolved counts and a one-decimal prevalence
     assert "15 of 300 isolates" in page and "5.0%" in page
     assert "197 of 3375 isolates" in page and "5.8%" in page
-    # 5.0% -> 5.8% is a rise; the delta names the direction and magnitude
-    assert "trend-up" in page and "prevalence up 0.8 pts" in page
+    # framed as sampling depth (muted), not emergence
+    assert "sampling-depth difference, not emergence" in page
+    assert "300 &rarr; 3375 isolates" in page
+    assert 'class="trend-delta trend-up"' not in page   # not framed as emergence (CSS aside)
+    assert "prevalence up 0.8 pts since the previous batch" not in page
+
+
+def test_trend_section_shows_emergence_delta_for_distinct_windows():
+    # Two non-overlapping 180-day windows (April vs October): a real time-trend, framed as a rise.
+    page = weather.render_page(
+        _cov_result(200, 150), now=NOW,
+        release_trend=_trend(("2026-04-14", 3375, 169, 180), ("2026-10-14", 3375, 196, 180)))
+    assert 'class="trend-delta trend-up"' in page
+    assert "prevalence up 0.8 pts since the previous batch" in page
+    assert "sampling-depth" not in page
 
 
 def test_trend_section_marks_a_falling_batch():
+    # Distinct (non-overlapping) windows -> a genuine fall, framed as emergence.
     page = weather.render_page(
         _cov_result(200, 150), now=NOW,
-        release_trend=_trend(("2026-04-11", 100, 10), ("2026-04-14", 100, 6)))
+        release_trend=_trend(("2026-04-14", 100, 10, 180), ("2026-10-14", 100, 6, 180)))
     assert "trend-down" in page and "prevalence down 4.0 pts" in page
 
 

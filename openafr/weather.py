@@ -575,16 +575,43 @@ def _prevalence_sparkline(points, *, projection=None, aria_label=""):
             f"{polylines}{dots}{proj_svg}{ticks}</svg>")
 
 
+_SAME_WINDOW_OVERLAP = 0.5  # >= this fraction of the shorter window => same calendar period
+
+
+def _windows_overlap_fraction(a, b):
+    """Overlap of two batches' [as_of, as_of+window_days) sampling windows, as a fraction of
+    the shorter window, or None if either batch lacks a parseable `as_of` + positive
+    `window_days`. Two batches whose windows overlap heavily cover the ~same calendar period,
+    so a prevalence difference between them is a sampling-depth artifact, not emergence."""
+    try:
+        start_a = datetime.date.fromisoformat(str(a.get("as_of")))
+        start_b = datetime.date.fromisoformat(str(b.get("as_of")))
+        wa = int(a.get("window_days") or 0)
+        wb = int(b.get("window_days") or 0)
+    except (TypeError, ValueError):
+        return None
+    if wa <= 0 or wb <= 0:
+        return None
+    end_a = start_a + datetime.timedelta(days=wa)
+    end_b = start_b + datetime.timedelta(days=wb)
+    overlap_days = (min(end_a, end_b) - max(start_a, start_b)).days
+    if overlap_days <= 0:
+        return 0.0
+    return overlap_days / min(wa, wb)
+
+
 def _trend_section(release_trend):
     """The resistance-trend block: prevalence per committed re-call batch, with the direction
     of the latest move, or "" when there is no trajectory to show (fewer than two batches).
 
-    `release_trend` -- the per-release series from render_weather (`as_of`, resolved
-    `n_called`, `n_resistant` = KNOWN-resistance panel carriers, `n_vus` = non-panel
+    `release_trend` -- the per-release series from render_weather (`as_of`, `window_days`,
+    resolved `n_called`, `n_resistant` = KNOWN-resistance panel carriers, `n_vus` = non-panel
     variant-of-uncertain-significance carriers, `prevalence`), ascending by release.
     Reproducible from the committed call tables; passed in, never recomputed here. Degrades
     honestly: a single batch is a point, not a trend, so the section is omitted until a second
-    batch gives it meaning.
+    batch gives it meaning; and when the latest two batches cover the ~same sampling window
+    (deeper re-fill of one calendar period) the move is framed as a sampling-depth difference,
+    not emergence, so the reader never reads a trend into a re-sampling artifact.
     """
     if not release_trend or len(release_trend) < 2:
         return ""
@@ -602,14 +629,29 @@ def _trend_section(release_trend):
     delta_html = ""
     if len(pts) >= 2:
         dp = (pts[-1] - pts[-2]) * 100   # percentage points, latest vs previous batch
-        if dp > 0.05:
-            cls, line = "trend-up", f"&#9650; prevalence up {dp:.1f} pts since the previous batch."
-        elif dp < -0.05:
-            cls, line = "trend-down", (f"&#9660; prevalence down {abs(dp):.1f} pts since the "
-                                       "previous batch.")
+        frac = _windows_overlap_fraction(release_trend[-2], release_trend[-1])
+        if frac is not None and frac >= _SAME_WINDOW_OVERLAP:
+            # The latest two batches re-sample the ~same calendar window at different depths,
+            # so this move is a sampling-depth artifact -- never framed as emergence (muted,
+            # not the trend-up emergence colour).
+            window = release_trend[-1].get("window_days")
+            span = f"~{window}-day" if window else "same"
+            line = (f"&#9644; {_prev(pts[-2])} &rarr; {_prev(pts[-1])} across two re-call "
+                    f"batches of the {span} window "
+                    f"({release_trend[-2].get('n_called', 0)} &rarr; "
+                    f"{release_trend[-1].get('n_called', 0)} isolates): a sampling-depth "
+                    "difference, not emergence.")
+            delta_html = f'    <p class="trend-delta trend-flat">{line}</p>\n'
         else:
-            cls, line = "trend-flat", "&#9644; prevalence held steady since the previous batch."
-        delta_html = f'    <p class="trend-delta {cls}">{line}</p>\n'
+            if dp > 0.05:
+                cls, line = "trend-up", (f"&#9650; prevalence up {dp:.1f} pts since the "
+                                         "previous batch.")
+            elif dp < -0.05:
+                cls, line = "trend-down", (f"&#9660; prevalence down {abs(dp):.1f} pts since "
+                                           "the previous batch.")
+            else:
+                cls, line = "trend-flat", "&#9644; prevalence held steady since the previous batch."
+            delta_html = f'    <p class="trend-delta {cls}">{line}</p>\n'
 
     # Non-panel hot-spot variants (uncertain significance) in the latest batch -- surfaced so
     # the reader sees they are tracked but deliberately NOT counted as known resistance.

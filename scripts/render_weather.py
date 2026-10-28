@@ -84,8 +84,9 @@ def _release_trend(args):
     """The per-release resistance trajectory the trend section renders, or None.
 
     Fully reproducible from committed data: one entry per committed fill, read from the calls
-    INDEX (`release_tag`, `as_of`, resolved `n_called`) joined to that release's committed
-    table for the resistant-carrier count. `n_resistant` is the KNOWN-resistance panel count
+    INDEX (`release_tag`, `as_of`, `window_days`, resolved `n_called`) joined to that release's
+    committed table for the resistant-carrier count. `window_days` lets the trend view tell a
+    real time-trend from a deeper re-sampling of the same window (sampling-depth artifact). `n_resistant` is the KNOWN-resistance panel count
     (not every FKS1 variant token): non-panel hot-spot variants are of uncertain significance
     and are carried separately as `n_vus`, so the headline never overstates resistance (the
     distinction the real-data backtest surfaced). Prevalence is panel-resistant / resolved --
@@ -103,6 +104,7 @@ def _release_trend(args):
         trend.append({
             "release_tag": tag,
             "as_of": row.get("as_of") or "",
+            "window_days": int(row.get("window_days") or 0) or None,
             "n_called": n_called,
             "n_resistant": n_resistant,
             "n_vus": n_vus,
