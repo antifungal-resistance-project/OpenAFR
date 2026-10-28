@@ -28,7 +28,11 @@ from openafr.weather import SCOPE_LIMITS, _fill_age_tier
 # resistance marker(s) drive each place (each `{token, carriers, low_ppv}`), so a consumer sees
 # that distinct hotspots carry distinct markers (independent emergence), not just where the rate
 # is high. A token-carrier tally, not a partition of the place's positives.
-SCHEMA_VERSION = 6
+# v7 (2026-10): added `window_days` to each `release_trend[]` entry (the batch's sampling window)
+# so a consumer can tell a real time-trend from a deeper re-sampling of the same calendar window:
+# a prevalence difference between two batches whose windows overlap is a sampling-depth artifact,
+# not emergence, and the page frames it as such.
+SCHEMA_VERSION = 7
 _TITLE = "C. auris Resistance Weather Report"
 _NOTICE = "Research use only -- a triage aid, not a clinical claim. Detection-only."
 

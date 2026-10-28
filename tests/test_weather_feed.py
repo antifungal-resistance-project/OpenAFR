@@ -19,7 +19,7 @@ def test_data_matches_alerts_and_is_json_serialisable():
     res = _fks1_hit_result()
     data = weather_feed.build_data(res, now=NOW, geo_breakdown={"USA": 3, "Kenya": 1},
                                    page_url=URL)
-    assert data["schema_version"] == 6 and data["generated"] == "2026-09-17T08:30:00Z"
+    assert data["schema_version"] == 7 and data["generated"] == "2026-09-17T08:30:00Z"
     assert [a["mutation"] for a in data["alerts"]] == [a["mutation"] for a in res["alerts"]]
     assert list(data["geography"]) == ["Kenya", "USA"]  # sorted, stable
     json.dumps(data)  # must not raise
