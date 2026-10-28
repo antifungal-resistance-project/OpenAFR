@@ -11,9 +11,16 @@ FKS1 caller. The page is live (release 710). The work now is making it deeper an
 
 _Last re-ranked: 2026-10-26._
 
+**Operational board:** the [OpenAFR GitHub Project](https://github.com/users/jajjer/projects/1)
+is the live tracker — each active bet is an issue with a `Rank` and `Status` (Backlog / Next /
+In progress / Parked / Done). Rank and status live on the board; this file is the narrative
+*why* and is refreshed when a bet lands. Keep the two in sync: re-rank on the board, re-tell the
+story here.
+
 ## Active bets (ranked)
 
-1. **Weather depth — keep extending what the page tells you.** The winning thread: each
+1. **Weather depth — keep extending what the page tells you.** ([#222](https://github.com/antifungal-resistance-project/OpenAFR/issues/222))
+   The winning thread: each
    recent PR adds a layer (#215 panel breakdown, #216 geo prevalence, #217 plain language,
    #218 claims-not-made, #219 QA, then **marker × region** — each geo-prevalence hotspot now
    names which FKS1 marker drives it; the data shows Mid-Atlantic is clonal D642Y and
@@ -26,17 +33,20 @@ _Last re-ranked: 2026-10-26._
      label batches by sampling depth rather than time. (Good next pick: a real honesty fix.)
    - Finer geo resolution; clearer forecast surfacing.
 
-2. **Live-loop durability — don't let the page go dark.** The display window anchors to the
+2. **Live-loop durability — don't let the page go dark.** ([#223](https://github.com/antifungal-resistance-project/OpenAFR/issues/223))
+   The display window anchors to the
    committed fill; on the current fill it goes dark ~2027-04-10. The non-billable monthly
    watchdog measures drift and rings for a human-gated billable refill. Bet: make sure that
    watchdog→refill path is solid and the dark-date is never a surprise.
 
-3. **Raise the echinocandin-call coverage ceiling (FKS1 HS3 panel extension).** The #137
+3. **Raise the echinocandin-call coverage ceiling (FKS1 HS3 panel extension).** ([#224](https://github.com/antifungal-resistance-project/OpenAFR/issues/224))
+   The #137
    diagnostic-accuracy arm read FAIL (VME 10% vs ≤3% bar) — a *coverage* ceiling, not a caller
    defect. The fix is the HS3 panel extension (v2 prereg; D642Y/M690I/R1354S path via #154,
    already on main). Billable GCP re-measure to confirm it lifts coverage.
 
-4. **FKS1 structural so-what — optional deepening.** Rungs 1–3 shipped (position_context,
+4. **FKS1 structural so-what — optional deepening.** ([#225](https://github.com/antifungal-resistance-project/OpenAFR/issues/225))
+   Rungs 1–3 shipped (position_context,
    structural_proximity, proximity_label verdict). Honesty boundary holds: no metal → no fit
    claim, never ACT-NOW. Any further structural work is a judgment call, not a committed need.
 

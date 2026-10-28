@@ -1,0 +1,86 @@
+# Keep the board and reality in sync: nudge when a PR lands without linking an issue.
+#
+# The one discipline that makes the OpenAFR Project board trustworthy is that every PR
+# closes its issue (`Closes #222`), so merging moves the board item to Done automatically
+# (the "Item closed" built-in workflow). This job is the backstop for the one slip that
+# silently breaks that loop: a PR merged with no closing keyword, which leaves its issue
+# (and board item) open forever. It only *comments* — never fails the PR — because plenty
+# of PRs legitimately close nothing (a docs tweak, a hotfix). Opt out explicitly with the
+# `no-issue` label or by writing `no-issue` in the PR body.
+#
+# See ROADMAP.md / CLAUDE.md for the board convention this guards.
+
+name: pr-links-issue
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-link:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Comment if no issue is linked
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+            const labels = (pr.labels || []).map(l => l.name.toLowerCase());
+
+            // Explicit opt-out.
+            if (labels.includes("no-issue") || /\bno-issue\b/i.test(body)) {
+              return;
+            }
+
+            // A closing keyword followed by an issue reference (#123 or a full issue URL).
+            const linked =
+              /\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\b[:\s]+#\d+/i.test(body) ||
+              /\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\b[:\s]+https?:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+/i.test(body);
+
+            const marker = "<!-- pr-links-issue -->";
+
+            // Find any prior comment from this job so we update instead of spamming.
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+            });
+            const prior = comments.data.find(c => (c.body || "").includes(marker));
+
+            if (linked) {
+              // Requirement met — clean up a stale nudge if one exists.
+              if (prior) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: prior.id,
+                });
+              }
+              return;
+            }
+
+            const message = marker + "\n" +
+              "**No issue linked.** Add `Closes #<n>` (or `Fixes`/`Resolves`) to the PR body so " +
+              "merging moves the board item to Done automatically. If this PR intentionally closes " +
+              "nothing, add the `no-issue` label or write `no-issue` in the body and this note clears itself.";
+
+            if (prior) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: prior.id,
+                body: message,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: message,
+              });
+            }
